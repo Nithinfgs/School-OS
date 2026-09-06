@@ -1445,6 +1445,30 @@ dd {
   border-radius: 7px;
   font-size: 13px;
 }
+.dev-login-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.dev-login-grid a {
+  min-height: 38px;
+  border: 1px solid #d8e0ea;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f8fafc;
+}
+.dev-login-grid a:hover {
+  background: #eef4ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
 .login-note {
   display: flex;
   justify-content: center;
@@ -1453,6 +1477,11 @@ dd {
   font-size: 10px;
   color: #8c99ab;
   margin-top: 17px;
+}
+@media (max-width: 520px) {
+  .dev-login-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .login-card footer {
   font-size: 10px;

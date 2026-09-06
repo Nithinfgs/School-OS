@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export type ChatGPTUser = {
@@ -17,12 +17,13 @@ const PERCENT_ENCODED_UTF8 = 'percent-encoded-utf-8';
 const SIGN_IN_PATH = '/signin-with-chatgpt';
 const SIGN_OUT_PATH = '/signout-with-chatgpt';
 const CALLBACK_PATH = '/callback';
+export const DEV_AUTH_COOKIE = 'schoolos-dev-user';
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
+  if (!userId || !email) return getDevUser();
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
@@ -37,6 +38,51 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
     email,
     fullName,
   };
+}
+
+async function getDevUser(): Promise<ChatGPTUser | null> {
+  const store = await cookies();
+  const raw = store.get(DEV_AUTH_COOKIE)?.value;
+  if (!raw) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(atob(raw));
+  } catch {
+    return null;
+  }
+
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    !('role' in parsed) ||
+    !['student', 'teacher', 'admin'].includes(String(parsed.role))
+  )
+    return null;
+
+  const role = String(parsed.role);
+  const profiles: Record<string, ChatGPTUser> = {
+    student: {
+      userId: 'dev:student',
+      displayName: 'Aarav Sharma',
+      email: 'student.dev@schoolos.local',
+      fullName: 'Aarav Sharma',
+    },
+    teacher: {
+      userId: 'dev:teacher',
+      displayName: 'Maya Iyer',
+      email: 'teacher.dev@schoolos.local',
+      fullName: 'Maya Iyer',
+    },
+    admin: {
+      userId: 'dev:admin',
+      displayName: 'Nithin Selvaraj',
+      email: 'admin.dev@schoolos.local',
+      fullName: 'Nithin Selvaraj',
+    },
+  };
+
+  return profiles[role];
 }
 
 export async function requireChatGPTUser(

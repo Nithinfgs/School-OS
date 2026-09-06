@@ -1,6 +1,13 @@
 import SchoolOS from './schoolos';
 import { getChatGPTUser, chatGPTSignInPath } from './chatgpt-auth';
-import { GraduationCap, ArrowRight, ShieldCheck } from 'lucide-react';
+import {
+  GraduationCap,
+  ArrowRight,
+  ShieldCheck,
+  User,
+  Users,
+  Wrench,
+} from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export default async function Page() {
   const user = await getChatGPTUser();
@@ -32,6 +39,20 @@ export default async function Page() {
           >
             Continue with ChatGPT <ArrowRight size={17} />
           </a>
+          <div className="dev-login-grid" aria-label="Development logins">
+            <a href="/api/dev-login?role=student&return_to=/" target="_top">
+              <User size={16} />
+              Dev student
+            </a>
+            <a href="/api/dev-login?role=teacher&return_to=/" target="_top">
+              <Users size={16} />
+              Dev teacher
+            </a>
+            <a href="/api/dev-login?role=admin&return_to=/" target="_top">
+              <Wrench size={16} />
+              Dev admin
+            </a>
+          </div>
           <div className="login-note">
             <ShieldCheck size={16} /> Use the account connected to your school.
           </div>

@@ -7,6 +7,7 @@ export function db() {
 export async function context() {
   const user = await getChatGPTUser();
   if (!user) throw new Error('UNAUTHORIZED');
+  if (user.userId.startsWith('dev:')) return devContext(user);
   const hash = Array.from(
     new Uint8Array(
       await crypto.subtle.digest(
@@ -55,6 +56,71 @@ export async function context() {
     member.userId = user.userId;
   }
   return { user, member, org: member.organizationId };
+}
+
+async function devContext(
+  user: NonNullable<Awaited<ReturnType<typeof getChatGPTUser>>>,
+) {
+  const org = 'schoolos-dev';
+  await db().batch([
+    db()
+      .prepare(
+        'INSERT OR IGNORE INTO organizations (id,name,ownerId) VALUES (?,?,?)',
+      )
+      .bind(org, 'Westbridge International', 'dev:admin'),
+    db()
+      .prepare(
+        'INSERT OR IGNORE INTO members (id,organizationId,userId,role,name,email,classes,studentId,department) VALUES (?,?,?,?,?,?,?,?,?)',
+      )
+      .bind(
+        'dev-admin-member',
+        org,
+        'dev:admin',
+        'Admin',
+        'Nithin Selvaraj',
+        'admin.dev@schoolos.local',
+        '',
+        '',
+        'Administration',
+      ),
+    db()
+      .prepare(
+        'INSERT OR IGNORE INTO members (id,organizationId,userId,role,name,email,classes,studentId,department) VALUES (?,?,?,?,?,?,?,?,?)',
+      )
+      .bind(
+        'dev-teacher-member',
+        org,
+        'dev:teacher',
+        'Teacher',
+        'Maya Iyer',
+        'teacher.dev@schoolos.local',
+        'Physics HL|Math AA HL',
+        '',
+        'Physics',
+      ),
+    db()
+      .prepare(
+        'INSERT OR IGNORE INTO members (id,organizationId,userId,role,name,email,classes,studentId,department) VALUES (?,?,?,?,?,?,?,?,?)',
+      )
+      .bind(
+        'dev-student-member',
+        org,
+        'dev:student',
+        'Student',
+        'Aarav Sharma',
+        'student.dev@schoolos.local',
+        'Physics HL|Chemistry HL|Math AA HL|English',
+        'student-1',
+        'Grade 12',
+      ),
+  ]);
+
+  const member = await db()
+    .prepare('SELECT * FROM members WHERE organizationId=? AND userId=?')
+    .bind(org, user.userId)
+    .first<any>();
+
+  return { user, member, org };
 }
 export async function ensureSeed(org: string, actor: string) {
   const rows = seed();

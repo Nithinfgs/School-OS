@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NITRO_PRESET = "netlify"
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Nitro creates the Netlify server function and route rules during the build.
+# Netlify should publish the generated public assets from this directory.

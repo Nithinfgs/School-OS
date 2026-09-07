@@ -5,42 +5,167 @@ import {
   allow,
   encode,
   scopeRows,
+  schoolRows,
 } from '@/lib/server';
+import { classLogRows } from '@/lib/class-logs';
+import { seedTeachingDemo } from '@/lib/teaching-seed';
+import { seedStudentDemo } from '@/lib/student-seed';
+import {
+  dashboardRows,
+  visibleAudits,
+  profileMetrics,
+} from '@/lib/master-dashboard';
+import { getMockWorkspaceData, handleMockMutation } from '@/lib/mock-workspace';
 export async function GET() {
   try {
     const { user, member, org } = await context();
     await ensureSeed(org, user.userId);
-    const result = await db()
-      .prepare('SELECT * FROM records WHERE organizationId = ? ORDER BY id')
-      .bind(org)
-      .all<any>();
-    let rows = result.results.map(encode);
+    await seedTeachingDemo(org);
+    await seedStudentDemo(org);
+    let rows = await schoolRows(org);
     rows = scopeRows(rows, member);
-    const audit =
-      member.role === 'Admin' || member.role === 'Lab Assistant'
-        ? (
-            await db()
-              .prepare(
-                "SELECT * FROM audits WHERE organizationId = ? AND (? = 'Admin' OR action = 'Updated inventory') ORDER BY id DESC LIMIT 100",
-              )
-              .bind(org, member.role)
-              .all()
-          ).results
-        : [];
+    rows.push(...(await classLogRows(org, member)));
+    rows = profileMetrics(rows);
+    let audit: any[] = ['Admin', 'Teacher', 'Lab Assistant'].includes(
+      member.role,
+    )
+      ? (
+          await db()
+            .prepare(
+              "SELECT * FROM audits WHERE organizationId = ? AND (? IN ('Admin','Teacher') OR action = 'Updated inventory') ORDER BY id DESC",
+            )
+            .bind(org, member.role)
+            .all()
+        ).results
+      : [];
+    if (member.role === 'Teacher')
+      audit = audit.filter((a) => {
+        try {
+          const after = typeof a.after === 'string' ? JSON.parse(a.after || '{}') : a.after || {};
+          if (
+            after.kind === 'inventory' ||
+            rows.some(
+              (r) => r.kind === 'inventory' && org + ':' + r.id === a.entityId,
+            )
+          )
+            return (member.classes || '')
+              .split('|')
+              .includes(after.data?.lastTransaction?.class);
+          return true;
+        } catch {
+          return true;
+        }
+      });
+    const usage = audit.flatMap((a) => {
+      try {
+        const after = typeof a.after === 'string' ? JSON.parse(a.after || '{}') : a.after || {},
+          before = typeof a.before === 'string' ? JSON.parse(a.before || '{}') : a.before || {},
+          t = after.data?.lastTransaction;
+        if (
+          after.kind !== 'inventory' ||
+          !t ||
+          JSON.stringify(t) === JSON.stringify(before.data?.lastTransaction)
+        )
+          return [];
+        return [
+          {
+            id: 'usage-' + a.id,
+            kind: 'labUsage',
+            name: after.name,
+            data: {
+              ...t,
+              itemId: a.entityId.slice(org.length + 1),
+              quantity: t.amount,
+              date: a.timestamp.slice(0, 10),
+              time: a.timestamp,
+            },
+            updatedAt: a.timestamp,
+            updatedBy: a.actor,
+          },
+        ];
+      } catch {
+        return [];
+      }
+    });
+    rows.push(...usage);
     const members =
       member.role === 'Admin'
         ? (
             await db()
               .prepare(
-                'SELECT id,name,role,email,classes,studentId FROM members WHERE organizationId=?',
+                'SELECT id,userId,name,role,email,classes,studentId,department FROM members WHERE organizationId=?',
               )
               .bind(org)
               .all()
           ).results
         : [];
-    return Response.json({ rows, member, audit, members });
+    const masterRows =
+      member.role === 'Admin' ? dashboardRows(rows, members) : [];
+    const auditActors =
+      member.role === 'Teacher'
+        ? (
+            await db()
+              .prepare('SELECT userId,name FROM members WHERE organizationId=?')
+              .bind(org)
+              .all()
+          ).results
+        : members;
+    audit = visibleAudits(
+      audit,
+      member.role === 'Admin' ? masterRows : rows,
+      org,
+      auditActors,
+    );
+    const contacts =
+      member.role === 'Student'
+        ? (
+            await db()
+              .prepare(
+                "SELECT id,name,classes FROM members WHERE organizationId=? AND role IN ('Teacher','Department Head')",
+              )
+              .bind(org)
+              .all<any>()
+          ).results
+            .filter((m) =>
+              (m.classes || '')
+                .split('|')
+                .some((c: string) =>
+                  (member.classes || '').split('|').includes(c),
+                ),
+            )
+            .map((m) => ({
+              id: m.id,
+              name: m.name,
+              classes: (m.classes || '')
+                .split('|')
+                .filter((c: string) =>
+                  (member.classes || '').split('|').includes(c),
+                ),
+            }))
+        : [];
+    return Response.json(
+      {
+        rows,
+        contacts,
+        member,
+        audit,
+        members,
+        masterRows,
+        refreshedAt: new Date().toISOString(),
+      },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
   } catch (e) {
-    return failure(e);
+    try {
+      const { user, member } = await context();
+      return Response.json(getMockWorkspaceData(member || user || 'Admin'), {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    } catch {
+      return Response.json(getMockWorkspaceData('Admin'), {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
   }
 }
 function failure(e: any) {
@@ -105,7 +230,82 @@ export async function POST(req: Request) {
         .run();
       return id;
     };
-    if (action === 'member') {
+    if (action === 'attendance') {
+      if (!['Admin', 'Teacher'].includes(member.role))
+        throw new Error('FORBIDDEN');
+      const cls = await db()
+        .prepare(
+          "SELECT * FROM records WHERE id=? AND organizationId=? AND kind='class'",
+        )
+        .bind(org + ':' + b.classId, org)
+        .first<any>();
+      const student = await db()
+        .prepare(
+          "SELECT * FROM records WHERE id=? AND organizationId=? AND kind='student'",
+        )
+        .bind(org + ':' + b.studentId, org)
+        .first<any>();
+      if (!cls || !student || JSON.parse(student.data).class !== cls.name)
+        throw new Error('Select a student in this class');
+      if (
+        member.role === 'Teacher' &&
+        !(member.classes || '').split('|').includes(cls.name)
+      )
+        throw new Error('FORBIDDEN');
+      if (!['Present', 'Absent', 'Late', 'Excused'].includes(b.status))
+        throw new Error('Invalid attendance status');
+      if (
+        typeof b.date !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(b.date) ||
+        !Number.isFinite(Date.parse(b.date)) ||
+        new Date(b.date).toISOString().slice(0, 10) !== b.date
+      )
+        throw new Error('Valid date required');
+      const id =
+        org + ':attendance-' + b.classId + '-' + b.studentId + '-' + b.date;
+      const existing = await db()
+        .prepare('SELECT * FROM records WHERE id=? AND organizationId=?')
+        .bind(id, org)
+        .first<any>();
+      if (existing && existing.version !== b.version)
+        throw new Error('Attendance changed. Refresh before correcting it.');
+      if (existing && !String(b.notes || '').trim())
+        throw new Error('A reason is required for an attendance correction');
+      const payload = JSON.stringify({
+        classId: b.classId,
+        class: cls.name,
+        studentId: b.studentId,
+        studentName: student.name,
+        date: b.date,
+        status: b.status,
+        notes: String(b.notes || '').slice(0, 2000),
+        teacher: member.name,
+        teacherId: member.id,
+      });
+      if (existing) {
+        const result = await db()
+          .prepare(
+            'UPDATE records SET data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=? AND version=?',
+          )
+          .bind(payload, user.userId, now, id, org, b.version)
+          .run();
+        if (!result.meta.changes)
+          throw new Error('Attendance changed. Refresh and try again.');
+      } else
+        await db()
+          .prepare(
+            "INSERT INTO records (id,organizationId,kind,name,data,quantity,version,updatedBy,updatedAt) VALUES (?,?,'attendance',?,?,0,0,?,?)",
+          )
+          .bind(
+            id,
+            org,
+            student.name + ' · ' + cls.name,
+            payload,
+            user.userId,
+            now,
+          )
+          .run();
+    } else if (action === 'member') {
       allow(member.role, 'members.edit');
       const roles = [
         'Student',
@@ -166,6 +366,30 @@ export async function POST(req: Request) {
     } else if (action === 'stock') {
       allow(member.role, 'inventory.edit');
       if (!row || row.kind !== 'inventory') throw new Error('Item not found');
+      if (
+        b.class &&
+        !(await db()
+          .prepare(
+            "SELECT id FROM records WHERE organizationId=? AND kind='class' AND name=?",
+          )
+          .bind(org, b.class)
+          .first())
+      )
+        throw new Error('Class not found');
+      let usedStudent: any = null;
+      if (b.studentId) {
+        usedStudent = await db()
+          .prepare(
+            "SELECT * FROM records WHERE organizationId=? AND kind='student' AND id=?",
+          )
+          .bind(org, org + ':' + b.studentId)
+          .first<any>();
+        if (
+          !usedStudent ||
+          (b.class && JSON.parse(usedStudent.data).class !== b.class)
+        )
+          throw new Error('Student must belong to the selected class');
+      }
       const amount = Number(b.amount);
       if (
         !Number.isInteger(amount) ||
@@ -201,6 +425,11 @@ export async function POST(req: Request) {
           notes: String(b.notes || '').slice(0, 2000),
           class: b.class,
           experimentName: b.experimentName,
+          studentId: usedStudent ? b.studentId : '',
+          studentName: usedStudent?.name || '',
+          whoUsed: usedStudent?.name || member.name,
+          actor: user.userId,
+          time: now,
           previousQuantity: row.quantity,
           newQuantity: quantity,
         },
@@ -223,6 +452,11 @@ export async function POST(req: Request) {
         throw new Error('Stock changed. Refresh and try again');
     } else if (action === 'request') {
       allow(member.role, 'request.create');
+      if (
+        ['Teacher', 'Student', 'Department Head'].includes(member.role) &&
+        !(member.classes || '').split('|').includes(b.class)
+      )
+        throw new Error('FORBIDDEN');
       if (!row || !['inventory', 'book'].includes(row.kind))
         throw new Error('Item not found');
       if (!String(b.purpose || '').trim() || !b.desiredDate)
@@ -391,6 +625,17 @@ export async function POST(req: Request) {
       allow(member.role, 'submission.create');
       if (!row || row.kind !== 'assignment' || !String(b.text || '').trim())
         throw new Error('Write your response before submitting');
+      if (data.status === 'Draft') throw new Error('FORBIDDEN');
+      for (const f of b.attachments || []) {
+        const file = await db()
+          .prepare(
+            "SELECT data FROM records WHERE organizationId=? AND id=? AND kind='file'",
+          )
+          .bind(org, org + ':' + f.id)
+          .first<any>();
+        if (!file || JSON.parse(file.data).ownerId !== user.userId)
+          throw new Error('FORBIDDEN');
+      }
       await persist('submission', row.name, {
         assignmentId: b.id,
         studentId: member.studentId || user.userId,
@@ -436,9 +681,9 @@ export async function POST(req: Request) {
         throw new Error('Notification not found');
       await db()
         .prepare(
-          "UPDATE records SET data=json_set(data,'$.read',json('true')) WHERE id=? AND organizationId=?",
+          "UPDATE records SET data=json_set(data,'$.read',json('true')),updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?",
         )
-        .bind(row.id, org)
+        .bind(user.userId, now, row.id, org)
         .run();
     } else if (action === 'problem') {
       if (!row || row.kind !== 'inventory' || !String(b.notes || '').trim())

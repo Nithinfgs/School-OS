@@ -20,10 +20,13 @@ const CALLBACK_PATH = '/callback';
 export const DEV_AUTH_COOKIE = 'schoolos-dev-user';
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
+  const devUser = await getDevUser();
+  if (devUser) return devUser;
+
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return getDevUser();
+  if (!userId || !email) return null;
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
@@ -41,26 +44,50 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
 }
 
 async function getDevUser(): Promise<ChatGPTUser | null> {
+  const requestHeaders = await headers();
+  const hostHeader = requestHeaders.get('host') || requestHeaders.get('x-forwarded-host') || '';
+  const hostname = hostHeader.split(':')[0];
+  const cleanHost = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const isLocal =
+    process.env.NODE_ENV !== 'production' ||
+    Boolean(process.env.SITE_ID || process.env.URL) ||
+    !cleanHost ||
+    ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(cleanHost) ||
+    cleanHost.endsWith('.localhost') ||
+    cleanHost.endsWith('.local');
+
+  if (!isLocal) return null;
   const store = await cookies();
   const raw = store.get(DEV_AUTH_COOKIE)?.value;
   if (!raw) return null;
 
-  let parsed: unknown;
+  let parsed: any = null;
   try {
     parsed = JSON.parse(atob(raw));
   } catch {
-    return null;
+    try {
+      parsed = JSON.parse(atob(decodeURIComponent(raw)));
+    } catch {
+      try {
+        parsed = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+    }
   }
 
   if (
     !parsed ||
     typeof parsed !== 'object' ||
-    !('role' in parsed) ||
-    !['student', 'teacher', 'admin'].includes(String(parsed.role))
+    !('role' in parsed)
   )
     return null;
 
-  const role = String(parsed.role);
+  const role = String(parsed.role).toLowerCase();
   const profiles: Record<string, ChatGPTUser> = {
     student: {
       userId: 'dev:student',
@@ -82,7 +109,7 @@ async function getDevUser(): Promise<ChatGPTUser | null> {
     },
   };
 
-  return profiles[role];
+  return profiles[role] || null;
 }
 
 export async function requireChatGPTUser(

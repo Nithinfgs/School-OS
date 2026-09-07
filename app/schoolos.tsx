@@ -1,9 +1,19 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modules, GlobalSearch, useWorkspace } from './modules';
+import { AdminMasterDashboard } from './admin-dashboard';
+import { TeacherDashboard } from './teacher-dashboard';
+import { StudentDashboard } from './student-dashboard';
+import { ChatRoomView } from './chat-room';
+import { personalNotifications } from '@/lib/student';
+import {
+  migrateLegacyHash,
+  navigateWebsite,
+  pagePath,
+  webSlug,
+} from '@/lib/web-navigation';
 import {
   GraduationCap,
-  House,
   FlaskConical,
   BookOpen,
   Users,
@@ -15,13 +25,16 @@ import {
   ChevronRight,
   ArrowUpRight,
   Plus,
-  Clock,
   CheckCircle2,
   ArrowRight,
-  Microscope,
   ClipboardList,
-  PanelLeft,
-  Command,
+  ChevronDown,
+  LayoutDashboard,
+  MessageSquare,
+  LogOut,
+  User,
+  Wrench,
+  Check,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -68,17 +81,30 @@ const apps = [
     note: 'View directory',
   },
 ];
-export default function SchoolOS() {
+export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
   const [page, setPage] = useState('Home');
-  const ws = useWorkspace();
+  const ws = useWorkspace(initialUser);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarProfileOpen, setSidebarProfileOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const sidebarProfileRef = useRef<HTMLDivElement>(null);
+
   const navigate = (p: string) => {
     setPage(p);
-    history.replaceState(null, '', '#' + p.toLowerCase().replaceAll(' ', '-'));
+    navigateWebsite(pagePath(p), true);
   };
   useEffect(() => {
-    const p = decodeURIComponent(location.hash.slice(1));
+    migrateLegacyHash();
+    const p = decodeURIComponent(location.pathname.slice(1));
+    if (
+      p.startsWith('admin/record/') ||
+      p.startsWith('teacher/') ||
+      p.startsWith('student/')
+    )
+      setPage('Home');
     const match = [
       'Home',
       'Labs',
@@ -89,17 +115,143 @@ export default function SchoolOS() {
       'Notifications',
       'Settings',
       'Help & support',
-    ].find((x) => x.toLowerCase().replaceAll(' ', '-') === p);
+    ].find((x) => webSlug(x) === p);
     if (match) setPage(match);
     const h = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((x) => !x);
       }
+      if (e.key === 'Escape') {
+        setProfileOpen(false);
+        setSidebarProfileOpen(false);
+        setQuickOpen(false);
+      }
     };
     window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+      if (
+        sidebarProfileRef.current &&
+        !sidebarProfileRef.current.contains(e.target as Node)
+      ) {
+        setSidebarProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
+    const route = () => {
+      if (
+        location.pathname.startsWith('/admin/record/') ||
+        location.pathname.startsWith('/teacher/') ||
+        location.pathname.startsWith('/student/')
+      )
+        setPage('Home');
+      else {
+        const current = location.pathname.slice(1);
+        const next = [
+          'Home',
+          'Labs',
+          'Library',
+          'Academics',
+          'Students',
+          'Calendar',
+          'Notifications',
+          'Settings',
+          'Help & support',
+        ].find((name) => webSlug(name) === current);
+        if (next) setPage(next);
+      }
+    };
+    window.addEventListener('popstate', route);
+    return () => {
+      window.removeEventListener('keydown', h);
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('popstate', route);
+    };
   }, []);
+  const role = ws.member.role || 'Student';
+  const initials = (ws.member.name || 'Alex Carter')
+    .split(/\s+/)
+    .map((part: string) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const visibleClasses = ws.rows
+    .filter((row: any) => row.kind === 'class')
+    .slice(0, 6);
+  const navGroups = [
+    {
+      label: '',
+      items: [
+        ['Home', LayoutDashboard],
+        ['Calendar', CalendarDays],
+        ['Notifications', Bell],
+      ],
+    },
+    {
+      label: 'LEARNING',
+      items: [
+        ['Academics', GraduationCap],
+        ['Students', Users],
+        ['Library', BookOpen],
+      ],
+    },
+    {
+      label: 'COMMUNICATION',
+      items: [['Chat', MessageSquare]],
+    },
+    {
+      label: 'SCHOOL SERVICES',
+      items: [['Labs', FlaskConical]],
+    },
+  ];
+  const quickActions =
+    role === 'Teacher'
+      ? [
+          ['Take attendance', '/teacher/action/attendance'],
+          ['Log lesson', '/teacher/action/lesson'],
+          ['Create assignment', '/teacher/action/assignment'],
+          ['Add student record', '/teacher/action/studentRecord'],
+          ['Message class', '/teacher/action/message'],
+          ['Upload resource', '/teacher/action/resource'],
+        ]
+      : role === 'Admin'
+        ? [
+            ['Open student directory', '/students'],
+            ['Review classes', '/academics'],
+            ['Review lab requests', '/labs'],
+            ['Post announcement', '/notifications'],
+          ]
+        : [
+            ['View assignments', '/student/page/assignments'],
+            ['Open calendar', '/student/page/calendar'],
+            ['Add CAS reflection', '/student/page/cas'],
+            ['Message a teacher', '/student/page/messages'],
+          ];
+  const runQuickAction = (path: string) => {
+    setQuickOpen(false);
+    navigateWebsite(path);
+    if (!path.startsWith('/teacher/') && !path.startsWith('/student/')) {
+      const next = path.slice(1);
+      const name = [
+        'Home',
+        'Labs',
+        'Library',
+        'Academics',
+        'Students',
+        'Calendar',
+        'Notifications',
+      ].find((item) => webSlug(item) === next);
+      if (name) setPage(name);
+    }
+  };
   useEffect(() => {
     const ctx = (document as any).modelContext;
     if (!ctx?.registerTool) return;
@@ -160,51 +312,88 @@ export default function SchoolOS() {
     >
       <Sidebar>
         <SidebarHeader>
-          <div className="brand">
-            <span className="logo">
-              <GraduationCap size={23} />
-            </span>
-            School<span className="brand-os">OS</span>
+          <div className="brand-row">
+            <button className="brand" onClick={() => navigate('Home')}>
+              <span className="logo">
+                <GraduationCap size={23} />
+              </span>
+              School<span className="brand-os">OS</span>
+            </button>
+            <SidebarTrigger />
           </div>
-          <div className="school">
+          <button className="school" onClick={() => navigate('Home')}>
             <span className="school-mark">W</span>
             <div>
               <b>Westbridge International</b>
-              <small>School workspace</small>
+              <small>IB World School · 2026–27</small>
             </div>
-          </div>
+            <ChevronDown size={14} />
+          </button>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {[
-              ['Home', House],
-              ['Labs', FlaskConical],
-              ['Library', BookOpen],
-              ['Academics', GraduationCap],
-              ['Students', Users],
-              ['Calendar', CalendarDays],
-              ['Notifications', Bell],
-            ].map(([name, Icon]: any, i) => (
-              <SidebarMenuItem key={name}>
-                {i === 1 && <p className="nav-label">WORKSPACE</p>}
-                {i === 5 && <div className="nav-divider" />}
-                <SidebarMenuButton
-                  isActive={page === name}
-                  onClick={() => navigate(name)}
-                >
-                  <Icon />
-                  <span>{name}</span>
-                  {name === 'Notifications' && <em>10</em>}
+          {navGroups.map((group) => (
+            <SidebarMenu key={group.label || 'primary'}>
+              {group.label && <p className="nav-label">{group.label}</p>}
+              {group.items.map(([name, Icon]: any) => (
+                <SidebarMenuItem key={name}>
+                  <SidebarMenuButton
+                    isActive={page === name}
+                    onClick={() => navigate(name)}
+                  >
+                    <Icon />
+                    <span>
+                      {name === 'Students' && role === 'Student'
+                        ? 'My profile'
+                        : name}
+                    </span>
+                    {name === 'Notifications' && (
+                      <em>
+                        {role === 'Student'
+                          ? personalNotifications(
+                              ws.rows,
+                              ws.member.studentId,
+                            ).filter((n) => !n.read).length
+                          : ws.rows.filter(
+                              (r: any) =>
+                                r.kind === 'notification' && !r.data.read,
+                            ).length}
+                      </em>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          ))}
+          {visibleClasses.length > 0 && role !== 'Admin' && (
+            <SidebarMenu className="class-shortcuts">
+              <p className="nav-label">MY CLASSES</p>
+              {visibleClasses.map((classRow: any, index: number) => (
+                <SidebarMenuItem key={classRow.id}>
+                  <SidebarMenuButton
+                    onClick={() =>
+                      navigateWebsite(
+                        role === 'Teacher'
+                          ? `/teacher/class/${classRow.id}`
+                          : `/student/class/${classRow.id}`,
+                      )
+                    }
+                  >
+                    <span className={`class-dot dot-${(index % 5) + 1}`} />
+                    <span>{classRow.name}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate('Academics')}>
+                  <span className="class-dot dot-all" />
+                  <span>See all classes</span>
+                  <ChevronRight className="nav-chevron" />
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+            </SidebarMenu>
+          )}
         </SidebarContent>
         <SidebarFooter>
-          <div className="term-card">
-            <span className="live-dot" /> Academic year 2026–27
-            <small>Term 1 · A fresh start</small>
-          </div>
           {[
             ['Settings', Settings],
             ['Help & support', LifeBuoy],
@@ -214,21 +403,36 @@ export default function SchoolOS() {
               <span>{name}</span>
             </SidebarMenuButton>
           ))}
-          <button className="profile" onClick={() => navigate('Settings')}>
-            <span className="avatar">AC</span>
-            <span>
-              <b>{ws.member.name || 'Alex Carter'}</b>
-              <small>{ws.member.role}</small>
-            </span>
-            <ChevronRight size={15} />
-          </button>
+          <div className="profile-wrap sidebar-profile-wrap" ref={sidebarProfileRef}>
+            <button
+              className="profile"
+              onClick={() => setSidebarProfileOpen((open) => !open)}
+              aria-expanded={sidebarProfileOpen}
+              aria-label="Open profile and switch account"
+            >
+              <span className="avatar">{initials}</span>
+              <span>
+                <b>{ws.member.name || 'Alex Carter'}</b>
+                <small>{role} · Term 1</small>
+              </span>
+              <ChevronRight size={15} />
+            </button>
+            {sidebarProfileOpen && (
+              <ProfileMenu
+                ws={ws}
+                navigate={navigate}
+                onClose={() => setSidebarProfileOpen(false)}
+                align="sidebar"
+              />
+            )}
+          </div>
         </SidebarFooter>
       </Sidebar>
-      <div className="workspace">
+      <div className="workspace" suppressHydrationWarning>
         <header className="topbar">
           <div className="crumb">
-            <SidebarTrigger />
-            <span>Workspace</span>
+            <SidebarTrigger className="topbar-toggle" />
+            <span>Westbridge International</span>
             <ChevronRight size={14} />
             <b>{page}</b>
           </div>
@@ -239,6 +443,34 @@ export default function SchoolOS() {
             >
               <Search size={16} /> Search anything… <kbd>⌘ K</kbd>
             </button>
+            <div className="quick-add-wrap">
+              <button
+                className="quick-add"
+                onClick={() => setQuickOpen((open) => !open)}
+                aria-expanded={quickOpen}
+              >
+                <Plus size={16} /> Quick add <ChevronDown size={14} />
+              </button>
+              {quickOpen && (
+                <div className="quick-add-menu" role="menu">
+                  <div className="quick-add-title">
+                    <span>CREATE OR OPEN</span>
+                    <small>{role} tools</small>
+                  </div>
+                  {quickActions.map(([label, path]) => (
+                    <button
+                      key={label}
+                      role="menuitem"
+                      onClick={() => runQuickAction(path)}
+                    >
+                      <Plus size={14} />
+                      <span>{label}</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               aria-label="Notifications"
               onClick={() => navigate('Notifications')}
@@ -246,11 +478,63 @@ export default function SchoolOS() {
               <Bell size={19} />
               <i />
             </button>
-            <span className="avatar small">AC</span>
+            <div className="profile-wrap" ref={profileRef}>
+              <button
+                className="avatar small"
+                aria-label="Open profile settings and switch account"
+                onClick={() => setProfileOpen((open) => !open)}
+                aria-expanded={profileOpen}
+              >
+                {initials}
+              </button>
+              {profileOpen && (
+                <ProfileMenu
+                  ws={ws}
+                  navigate={navigate}
+                  onClose={() => setProfileOpen(false)}
+                  align="top"
+                />
+              )}
+            </div>
           </div>
         </header>
-        <main className="page">
-          {page !== 'Home' ? (
+        <main className="page" suppressHydrationWarning>
+          {ws.member.role === 'Teacher' && page !== 'Home' && (
+            <div className="teacher-quick" aria-label="Teacher quick actions">
+              {[
+                ['attendance', 'Take attendance'],
+                ['lesson', 'Log lesson'],
+                ['studentRecord', 'Add record'],
+                ['assignment', 'Create assignment'],
+                ['gradeWork', 'Grade work'],
+                ['resource', 'Upload resource'],
+                ['message', 'Message class'],
+                ['labRequest', 'Request lab item'],
+                ['announcement', 'Add announcement'],
+              ].map(([action, label]) => (
+                <button
+                  className="resource-link"
+                  key={action}
+                  onClick={() => {
+                    navigate('Home');
+                    navigateWebsite('/teacher/action/' + action);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {ws.loading && !ws.member.role ? (
+            <div className="workspace-loader">
+              <div className="loader-spinner" />
+            </div>
+          ) : ['Chat', 'Messages'].includes(page) ? (
+            <ChatRoomView ws={ws} />
+          ) : ws.member.role === 'Student' &&
+          !['Settings', 'Help & support'].includes(page) ? (
+            <StudentDashboard ws={ws} page={page} />
+          ) : page !== 'Home' ? (
             <Modules
               page={page}
               ws={ws}
@@ -258,6 +542,14 @@ export default function SchoolOS() {
               selected={selected}
               setSelected={setSelected}
             />
+          ) : ws.member.role === 'Admin' ? (
+            <AdminMasterDashboard
+              ws={ws}
+              navigate={navigate}
+              select={setSelected}
+            />
+          ) : ws.member.role === 'Teacher' ? (
+            <TeacherDashboard ws={ws} />
           ) : (
             <>
               <div className="page-heading">
@@ -269,7 +561,7 @@ export default function SchoolOS() {
                   </h1>
                   <p>Here’s what’s happening at Westbridge today.</p>
                 </div>
-                <div className="date-label">
+                <div className="date-label" suppressHydrationWarning>
                   <CalendarDays size={16} /> Sunday, 6 September 2026
                 </div>
               </div>
@@ -521,12 +813,165 @@ export default function SchoolOS() {
           <GlobalSearch
             open={searchOpen}
             setOpen={setSearchOpen}
-            rows={ws.rows}
+            rows={ws.member.role === 'Admin' ? ws.masterRows || [] : ws.rows}
+            adminOpen={
+              ws.member.role === 'Admin'
+                ? (r: any) => {
+                    navigate('Home');
+                    navigateWebsite(
+                      '/admin/record/' + encodeURIComponent(r.id),
+                    );
+                  }
+                : ws.member.role === 'Teacher'
+                  ? (r: any) => {
+                      navigate('Home');
+                      navigateWebsite(
+                        '/teacher/' +
+                          (r.kind === 'class' ? 'class' : 'record') +
+                          '/' +
+                          encodeURIComponent(r.id),
+                      );
+                    }
+                  : ws.member.role === 'Student'
+                    ? (r: any) => {
+                        navigate('Home');
+                        navigateWebsite(
+                          '/student/' +
+                            (r.kind === 'class' ? 'class' : 'record') +
+                            '/' +
+                            encodeURIComponent(r.id),
+                        );
+                      }
+                    : undefined
+            }
             navigate={navigate}
             select={setSelected}
           />
         </main>
       </div>
     </SidebarProvider>
+  );
+}
+
+export function ProfileMenu({
+  ws,
+  navigate,
+  onClose,
+  align = 'top',
+}: {
+  ws: any;
+  navigate: (page: string) => void;
+  onClose: () => void;
+  align?: 'top' | 'sidebar';
+}) {
+  const member = ws.member || {};
+  const currentRole = (member.role || 'Student').toLowerCase();
+  const initials = (member.name || 'Alex Carter')
+    .split(/\s+/)
+    .map((part: string) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const devProfiles = [
+    {
+      role: 'admin',
+      name: 'Nithin Selvaraj',
+      title: 'School Administrator',
+      badge: 'Admin',
+      email: 'admin.dev@schoolos.local',
+      icon: Wrench,
+    },
+    {
+      role: 'teacher',
+      name: 'Maya Iyer',
+      title: 'Physics & Math Teacher',
+      badge: 'Teacher',
+      email: 'teacher.dev@schoolos.local',
+      icon: Users,
+    },
+    {
+      role: 'student',
+      name: 'Aarav Sharma',
+      title: 'Grade 12 Student (IBDP)',
+      badge: 'Student',
+      email: 'student.dev@schoolos.local',
+      icon: User,
+    },
+  ];
+
+  return (
+    <div
+      className={`profile-menu ${align === 'sidebar' ? 'profile-menu-sidebar' : 'profile-menu-topbar'}`}
+      role="menu"
+      aria-label="User profile and account switcher"
+    >
+      <div className="profile-menu-header">
+        <span className="avatar">{initials}</span>
+        <div className="profile-menu-info">
+          <b>{member.name || 'Alex Carter'}</b>
+          <div className="profile-menu-meta-row">
+            <span className={`role-pill ${currentRole}`}>{member.role || 'Student'}</span>
+            <small className="profile-menu-email">{member.email || 'Signed in'}</small>
+          </div>
+        </div>
+      </div>
+
+      <div className="profile-menu-section-title">
+        <span>SWITCH PROFILE</span>
+        <small>Development accounts</small>
+      </div>
+
+      <div className="profile-menu-profiles">
+        {devProfiles.map((p) => {
+          const isActive = currentRole === p.role;
+          const Icon = p.icon;
+          return (
+            <a
+              key={p.role}
+              href={`/api/dev-login?role=${p.role}&return_to=/`}
+              className={`profile-switch-item ${isActive ? 'active' : ''}`}
+            >
+              <span className={`profile-switch-avatar ${p.role}`}>
+                <Icon size={14} />
+              </span>
+              <div className="profile-switch-meta">
+                <div className="profile-switch-name-row">
+                  <b>{p.name}</b>
+                  <span className={`role-pill ${p.role}`}>{p.badge}</span>
+                </div>
+                <small>{p.title}</small>
+              </div>
+              {isActive ? (
+                <Check size={14} className="profile-switch-check" />
+              ) : (
+                <ChevronRight size={13} className="profile-switch-arrow" />
+              )}
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="profile-menu-footer">
+        <button
+          className="profile-menu-action"
+          onClick={() => {
+            onClose();
+            navigate('Settings');
+          }}
+        >
+          <Settings size={14} />
+          <span>Profile & settings</span>
+        </button>
+        <a
+          href="/api/dev-login?role=clear&return_to=/"
+          className="profile-menu-signout"
+          target="_top"
+        >
+          <LogOut size={14} />
+          <span>Sign out</span>
+        </a>
+      </div>
+    </div>
   );
 }

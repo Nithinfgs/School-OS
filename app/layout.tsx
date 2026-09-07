@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SchoolOS · Westbridge International', description: 'Your entire school. One platform.',
+  title: 'SchoolOS · Westbridge International',
+  description: 'Secure school management for students, teachers and staff.',
+  applicationName: 'SchoolOS',
+  icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({

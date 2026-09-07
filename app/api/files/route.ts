@@ -1,10 +1,20 @@
 import { env } from 'cloudflare:workers';
-import { context, db } from '@/lib/server';
+import { context, db, schoolRows } from '@/lib/server';
+import { isMasterVisible } from '@/lib/master-dashboard';
 function allowedFile(r: any, member: any, user: any) {
   const d = JSON.parse(r.data);
+  if (d.audience === 'message')
+    return (
+      d.participants?.includes(user.userId) ||
+      d.ownerId === user.userId ||
+      (member.role === 'Student' && d.studentIds?.includes(member.studentId))
+    );
+  if (!isMasterVisible({ ...r, data: d }) && d.ownerId !== user.userId)
+    return false;
   return (
     member.role === 'Admin' ||
     d.ownerId === user.userId ||
+    (member.role === 'Student' && d.studentIds?.includes(member.studentId)) ||
     (['Teacher', 'Department Head'].includes(member.role) &&
       (member.classes || '').split('|').includes(d.class)) ||
     (d.audience === 'class' &&
@@ -29,6 +39,47 @@ export async function POST(req: Request) {
     const f = await req.formData();
     const file = f.get('file');
     const cls = String(f.get('class') || '');
+    const requestedAudience = String(f.get('audience') || 'class');
+    let studentIds: string[] = [];
+    if (
+      member.role !== 'Student' &&
+      ['targeted', 'message'].includes(requestedAudience)
+    ) {
+      const ids = JSON.parse(String(f.get('studentIds') || '[]'));
+      if (!Array.isArray(ids) || !ids.length || ids.length > 100)
+        return Response.json(
+          { error: 'Choose the students before uploading this file' },
+          { status: 400 },
+        );
+      for (const id of ids) {
+        const s = await db()
+          .prepare(
+            "SELECT data FROM records WHERE organizationId=? AND id=? AND kind='student'",
+          )
+          .bind(org, org + ':' + id)
+          .first<any>();
+        const enrolled =
+          s &&
+          (await schoolRows(org))
+            .find((r) => r.id === id)
+            ?.data.classes?.includes(cls);
+        if (!s || (JSON.parse(s.data).class !== cls && !enrolled))
+          return Response.json(
+            { error: 'Student is outside this class' },
+            { status: 403 },
+          );
+      }
+      studentIds = [...new Set(ids)] as string[];
+    }
+    if (
+      !(await db()
+        .prepare(
+          "SELECT id FROM records WHERE organizationId=? AND kind='class' AND name=?",
+        )
+        .bind(org, cls)
+        .first())
+    )
+      return Response.json({ error: 'Class not found' }, { status: 400 });
     if (!(file instanceof File) || file.size > 10 * 1024 * 1024 || !file.size)
       return Response.json(
         { error: 'Choose a file smaller than 10 MB' },
@@ -61,7 +112,21 @@ export async function POST(req: Request) {
           size: file.size,
           ownerId: user.userId,
           class: cls,
-          audience: member.role === 'Student' ? 'private' : 'class',
+          audience:
+            member.role === 'Student'
+              ? 'submission'
+              : ['targeted', 'message'].includes(requestedAudience)
+                ? requestedAudience
+                : 'class',
+          module:
+            member.role !== 'Student' && requestedAudience === 'message'
+              ? 'message'
+              : 'Documents',
+          studentIds,
+          studentId: member.studentId || '',
+          subject: String(f.get('subject') || '').slice(0, 200),
+          unit: String(f.get('unit') || '').slice(0, 200),
+          topic: String(f.get('topic') || '').slice(0, 200),
         }),
         user.userId,
         new Date().toISOString(),

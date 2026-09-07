@@ -1,7 +1,11 @@
 import { sites } from '@openai/sites-vite-plugin';
 import tailwindcss from '@tailwindcss/postcss';
 import vinext from 'vinext';
+import { nitro } from 'nitro/vite';
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import hostingConfig from './.openai/hosting.json';
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
@@ -35,11 +39,35 @@ const localBindingConfig = {
 };
 
 export default defineConfig(async () => {
-  // Keep Wrangler and Miniflare state project-local. These are non-secret tool
-  // settings; application environment belongs in ignored `.env*` files.
+  // Keep generated development state away from deployable source files.
+  // Application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= 'false';
-  process.env.WRANGLER_LOG_PATH ??= '.wrangler/logs';
-  process.env.MINIFLARE_REGISTRY_PATH ??= '.wrangler/registry';
+  process.env.WRANGLER_LOG_PATH ??= join(tmpdir(), 'schoolos-wrangler', 'logs');
+  // Keep Miniflare's internal worker registry outside the source directory.
+  // Browsers otherwise try to upload entries such as __vite_proxy_worker__
+  // when the project folder is dropped onto a hosting provider.
+  process.env.MINIFLARE_REGISTRY_PATH ??= join(
+    tmpdir(),
+    'schoolos-wrangler',
+    'registry',
+  );
+
+  const isNetlify =
+    process.env.NETLIFY === 'true' || process.env.NITRO_PRESET === 'netlify';
+
+  if (isNetlify) {
+    return {
+      css: { postcss: { plugins: [tailwindcss()] } },
+      resolve: {
+        alias: {
+          'cloudflare:workers': fileURLToPath(
+            new URL('./lib/netlify-cloudflare-shim.ts', import.meta.url),
+          ),
+        },
+      },
+      plugins: [vinext(), nitro()],
+    };
+  }
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import('@cloudflare/vite-plugin');

@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 export const organizations = sqliteTable('organizations', {
   id: text().primaryKey(),
   name: text().notNull(),
@@ -47,4 +53,41 @@ export const audits = sqliteTable(
     timestamp: text().notNull(),
   },
   (t) => [index('idx_audits_org').on(t.organizationId)],
+);
+export const teacherClassLogs = sqliteTable(
+  'teacher_class_logs',
+  {
+    id: text().primaryKey(),
+    organizationId: text()
+      .notNull()
+      .references(() => organizations.id),
+    classId: text()
+      .notNull()
+      .references(() => records.id),
+    date: text().notNull(),
+    period: text().notNull().default('Daily'),
+    activities: text().notNull().default(''),
+    topic: text().notNull(),
+    contentCovered: text().notNull(),
+    notes: text().notNull().default(''),
+    homework: text().notNull().default(''),
+    resources: text().notNull().default('[]'),
+    createdBy: text()
+      .notNull()
+      .references(() => members.id),
+    updatedBy: text()
+      .notNull()
+      .references(() => members.id),
+    createdAt: text().notNull(),
+    updatedAt: text().notNull(),
+    version: integer().notNull().default(0),
+  },
+  (t) => [
+    uniqueIndex('idx_class_logs_org_class_date_period').on(
+      t.organizationId,
+      t.classId,
+      t.date,
+      t.period,
+    ),
+  ],
 );

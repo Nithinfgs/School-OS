@@ -40,7 +40,7 @@ export const mockMembers = [
     role: 'Student',
     email: 'nithin.selvaraj@schoolos.local',
     department: 'DP-2',
-    classes: 'Physics HL|Chemistry HL|Biology HL|Math AA HL|English|Economics',
+    classes: 'Physics|Chemistry|Digital Society|Math AA|English|French B|Theory of Knowledge (TOK)|CAS Experience|DEAR (Drop Everything And Read)|Physical Education (PE)|Extended Essay (EE Workshop)',
     studentId: 'student-1',
   },
   {
@@ -664,7 +664,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
     name = 'Nithin Selvaraj';
     email = 'student.dev@schoolos.local';
     studentId = 'student-1';
-    memberClasses = 'Physics HL|Chemistry HL|Biology HL|Math AA HL|English|Economics';
+    memberClasses = 'Physics|Chemistry|Digital Society|Math AA|English|French B|Theory of Knowledge (TOK)|CAS Experience|DEAR (Drop Everything And Read)|Physical Education (PE)|Extended Essay (EE Workshop)';
   } else if (role === 'Teacher') {
     userId = 'dev:teacher';
     name = 'Maya Iyer';
@@ -683,7 +683,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
     name,
     email,
     role,
-    department: role === 'Admin' ? 'Leadership' : role === 'Teacher' ? 'Science' : 'High School',
+    department: role === 'Admin' ? 'Leadership' : role === 'Teacher' ? 'Science' : 'DP-2',
     classes: memberClasses,
     studentId,
   };
@@ -708,10 +708,10 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
   } else if (role === 'Student') {
     const stuClasses = (memberClasses || '').split('|');
     rows = rows.filter((r) => {
-      if (['book', 'document', 'meal', 'event', 'notification'].includes(r.kind)) return true;
-      if (r.kind === 'timetable' || r.kind === 'class' || r.kind === 'assignment') {
+      if (['book', 'document', 'meal', 'event', 'notification', 'timetable'].includes(r.kind)) return true;
+      if (r.kind === 'class' || r.kind === 'assignment' || r.kind === 'resource' || r.kind === 'classLog' || r.kind === 'exam') {
         const c = r.data?.class || r.name;
-        return stuClasses.includes(c);
+        return !c || stuClasses.includes(c);
       }
       if (r.kind === 'submission') {
         return r.data?.studentId === studentId || r.data?.studentName === name;
@@ -727,6 +727,9 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
       }
       if (r.kind === 'request') {
         return r.data?.studentId === studentId;
+      }
+      if (['project', 'cas'].includes(r.kind)) {
+        return true;
       }
       return false;
     });

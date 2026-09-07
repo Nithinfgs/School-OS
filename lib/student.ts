@@ -72,7 +72,7 @@ export function studentScope(rows: any[], member: any) {
         )
       )
         return (
-          classes.includes(d.class) &&
+          (classes.includes(d.class) || r.kind === 'timetable' || !d.class) &&
           d.status !== 'Draft' &&
           (!d.studentId || d.studentId === own)
         );

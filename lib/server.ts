@@ -90,7 +90,7 @@ const DEV_MEMBERS: Record<string, any> = {
     role: 'Student',
     name: 'Nithin Selvaraj',
     email: 'nithin.selvaraj@schoolos.local',
-    classes: 'Physics HL|Chemistry HL|Math AA HL|English|Economics|Biology HL',
+    classes: 'Physics|Chemistry|Digital Society|Math AA|English|French B|Theory of Knowledge (TOK)|CAS Experience|DEAR (Drop Everything And Read)|Physical Education (PE)|Extended Essay (EE Workshop)',
     studentId: 'student-1',
     department: 'DP-2',
   },

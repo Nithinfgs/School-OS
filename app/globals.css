@@ -3124,24 +3124,6 @@ dd {
   gap: 1.25rem;
   min-width: 0;
 }
-.student-tabs {
-  display: flex;
-  gap: 0.35rem;
-  overflow: auto;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.65rem;
-}
-.student-tabs button {
-  white-space: nowrap;
-  padding: 0.5rem 0.8rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-}
-.student-tabs button[aria-current='page'] {
-  background: #e7f2ed;
-  color: #17674c;
-  font-weight: 650;
-}
 .student-focus {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
@@ -3445,7 +3427,7 @@ dd {
 
 /* Student navigation: the section rail scrolls; frequent actions stay docked. */
 .student-dashboard {
-  padding-bottom: 76px;
+  padding-bottom: 32px;
 }
 
 .student-tabs {
@@ -3455,15 +3437,16 @@ dd {
   width: 100%;
   max-width: 100%;
   display: flex;
+  align-items: center;
   flex-wrap: nowrap;
-  gap: 4px;
+  gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 8px 4px 9px;
+  padding: 10px 18px;
   border: 1px solid #dbe2e7;
   border-width: 1px 0;
   background: rgb(243 245 247 / 96%);
-  box-shadow: 0 5px 10px rgb(28 48 66 / 4%);
+  box-shadow: 0 2px 6px rgb(28 48 66 / 4%);
   scrollbar-width: thin;
   scrollbar-color: #a9bac5 transparent;
   scroll-snap-type: x proximity;
@@ -3472,19 +3455,21 @@ dd {
 
 .student-tabs::after {
   content: '';
-  width: 14px;
-  flex: 0 0 14px;
+  width: 18px;
+  flex: 0 0 18px;
 }
 
 .student-tabs button {
   flex: 0 0 auto;
-  min-height: 36px;
-  padding: 0 13px;
-  color: #4e5e6e;
+  min-height: 38px;
+  padding: 0 18px;
+  color: #4b5d6e;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  font-size: 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   scroll-snap-align: start;
   transition: background-color 0.16s cubic-bezier(0.4, 0, 0.2, 1),
               color 0.16s cubic-bezier(0.4, 0, 0.2, 1),
@@ -3492,11 +3477,15 @@ dd {
               box-shadow 0.16s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.1s ease;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .student-tabs button:hover {
-  color: #1f668f;
-  background: #e6eef2;
+  color: #1a5676;
+  background: #e2ecf2;
 }
 
 .student-tabs button:active {
@@ -3505,9 +3494,10 @@ dd {
 
 .student-tabs button[aria-current='page'] {
   color: #ffffff;
-  border-color: #236f91;
-  background: #2d7f9f;
-  box-shadow: 0 2px 4px rgb(24 66 86 / 18%);
+  border-color: #216785;
+  background: #2b7796;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgb(24 66 86 / 22%);
 }
 
 @keyframes tabFadeSlideIn {

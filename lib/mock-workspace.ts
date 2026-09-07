@@ -1,5 +1,6 @@
 import { seed, classes, students } from './seed';
 import { dashboardRows, profileMetrics } from './master-dashboard';
+import { IBDP_ACADEMIC_CALENDAR_EVENTS } from './ibdp-calendar';
 
 export type MockWorkspaceData = {
   rows: any[];
@@ -487,6 +488,31 @@ export function buildMockRows(): any[] {
       },
     },
   );
+
+  // IBDP Academic Calendar 2026-2027 Events
+  IBDP_ACADEMIC_CALENDAR_EVENTS.forEach((evt) => {
+    rows.push({
+      id: evt.id,
+      kind: 'event',
+      name: evt.title,
+      quantity: 1,
+      data: {
+        title: evt.title,
+        date: evt.startDate,
+        startDate: evt.startDate,
+        endDate: evt.endDate,
+        category: evt.category,
+        categoryLabel: evt.categoryLabel,
+        target: evt.target || 'All',
+        description: evt.description || evt.title,
+        color: evt.color,
+        startTime: '08:30',
+        endTime: '15:30',
+        room: 'Campus Wide',
+        studentFacing: true,
+      },
+    });
+  });
 
   // Messages / Communication threads
   rows.push(

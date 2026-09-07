@@ -56,6 +56,7 @@ import {
   personalNotifications,
 } from '@/lib/student';
 import { navigateWebsite, webSlug } from '@/lib/web-navigation';
+import { AppleCalendarView } from '@/app/components/apple-calendar-view';
 
 const labels: any = {
   assignment: 'Assignment',
@@ -1223,82 +1224,12 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     );
   }
   else if (section === 'Calendar') {
-    const start = new Date(day + 'T12:00'),
-      count =
-        calendarMode === 'Day'
-          ? 1
-          : calendarMode === 'Week'
-            ? 7
-            : new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
-    if (calendarMode === 'Month') start.setDate(1);
     content = (
-      <>
-        <div className="teacher-toolbar">
-          <Input
-            aria-label="Calendar date"
-            type="date"
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-          />
-          <TeachingSelect
-            label="View"
-            value={calendarMode}
-            onChange={setCalendarMode}
-            options={['Day', 'Week', 'Month', 'DP2 Timetable']}
-          />
-          <TeachingSelect
-            label="Category"
-            value={category}
-            onChange={setCategory}
-            options={[
-              { id: '', name: 'All events' },
-              'timetable',
-              'assignment',
-              'classLog',
-              'exam',
-              'project',
-              'cas',
-              'loan',
-              'event',
-              'counsellingRequest',
-            ]}
-          />
-        </div>
-        {calendarMode === 'DP2 Timetable' ? (
-          <DP2TimetableMatrix />
-        ) : (
-          <div
-            className={
-              'student-calendar ' +
-              (calendarMode === 'Month' ? 'student-month' : '')
-            }
-          >
-            {Array.from({ length: count }, (_, i) => {
-              const d = new Date(start);
-              d.setDate(d.getDate() + i);
-              const key = d.toLocaleDateString('en-CA');
-              return (
-                <section className="teacher-panel" key={key}>
-                  <h3 suppressHydrationWarning>
-                    {d.toLocaleDateString(undefined, {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                    })}
-                  </h3>
-                  <List
-                    rows={personalEvents(rows, key).filter(
-                      (r) => !category || r.kind === category,
-                    )}
-                    open={open}
-                    empty="No events"
-                  />
-                </section>
-              );
-            })}
-          </div>
-        )}
-      </>
+      <AppleCalendarView
+        ws={ws}
+        initialDate={day || '2026-09-07'}
+        onOpenClass={open}
+      />
     );
   } else if (['Facilities', 'Labs', 'Library'].includes(section)) {
     const lab = facilitiesTab === 'Labs',

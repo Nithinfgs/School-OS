@@ -5,8 +5,6 @@ export const studentSections = [
   'Today',
   'Classes',
   'Academics',
-  'Grades',
-  'Resources',
   'Records',
   'Calendar',
   'Exams',

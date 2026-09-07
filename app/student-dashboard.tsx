@@ -188,7 +188,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     [category, setCategory] = useState(''),
     [error, setError] = useState(''),
     [recordsTab, setRecordsTab] = useState<'Attendance' | 'Medical' | 'Cafeteria' | 'Documents'>('Attendance'),
-    [academicsTab, setAcademicsTab] = useState<'assignments' | 'classes' | 'feedback'>('assignments'),
+    [academicsTab, setAcademicsTab] = useState<'assignments' | 'classes' | 'grades' | 'resources' | 'feedback'>('assignments'),
     [casTab, setCasTab] = useState<'all' | 'cas' | 'projects'>('all'),
     [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all');
   const rows = ws.rows,
@@ -245,6 +245,12 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           if (rawKey === 'assignments') {
             targetSection = 'Academics';
             setAcademicsTab('assignments');
+          } else if (rawKey === 'grades') {
+            targetSection = 'Academics';
+            setAcademicsTab('grades');
+          } else if (rawKey === 'resources') {
+            targetSection = 'Academics';
+            setAcademicsTab('resources');
           } else if (rawKey === 'projects') {
             targetSection = 'CAS';
             setCasTab('projects');
@@ -679,11 +685,23 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         ))}
       </div>
     );
-  else if (['Assignments', 'Academics'].includes(section)) {
+  else if (['Assignments', 'Academics', 'Grades', 'Resources'].includes(section)) {
     content = (
       <>
-        <div className="teacher-toolbar" style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-          <div className="sub-tabs-pill" style={{ display: 'flex', gap: '6px', padding: '4px', background: 'var(--muted, #f1f5f9)', borderRadius: '8px' }}>
+        <div
+          className="teacher-toolbar"
+          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
+        >
+          <div
+            className="sub-tabs-pill"
+            style={{
+              display: 'flex',
+              gap: '6px',
+              padding: '4px',
+              background: 'var(--muted, #f1f5f9)',
+              borderRadius: '8px',
+            }}
+          >
             <button
               type="button"
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'assignments' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
@@ -697,6 +715,20 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               onClick={() => setAcademicsTab('classes')}
             >
               Enrolled Classes ({classes.length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'grades' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAcademicsTab('grades')}
+            >
+              Grades
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'resources' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAcademicsTab('resources')}
+            >
+              Resources ({of('resource').length})
             </button>
             <button
               type="button"
@@ -732,6 +764,17 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               />
             </>
           )}
+          {academicsTab === 'resources' && (
+            <TeachingSelect
+              label="Subject"
+              value={subject}
+              onChange={setSubject}
+              options={[
+                { id: '', name: 'All subjects' },
+                ...classes.map((c: any) => ({ id: c.name, name: c.name })),
+              ]}
+            />
+          )}
         </div>
         {academicsTab === 'assignments' ? (
           <List
@@ -766,48 +809,62 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               </button>
             ))}
           </div>
+        ) : academicsTab === 'grades' ? (
+          <div className="academics-grades-grid">
+            {classes.map((c: any) => {
+              const grades = of('submission').filter(
+                  (r: any) =>
+                    r.data.class === c.name && r.data.returned === true,
+                ),
+                exams = of('exam').filter(
+                  (r: any) =>
+                    r.data.class === c.name && r.data.results?.length,
+                );
+              return (
+                <section className="teacher-panel" key={c.id}>
+                  <h2>{c.name}</h2>
+                  <List
+                    rows={[...grades, ...exams].sort((a: any, b: any) =>
+                      (b.updatedAt || '').localeCompare(a.updatedAt || ''),
+                    )}
+                    open={open}
+                    empty="No published results yet."
+                    meta={(r: any) =>
+                      r.kind === 'exam'
+                        ? `${r.data.results[0].mark}% · ${r.data.results[0].feedback || ''}`
+                        : `${r.data.grade ?? '—'} marks · ${r.data.feedback || 'Open returned work'}`
+                    }
+                  />
+                </section>
+              );
+            })}
+          </div>
+        ) : academicsTab === 'resources' ? (
+          <div className="academics-resources-view">
+            <List
+              rows={matched(of('resource'))}
+              open={open}
+              empty="No academic resources found for this subject."
+              meta={(r: any) =>
+                `${r.data.class || 'Academic'} · ${r.data.category || 'Resource'} · ${r.data.date || 'Current term'}`
+              }
+            />
+          </div>
         ) : (
           <div className="teacher-grid">
             {pane(
               'Recent returned work & grades',
               of('submission').filter((r: any) => r.data.returned),
             )}
-            {pane('Academic Resources & Course Materials', of('resource').slice(0, 8))}
+            {pane(
+              'Academic Resources & Course Materials',
+              of('resource').slice(0, 8),
+            )}
           </div>
         )}
       </>
     );
   }
-  else if (section === 'Grades')
-    content = (
-      <>
-        {classes.map((c: any) => {
-          const grades = of('submission').filter(
-              (r: any) => r.data.class === c.name && r.data.returned === true,
-            ),
-            exams = of('exam').filter(
-              (r: any) => r.data.class === c.name && r.data.results?.length,
-            );
-          return (
-            <section className="teacher-panel" key={c.id}>
-              <h2>{c.name}</h2>
-              <List
-                rows={[...grades, ...exams].sort((a: any, b: any) =>
-                  (b.updatedAt || '').localeCompare(a.updatedAt || ''),
-                )}
-                open={open}
-                empty="No published results yet."
-                meta={(r: any) =>
-                  r.kind === 'exam'
-                    ? `${r.data.results[0].mark}% · ${r.data.results[0].feedback || ''}`
-                    : `${r.data.grade ?? '—'} marks · ${r.data.feedback || 'Open returned work'}`
-                }
-              />
-            </section>
-          );
-        })}
-      </>
-    );
   else if (section === 'Calendar') {
     const start = new Date(day + 'T12:00'),
       count =

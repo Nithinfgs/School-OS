@@ -25,6 +25,7 @@ import {
   FileText,
   Megaphone,
   Building2,
+  LayoutGrid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -178,6 +179,312 @@ function Details({ row }: any) {
   );
 }
 
+export function DP2TimetableMatrix() {
+  const [selectedCell, setSelectedCell] = useState<any>(null);
+
+  const days = [
+    { name: 'Monday', short: 'Mon' },
+    { name: 'Tuesday', short: 'Tue' },
+    { name: 'Wednesday', short: 'Wed' },
+    { name: 'Thursday', short: 'Thu' },
+    { name: 'Friday', short: 'Fri' },
+  ];
+
+  const gridData: Record<
+    string,
+    Record<
+      string,
+      { code: string; title: string; teacher: string; room: string; time: string }
+    >
+  > = {
+    Monday: {
+      p1: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '08:30–09:10' },
+      p2: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '09:10–09:50' },
+      p3: { code: 'C5', title: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102', time: '10:00–10:40' },
+      p4: { code: 'C1', title: 'English A: Language & Literature', teacher: 'Michael Brooks', room: 'Room 108', time: '10:40–11:20' },
+      p5: { code: 'C4', title: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101', time: '11:20–12:00' },
+      p6: { code: 'C2', title: 'Economics', teacher: 'Emily Thompson', room: 'Room 210', time: '12:00–12:40' },
+      p7: { code: 'C6', title: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103', time: '01:20–02:00' },
+      p8: { code: 'C6', title: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103', time: '02:00–02:40' },
+      p9: { code: 'CAS', title: 'Creativity, Activity, Service (CAS Portfolio)', teacher: 'Sarah Jenkins', room: 'CAS Hub', time: '02:40–03:20' },
+    },
+    Tuesday: {
+      p1: { code: 'C6', title: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103', time: '08:30–09:10' },
+      p2: { code: 'C2', title: 'Economics', teacher: 'Emily Thompson', room: 'Room 210', time: '09:10–09:50' },
+      p3: { code: 'C5', title: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102', time: '10:00–10:40' },
+      p4: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '10:40–11:20' },
+      p5: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '11:20–12:00' },
+      p6: { code: 'C4', title: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101', time: '12:00–12:40' },
+      p7: { code: 'TOK', title: 'Theory of Knowledge (TOK Core)', teacher: 'Marcus Vance', room: 'Lecture Hall 2', time: '01:20–02:00' },
+      p8: { code: 'C1', title: 'English A: Language & Literature', teacher: 'Michael Brooks', room: 'Room 108', time: '02:00–02:40' },
+      p9: { code: 'C1', title: 'English A: Language & Literature', teacher: 'Michael Brooks', room: 'Room 108', time: '02:40–03:20' },
+    },
+    Wednesday: {
+      p1: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '08:30–09:10' },
+      p2: { code: 'C6', title: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103', time: '09:10–09:50' },
+      p3: { code: 'C5', title: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102', time: '10:00–10:40' },
+      p4: { code: 'C5', title: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102', time: '10:40–11:20' },
+      p5: { code: 'C4', title: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101', time: '11:20–12:00' },
+      p6: { code: 'C4', title: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101', time: '12:00–12:40' },
+      p7: { code: 'C2', title: 'Economics', teacher: 'Emily Thompson', room: 'Room 210', time: '01:20–02:00' },
+      p8: { code: 'C1', title: 'English A: Language & Literature', teacher: 'Michael Brooks', room: 'Room 108', time: '02:00–02:40' },
+      p9: { code: 'DEAR', title: 'Drop Everything And Read (Independent Literacy)', teacher: 'Daniel Moore', room: 'Library', time: '02:40–03:20' },
+    },
+    Thursday: {
+      p1: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '08:30–09:10' },
+      p2: { code: 'C6', title: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103', time: '09:10–09:50' },
+      p3: { code: 'C5', title: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102', time: '10:00–10:40' },
+      p4: { code: 'C1', title: 'English A: Language & Literature', teacher: 'Michael Brooks', room: 'Room 108', time: '10:40–11:20' },
+      p5: { code: 'C4', title: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101', time: '11:20–12:00' },
+      p6: { code: 'C2', title: 'Economics', teacher: 'Emily Thompson', room: 'Room 210', time: '12:00–12:40' },
+      p7: { code: 'TOK', title: 'Theory of Knowledge (TOK Core)', teacher: 'Marcus Vance', room: 'Lecture Hall 2', time: '01:20–02:00' },
+      p8: { code: 'PE', title: 'Physical Education & Well-being', teacher: 'Coach Ryan', room: 'Sports Complex', time: '02:00–02:40' },
+      p9: { code: 'PE', title: 'Physical Education & Well-being', teacher: 'Coach Ryan', room: 'Sports Complex', time: '02:40–03:20' },
+    },
+    Friday: {
+      p1: { code: 'C3', title: 'Mathematics: Analysis and Approaches HL (Math AA HL)', teacher: 'James Wilson', room: 'Room 204', time: '08:30–09:10' },
+      p2: { code: 'C4', title: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101', time: '09:10–09:50' },
+      p3: { code: 'C5', title: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102', time: '10:00–10:40' },
+      p4: { code: 'C6', title: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103', time: '10:40–11:20' },
+      p5: { code: 'C2', title: 'Economics', teacher: 'Emily Thompson', room: 'Room 210', time: '11:20–12:00' },
+      p6: { code: 'C2', title: 'Economics', teacher: 'Emily Thompson', room: 'Room 210', time: '12:00–12:40' },
+      p7: { code: 'C1', title: 'English A: Language & Literature', teacher: 'Michael Brooks', room: 'Room 108', time: '01:20–02:00' },
+      p8: { code: 'EE', title: 'Extended Essay (EE Workshop & Supervision)', teacher: 'Dr. Sarah Mitchell', room: 'Resource Hub', time: '02:00–02:40' },
+      p9: { code: 'CAS', title: 'Creativity, Activity, Service (CAS Project)', teacher: 'Sarah Jenkins', room: 'CAS Hub', time: '02:40–03:20' },
+    },
+  };
+
+  const getCellClass = (code: string) => {
+    switch (code) {
+      case 'C1': return 'dp2-cell-c1';
+      case 'C2': return 'dp2-cell-c2';
+      case 'C3': return 'dp2-cell-c3';
+      case 'C4': return 'dp2-cell-c4';
+      case 'C5': return 'dp2-cell-c5';
+      case 'C6': return 'dp2-cell-c6';
+      case 'TOK': return 'dp2-cell-tok';
+      case 'PE': return 'dp2-cell-pe';
+      case 'EE': return 'dp2-cell-ee';
+      case 'CAS': return 'dp2-cell-cas';
+      case 'DEAR': return 'dp2-cell-dear';
+      default: return '';
+    }
+  };
+
+  const legend = [
+    { code: 'C1', name: 'C1 · English A Literature', bg: '#dcfce7', text: '#166534', border: '#bbf7d0' },
+    { code: 'C2', name: 'C2 · Economics', bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' },
+    { code: 'C3', name: 'C3 · Math AA HL', bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
+    { code: 'C4', name: 'C4 · Physics HL', bg: '#cbd5e1', text: '#1e293b', border: '#94a3b8' },
+    { code: 'C5', name: 'C5 · Chemistry HL', bg: '#ffedd5', text: '#9a3412', border: '#fed7aa' },
+    { code: 'C6', name: 'C6 · Biology HL', bg: '#ede9fe', text: '#5b21b6', border: '#ddd6fe' },
+    { code: 'TOK', name: 'TOK · Theory of Knowledge', bg: '#701a75', text: '#ffffff', border: '#581c87' },
+    { code: 'EE', name: 'EE · Extended Essay', bg: '#c2410c', text: '#ffffff', border: '#9a3412' },
+    { code: 'CAS', name: 'CAS · Creativity, Activity, Service', bg: '#16a34a', text: '#ffffff', border: '#15803d' },
+    { code: 'PE', name: 'PE · Physical Education', bg: '#2563eb', text: '#ffffff', border: '#1d4ed8' },
+    { code: 'DEAR', name: 'DEAR · Drop Everything & Read', bg: '#ffffff', text: '#334155', border: '#cbd5e1' },
+  ];
+
+  return (
+    <div className="dp2-timetable-wrapper">
+      <div className="dp2-timetable-card">
+        <div className="dp2-timetable-header-bar">
+          <div className="dp2-timetable-title-group">
+            <h2 className="dp2-timetable-main-title">DP2 Timetable 2026–27</h2>
+            <p className="dp2-timetable-subtitle">
+              Student: <b>Nithin Selvaraj</b> · Grade: <b>DP-2 (Grade 12)</b> · Academic Year 2026–2027
+            </p>
+          </div>
+          <span className="dp2-timetable-pill-badge">
+            <Clock size={13} className="inline mr-1" /> Term 1 Active
+          </span>
+        </div>
+
+        <div className="dp2-table-responsive-container">
+          <table className="dp2-timetable-grid-table">
+            <thead>
+              <tr className="dp2-header-row-numbers">
+                <th rowSpan={2} className="dp2-th-corner">
+                  <span className="dp2-th-corner-text">Day \ Period</span>
+                </th>
+                <th className="dp2-th-period">1</th>
+                <th className="dp2-th-period">2</th>
+                <th className="dp2-th-break-time">09:50 – 10:00</th>
+                <th className="dp2-th-period">3</th>
+                <th className="dp2-th-period">4</th>
+                <th className="dp2-th-period">5</th>
+                <th className="dp2-th-period">6</th>
+                <th className="dp2-th-break-time">12:40 – 01:20</th>
+                <th className="dp2-th-period">7</th>
+                <th className="dp2-th-period">8</th>
+                <th className="dp2-th-period">9</th>
+              </tr>
+              <tr className="dp2-header-row-times">
+                <th className="dp2-th-time">08:30–09:10</th>
+                <th className="dp2-th-time">09:10–09:50</th>
+                <th className="dp2-th-break-title" rowSpan={6}>
+                  <div className="dp2-break-label-vertical">SHORT BREAK</div>
+                </th>
+                <th className="dp2-th-time">10:00–10:40</th>
+                <th className="dp2-th-time">10:40–11:20</th>
+                <th className="dp2-th-time">11:20–12:00</th>
+                <th className="dp2-th-time">12:00–12:40</th>
+                <th className="dp2-th-break-title" rowSpan={6}>
+                  <div className="dp2-break-label-vertical">LUNCH BREAK</div>
+                </th>
+                <th className="dp2-th-time">01:20–02:00</th>
+                <th className="dp2-th-time">02:00–02:40</th>
+                <th className="dp2-th-time">02:40–03:20</th>
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((d) => {
+                const daySchedule = gridData[d.name];
+                return (
+                  <tr key={d.name} className="dp2-data-row">
+                    <td className="dp2-day-cell">
+                      <b>{d.name}</b>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p1.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p1, day: d.name, period: 'Period 1' })}
+                      >
+                        {daySchedule.p1.code}
+                      </button>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p2.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p2, day: d.name, period: 'Period 2' })}
+                      >
+                        {daySchedule.p2.code}
+                      </button>
+                    </td>
+                    {/* Short break spans across rows */}
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p3.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p3, day: d.name, period: 'Period 3' })}
+                      >
+                        {daySchedule.p3.code}
+                      </button>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p4.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p4, day: d.name, period: 'Period 4' })}
+                      >
+                        {daySchedule.p4.code}
+                      </button>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p5.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p5, day: d.name, period: 'Period 5' })}
+                      >
+                        {daySchedule.p5.code}
+                      </button>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p6.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p6, day: d.name, period: 'Period 6' })}
+                      >
+                        {daySchedule.p6.code}
+                      </button>
+                    </td>
+                    {/* Lunch break spans across rows */}
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p7.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p7, day: d.name, period: 'Period 7' })}
+                      >
+                        {daySchedule.p7.code}
+                      </button>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p8.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p8, day: d.name, period: 'Period 8' })}
+                      >
+                        {daySchedule.p8.code}
+                      </button>
+                    </td>
+                    <td className="dp2-cell-wrapper">
+                      <button
+                        type="button"
+                        className={`dp2-cell-btn ${getCellClass(daySchedule.p9.code)}`}
+                        onClick={() => setSelectedCell({ ...daySchedule.p9, day: d.name, period: 'Period 9' })}
+                      >
+                        {daySchedule.p9.code}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {selectedCell && (
+          <div className="dp2-cell-detail-popover">
+            <div className="dp2-detail-card">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className={`dp2-badge-large ${getCellClass(selectedCell.code)}`}>
+                  {selectedCell.code} · {selectedCell.title}
+                </span>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedCell(null)}>
+                  Close
+                </Button>
+              </div>
+              <div className="dp2-detail-meta-grid">
+                <div>
+                  <small className="text-slate-500 block">Day & Time</small>
+                  <b>{selectedCell.day} · {selectedCell.period} ({selectedCell.time})</b>
+                </div>
+                <div>
+                  <small className="text-slate-500 block">Teacher</small>
+                  <b>{selectedCell.teacher}</b>
+                </div>
+                <div>
+                  <small className="text-slate-500 block">Room / Location</small>
+                  <b>{selectedCell.room}</b>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Legend */}
+        <div className="dp2-timetable-legend-section">
+          <h4 className="dp2-legend-title">Subject & Course Mapping</h4>
+          <div className="dp2-legend-grid">
+            {legend.map((item) => (
+              <div
+                key={item.code}
+                className="dp2-legend-chip"
+                style={{ backgroundColor: item.bg, color: item.text, borderColor: item.border }}
+              >
+                <b>{item.code}</b>
+                <span>{item.name.replace(`${item.code} · `, '')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StudentDashboard({ ws, page = 'Home' }: any) {
   const [section, setSection] = useState(
       page === 'Students' ? 'Profile' : page,
@@ -197,7 +504,8 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     [academicsTab, setAcademicsTab] = useState<'assignments' | 'classes' | 'grades' | 'resources' | 'feedback'>('assignments'),
     [facilitiesTab, setFacilitiesTab] = useState<'Labs' | 'Library'>('Labs'),
     [casTab, setCasTab] = useState<'all' | 'cas' | 'projects'>('all'),
-    [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all');
+    [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all'),
+    [timetableTab, setTimetableTab] = useState<'schedule' | 'grid'>('schedule');
   const rows = ws.rows,
     own = ws.member.studentId,
     today = localDate(),
@@ -577,19 +885,39 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
   else if (section === 'Today')
     content = (
       <>
-        <div className="teacher-toolbar">
-          <Input
-            aria-label="Timetable date"
-            type="date"
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-          />
-          <Button onClick={() => setDay(today)}>Today</Button>
-          <Button variant="outline" onClick={() => go('Calendar')}>
-            Week calendar
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="sub-tabs-pill">
+            <button
+              className={timetableTab === 'schedule' ? 'bg-white shadow-sm font-bold' : ''}
+              onClick={() => setTimetableTab('schedule')}
+            >
+              <Clock size={14} className="inline mr-1.5" />
+              Daily Schedule View
+            </button>
+            <button
+              className={timetableTab === 'grid' ? 'bg-white shadow-sm font-bold' : ''}
+              onClick={() => setTimetableTab('grid')}
+            >
+              <LayoutGrid size={14} className="inline mr-1.5" />
+              DP2 Timetable 2026–27 Matrix
+            </button>
+          </div>
+          {timetableTab === 'schedule' && (
+            <div className="teacher-toolbar" style={{ marginBottom: 0 }}>
+              <Input
+                aria-label="Timetable date"
+                type="date"
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+              />
+              <Button onClick={() => setDay(today)}>Today</Button>
+              <Button variant="outline" onClick={() => go('Calendar')}>
+                Week calendar
+              </Button>
+            </div>
+          )}
         </div>
-        {timetable(day)}
+        {timetableTab === 'schedule' ? timetable(day) : <DP2TimetableMatrix />}
       </>
     );
   else if (section === 'Classes' && cls) {
@@ -900,7 +1228,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             label="View"
             value={calendarMode}
             onChange={setCalendarMode}
-            options={['Day', 'Week', 'Month']}
+            options={['Day', 'Week', 'Month', 'DP2 Timetable']}
           />
           <TeachingSelect
             label="Category"
@@ -920,36 +1248,40 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             ]}
           />
         </div>
-        <div
-          className={
-            'student-calendar ' +
-            (calendarMode === 'Month' ? 'student-month' : '')
-          }
-        >
-          {Array.from({ length: count }, (_, i) => {
-            const d = new Date(start);
-            d.setDate(d.getDate() + i);
-            const key = d.toLocaleDateString('en-CA');
-            return (
-              <section className="teacher-panel" key={key}>
-                <h3 suppressHydrationWarning>
-                  {d.toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </h3>
-                <List
-                  rows={personalEvents(rows, key).filter(
-                    (r) => !category || r.kind === category,
-                  )}
-                  open={open}
-                  empty="No events"
-                />
-              </section>
-            );
-          })}
-        </div>
+        {calendarMode === 'DP2 Timetable' ? (
+          <DP2TimetableMatrix />
+        ) : (
+          <div
+            className={
+              'student-calendar ' +
+              (calendarMode === 'Month' ? 'student-month' : '')
+            }
+          >
+            {Array.from({ length: count }, (_, i) => {
+              const d = new Date(start);
+              d.setDate(d.getDate() + i);
+              const key = d.toLocaleDateString('en-CA');
+              return (
+                <section className="teacher-panel" key={key}>
+                  <h3 suppressHydrationWarning>
+                    {d.toLocaleDateString(undefined, {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </h3>
+                  <List
+                    rows={personalEvents(rows, key).filter(
+                      (r) => !category || r.kind === category,
+                    )}
+                    open={open}
+                    empty="No events"
+                  />
+                </section>
+              );
+            })}
+          </div>
+        )}
       </>
     );
   } else if (['Facilities', 'Labs', 'Library'].includes(section)) {
@@ -1352,15 +1684,18 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         <div className="student-profile-account-bar">
           <div className="student-profile-account-info">
             <span className="avatar">
-              {(profile?.name || ws.member.name || 'AS')
+              {(profile?.name || ws.member.name || 'NS')
+                .split(' ')
+                .map((n: string) => n[0])
+                .join('')
                 .slice(0, 2)
                 .toUpperCase()}
             </span>
             <div>
               <b>{profile?.name || ws.member.name}</b>
               <small>
-                Student · Grade 12 ·{' '}
-                {ws.member.email || 'student.dev@schoolos.local'}
+                Student · Grade DP-2 (Grade 12) ·{' '}
+                {ws.member.email || 'nithin.selvaraj@schoolos.local'}
               </small>
             </div>
           </div>

@@ -88,11 +88,11 @@ const DEV_MEMBERS: Record<string, any> = {
     organizationId: 'schoolos-dev',
     userId: 'dev:student',
     role: 'Student',
-    name: 'Aarav Sharma',
-    email: 'student.dev@schoolos.local',
-    classes: 'Physics HL|Chemistry HL|Math AA HL|English',
+    name: 'Nithin Selvaraj',
+    email: 'nithin.selvaraj@schoolos.local',
+    classes: 'Physics HL|Chemistry HL|Math AA HL|English|Economics|Biology HL',
     studentId: 'student-1',
-    department: 'Grade 12',
+    department: 'DP-2',
   },
 };
 

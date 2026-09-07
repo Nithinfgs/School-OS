@@ -116,7 +116,7 @@ const INITIAL_SPACES: ChatRoom[] = [
     lastMessageTime: '10:45 AM',
     participants: [
       { id: 'dev:teacher', name: 'Maya Iyer', role: 'Teacher', online: true, status: 'Grading IA drafts' },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
       { id: 'student-2', name: 'Emma Wilson', role: 'Student', online: true },
       { id: 'student-3', name: 'Liam Chen', role: 'Student', online: false },
       { id: 'student-4', name: 'Sofia Martinez', role: 'Student', online: true },
@@ -135,7 +135,7 @@ const INITIAL_SPACES: ChatRoom[] = [
     lastMessageTime: 'Yesterday',
     participants: [
       { id: 'dev:david-park', name: 'David Park', role: 'Teacher', online: true, status: 'In Lab 102' },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
       { id: 'student-2', name: 'Emma Wilson', role: 'Student', online: true },
       { id: 'student-5', name: 'Noah Patel', role: 'Student', online: false },
     ],
@@ -152,7 +152,7 @@ const INITIAL_SPACES: ChatRoom[] = [
     lastMessageTime: 'Yesterday',
     participants: [
       { id: 'dev:james-wilson', name: 'James Wilson', role: 'Teacher', online: false },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
       { id: 'student-3', name: 'Liam Chen', role: 'Student', online: false },
     ],
   },
@@ -168,7 +168,7 @@ const INITIAL_SPACES: ChatRoom[] = [
     participants: [
       { id: 'dev:admin', name: 'Nithin Selvaraj', role: 'Admin', online: true },
       { id: 'dev:teacher', name: 'Maya Iyer', role: 'Teacher', online: true },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
     ],
   },
   {
@@ -201,7 +201,7 @@ const INITIAL_DMS: ChatRoom[] = [
     lastMessageTime: 'Just now',
     participants: [
       { id: 'bot:ai', name: 'SchoolOS Study Bot', role: 'AI Assistant', online: true, status: 'Active & Ready' },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
     ],
   },
   {
@@ -214,7 +214,7 @@ const INITIAL_DMS: ChatRoom[] = [
     lastMessageTime: '10:18 AM',
     participants: [
       { id: 'dev:teacher', name: 'Maya Iyer', role: 'Teacher', online: true, status: 'Office hours in Lab 101' },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
     ],
   },
   {
@@ -227,19 +227,19 @@ const INITIAL_DMS: ChatRoom[] = [
     lastMessageTime: 'Sep 6',
     participants: [
       { id: 'dev:david-park', name: 'David Park', role: 'Teacher', online: true },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
     ],
   },
   {
     id: 'dm-aarav-sharma',
     type: 'dm',
-    name: 'Aarav Sharma',
+    name: 'Nithin Selvaraj',
     topic: 'Grade 11 Student · IB DP Candidate',
     unreadCount: 0,
     lastMessage: 'Thank you Ms. Iyer, I will record the preliminary trials today.',
     lastMessageTime: '9:40 AM',
     participants: [
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
       { id: 'dev:teacher', name: 'Maya Iyer', role: 'Teacher', online: true },
     ],
   },
@@ -253,7 +253,7 @@ const INITIAL_DMS: ChatRoom[] = [
     lastMessageTime: 'Sep 1',
     participants: [
       { id: 'dev:admin', name: 'Nithin Selvaraj', role: 'Admin', online: true },
-      { id: 'dev:student', name: 'Aarav Sharma', role: 'Student', online: true },
+      { id: 'dev:student', name: 'Nithin Selvaraj', role: 'Student', online: true },
       { id: 'dev:teacher', name: 'Maya Iyer', role: 'Teacher', online: true },
     ],
   },
@@ -285,7 +285,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       id: 'msg-w-3',
       roomId: 'dm-maya-iyer',
       senderId: 'dev:student',
-      senderName: 'Aarav Sharma',
+      senderName: 'Nithin Selvaraj',
       senderRole: 'Student',
       content: "I'm great, thanks! Ready for the practical. Which trail for the weekend trip?",
       timestamp: '2026-09-07T10:16:00Z',
@@ -295,7 +295,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       id: 'msg-w-4',
       roomId: 'dm-maya-iyer',
       senderId: 'dev:student',
-      senderName: 'Aarav Sharma',
+      senderName: 'Nithin Selvaraj',
       senderRole: 'Student',
       content: 'Are we meeting at 9 AM? 🥾',
       timestamp: '2026-09-07T10:17:00Z',
@@ -310,7 +310,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       content: "Awesome! Let's do the Scenic Loop Trail. Yes, 9 AM works perfectly! 👍",
       timestamp: '2026-09-07T10:18:00Z',
       status: 'read',
-      reactions: { '👍': ['Aarav Sharma'] },
+      reactions: { '👍': ['Nithin Selvaraj'] },
     },
   ],
   'bot-schoolos-ai': [
@@ -328,7 +328,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       id: 'msg-bot-2',
       roomId: 'bot-schoolos-ai',
       senderId: 'dev:student',
-      senderName: 'Aarav Sharma',
+      senderName: 'Nithin Selvaraj',
       senderRole: 'Student',
       content: 'Can you summarize how to calculate the damping coefficient for a spring oscillator?',
       timestamp: '2026-09-07T08:05:00Z',
@@ -342,7 +342,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       senderRole: 'AI Assistant',
       content: 'For an underdamped oscillator, the amplitude decays as A(t) = A₀ · e^(-γt), where γ = b / (2m). To find damping coefficient b:\n1. Plot ln(A_n / A₀) against time t.\n2. The slope equals -γ = -b / (2m).\n3. Multiply slope by -2m to obtain b in kg/s! 🔬',
       timestamp: '2026-09-07T08:06:00Z',
-      reactions: { '💡': ['Aarav Sharma'], '🔥': ['Aarav Sharma'] },
+      reactions: { '💡': ['Nithin Selvaraj'], '🔥': ['Nithin Selvaraj'] },
       status: 'read',
     },
   ],
@@ -356,7 +356,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       content: 'Good morning everyone! Please download the updated lab guidelines for our trolley momentum collision practical.',
       timestamp: '2026-09-07T08:30:00Z',
       attachments: [{ id: 'att-1', name: 'Physics_HL_Lab_Guidelines.pdf', size: '1.4 MB' }],
-      reactions: { '👍': ['Aarav Sharma', 'Emma Wilson'] },
+      reactions: { '👍': ['Nithin Selvaraj', 'Emma Wilson'] },
       isPinned: true,
       status: 'read',
     },
@@ -383,14 +383,14 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
         senderName: 'Emma Wilson',
         text: 'for trial 3 with inelastic collisions, should we calibrate...',
       },
-      reactions: { '💡': ['Emma Wilson', 'Aarav Sharma'] },
+      reactions: { '💡': ['Emma Wilson', 'Nithin Selvaraj'] },
       status: 'read',
     },
     {
       id: 'msg-p-4',
       roomId: 'space-physics-hl',
       senderId: 'dev:student',
-      senderName: 'Aarav Sharma',
+      senderName: 'Nithin Selvaraj',
       senderRole: 'Student',
       content: 'Our group finished kinetic energy loss calculations. Experimental momentum matched theory within 1.8% error! 🚀',
       timestamp: '2026-09-07T10:12:00Z',
@@ -405,7 +405,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       senderRole: 'Teacher',
       content: 'All lab groups: please upload your photogate calibration spreadsheets before Friday.',
       timestamp: '2026-09-07T10:45:00Z',
-      reactions: { '✅': ['Aarav Sharma', 'Emma Wilson'] },
+      reactions: { '✅': ['Nithin Selvaraj', 'Emma Wilson'] },
       status: 'read',
     },
   ],
@@ -419,7 +419,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       content: 'Welcome to Chemistry HL. Please review the acid-base titration video before Tuesday’s lab session.',
       timestamp: '2026-09-06T14:00:00Z',
       attachments: [{ id: 'att-2', name: 'Titration_Protocol_Standard.pdf', size: '890 KB' }],
-      reactions: { '👍': ['Aarav Sharma'] },
+      reactions: { '👍': ['Nithin Selvaraj'] },
       status: 'read',
     },
     {
@@ -430,7 +430,7 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       senderRole: 'Teacher',
       content: 'Remember to wear safety goggles at all times in Lab 102.',
       timestamp: '2026-09-06T16:30:00Z',
-      reactions: { '⚠️': ['Emma Wilson', 'Aarav Sharma'] },
+      reactions: { '⚠️': ['Emma Wilson', 'Nithin Selvaraj'] },
       status: 'read',
     },
   ],
@@ -467,7 +467,7 @@ export function ChatRoomView({ ws, initialRoomId }: { ws: any; initialRoomId?: s
   const currentMember = ws?.member || {
     id: 'dev-student-member',
     userId: 'dev:student',
-    name: 'Aarav Sharma',
+    name: 'Nithin Selvaraj',
     role: 'Student',
   };
 

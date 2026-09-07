@@ -15,7 +15,7 @@ export const classes = [
   'Economics',
 ];
 export const students = [
-  'Aarav Sharma',
+  'Nithin Selvaraj',
   'Emma Wilson',
   'Liam Chen',
   'Sofia Martinez',
@@ -254,9 +254,9 @@ export function seed(): Entry[] {
   );
   students.forEach((name, i) =>
     add('student', name, {
-      grade: i < 15 ? '11' : '12',
+      grade: i === 0 ? 'DP-2' : i < 15 ? '11' : '12',
       class: classes[i % 6],
-      homeroom: i < 15 ? '11A' : '12B',
+      homeroom: i === 0 ? 'DP2' : i < 15 ? '11A' : '12B',
       studentId: `WB${26001 + i}`,
       attendance: 93 + (i % 8),
       average: 72 + (i % 24),

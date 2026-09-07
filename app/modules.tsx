@@ -724,8 +724,8 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                         },
                         {
                           role: 'student',
-                          name: 'Aarav Sharma',
-                          title: 'Grade 12 Student (IBDP)',
+                          name: 'Nithin Selvaraj',
+                          title: 'DP-2 Student (IBDP)',
                           badge: 'Student',
                           icon: User,
                         },

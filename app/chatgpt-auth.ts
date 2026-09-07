@@ -91,9 +91,9 @@ async function getDevUser(): Promise<ChatGPTUser | null> {
   const profiles: Record<string, ChatGPTUser> = {
     student: {
       userId: 'dev:student',
-      displayName: 'Aarav Sharma',
-      email: 'student.dev@schoolos.local',
-      fullName: 'Aarav Sharma',
+      displayName: 'Nithin Selvaraj',
+      email: 'nithin.selvaraj@schoolos.local',
+      fullName: 'Nithin Selvaraj',
     },
     teacher: {
       userId: 'dev:teacher',

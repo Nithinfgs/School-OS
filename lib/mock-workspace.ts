@@ -36,10 +36,10 @@ export const mockMembers = [
   {
     id: 'dev-student-member',
     userId: 'dev:student',
-    name: 'Aarav Sharma',
+    name: 'Nithin Selvaraj',
     role: 'Student',
-    email: 'student.dev@schoolos.local',
-    department: 'High School',
+    email: 'nithin.selvaraj@schoolos.local',
+    department: 'DP-2',
     classes: 'Physics HL|Chemistry HL|Biology HL|Math AA HL|English|Economics',
     studentId: 'student-1',
   },
@@ -119,44 +119,82 @@ export function buildMockRows(): any[] {
   const base = seed();
   const rows: any[] = [...base];
 
-  // Timetable
-  const periods = [
-    { period: 'P1', start: '08:30', end: '09:25' },
-    { period: 'P2', start: '09:30', end: '10:25' },
-    { period: 'P3', start: '10:45', end: '11:40' },
-    { period: 'P4', start: '11:45', end: '12:40' },
-    { period: 'P5', start: '13:30', end: '14:25' },
-    { period: 'P6', start: '14:30', end: '15:25' },
+  // DP2 Timetable 2026-27 Schedule (Mon-Fri, Periods 1-9)
+  const dp2Schedule = [
+    // Monday (1)
+    { day: 1, p: 'P1', start: '08:30', end: '09:10', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 1, p: 'P2', start: '09:10', end: '09:50', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 1, p: 'P3', start: '10:00', end: '10:40', code: 'C5', class: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102' },
+    { day: 1, p: 'P4', start: '10:40', end: '11:20', code: 'C1', class: 'English', teacher: 'Michael Brooks', room: 'Room 108' },
+    { day: 1, p: 'P5', start: '11:20', end: '12:00', code: 'C4', class: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101' },
+    { day: 1, p: 'P6', start: '12:00', end: '12:40', code: 'C2', class: 'Economics', teacher: 'Emily Thompson', room: 'Room 210' },
+    { day: 1, p: 'P7', start: '13:20', end: '14:00', code: 'C6', class: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103' },
+    { day: 1, p: 'P8', start: '14:00', end: '14:40', code: 'C6', class: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103' },
+    { day: 1, p: 'P9', start: '14:40', end: '15:20', code: 'CAS', class: 'CAS Experience', teacher: 'Sarah Jenkins', room: 'CAS Hub' },
+
+    // Tuesday (2)
+    { day: 2, p: 'P1', start: '08:30', end: '09:10', code: 'C6', class: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103' },
+    { day: 2, p: 'P2', start: '09:10', end: '09:50', code: 'C2', class: 'Economics', teacher: 'Emily Thompson', room: 'Room 210' },
+    { day: 2, p: 'P3', start: '10:00', end: '10:40', code: 'C5', class: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102' },
+    { day: 2, p: 'P4', start: '10:40', end: '11:20', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 2, p: 'P5', start: '11:20', end: '12:00', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 2, p: 'P6', start: '12:00', end: '12:40', code: 'C4', class: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101' },
+    { day: 2, p: 'P7', start: '13:20', end: '14:00', code: 'TOK', class: 'Theory of Knowledge (TOK)', teacher: 'Marcus Vance', room: 'Lecture Hall 2' },
+    { day: 2, p: 'P8', start: '14:00', end: '14:40', code: 'C1', class: 'English', teacher: 'Michael Brooks', room: 'Room 108' },
+    { day: 2, p: 'P9', start: '14:40', end: '15:20', code: 'C1', class: 'English', teacher: 'Michael Brooks', room: 'Room 108' },
+
+    // Wednesday (3)
+    { day: 3, p: 'P1', start: '08:30', end: '09:10', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 3, p: 'P2', start: '09:10', end: '09:50', code: 'C6', class: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103' },
+    { day: 3, p: 'P3', start: '10:00', end: '10:40', code: 'C5', class: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102' },
+    { day: 3, p: 'P4', start: '10:40', end: '11:20', code: 'C5', class: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102' },
+    { day: 3, p: 'P5', start: '11:20', end: '12:00', code: 'C4', class: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101' },
+    { day: 3, p: 'P6', start: '12:00', end: '12:40', code: 'C4', class: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101' },
+    { day: 3, p: 'P7', start: '13:20', end: '14:00', code: 'C2', class: 'Economics', teacher: 'Emily Thompson', room: 'Room 210' },
+    { day: 3, p: 'P8', start: '14:00', end: '14:40', code: 'C1', class: 'English', teacher: 'Michael Brooks', room: 'Room 108' },
+    { day: 3, p: 'P9', start: '14:40', end: '15:20', code: 'DEAR', class: 'DEAR (Drop Everything And Read)', teacher: 'Daniel Moore', room: 'Library' },
+
+    // Thursday (4)
+    { day: 4, p: 'P1', start: '08:30', end: '09:10', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 4, p: 'P2', start: '09:10', end: '09:50', code: 'C6', class: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103' },
+    { day: 4, p: 'P3', start: '10:00', end: '10:40', code: 'C5', class: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102' },
+    { day: 4, p: 'P4', start: '10:40', end: '11:20', code: 'C1', class: 'English', teacher: 'Michael Brooks', room: 'Room 108' },
+    { day: 4, p: 'P5', start: '11:20', end: '12:00', code: 'C4', class: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101' },
+    { day: 4, p: 'P6', start: '12:00', end: '12:40', code: 'C2', class: 'Economics', teacher: 'Emily Thompson', room: 'Room 210' },
+    { day: 4, p: 'P7', start: '13:20', end: '14:00', code: 'TOK', class: 'Theory of Knowledge (TOK)', teacher: 'Marcus Vance', room: 'Lecture Hall 2' },
+    { day: 4, p: 'P8', start: '14:00', end: '14:40', code: 'PE', class: 'Physical Education (PE)', teacher: 'Coach Ryan', room: 'Sports Complex' },
+    { day: 4, p: 'P9', start: '14:40', end: '15:20', code: 'PE', class: 'Physical Education (PE)', teacher: 'Coach Ryan', room: 'Sports Complex' },
+
+    // Friday (5)
+    { day: 5, p: 'P1', start: '08:30', end: '09:10', code: 'C3', class: 'Math AA HL', teacher: 'James Wilson', room: 'Room 204' },
+    { day: 5, p: 'P2', start: '09:10', end: '09:50', code: 'C4', class: 'Physics HL', teacher: 'Maya Iyer', room: 'Lab 101' },
+    { day: 5, p: 'P3', start: '10:00', end: '10:40', code: 'C5', class: 'Chemistry HL', teacher: 'David Park', room: 'Lab 102' },
+    { day: 5, p: 'P4', start: '10:40', end: '11:20', code: 'C6', class: 'Biology HL', teacher: 'Dr. Maya Rao', room: 'Lab 103' },
+    { day: 5, p: 'P5', start: '11:20', end: '12:00', code: 'C2', class: 'Economics', teacher: 'Emily Thompson', room: 'Room 210' },
+    { day: 5, p: 'P6', start: '12:00', end: '12:40', code: 'C2', class: 'Economics', teacher: 'Emily Thompson', room: 'Room 210' },
+    { day: 5, p: 'P7', start: '13:20', end: '14:00', code: 'C1', class: 'English', teacher: 'Michael Brooks', room: 'Room 108' },
+    { day: 5, p: 'P8', start: '14:00', end: '14:40', code: 'EE', class: 'Extended Essay (EE Workshop)', teacher: 'Dr. Sarah Mitchell', room: 'Resource Hub' },
+    { day: 5, p: 'P9', start: '14:40', end: '15:20', code: 'CAS', class: 'CAS Experience', teacher: 'Sarah Jenkins', room: 'CAS Hub' },
   ];
 
-  const teacherMap: Record<string, { teacher: string; room: string }> = {
-    'Physics HL': { teacher: 'Maya Iyer', room: 'Lab 101' },
-    'Chemistry HL': { teacher: 'David Park', room: 'Lab 102' },
-    'Biology HL': { teacher: 'Dr. Maya Rao', room: 'Lab 103' },
-    'Math AA HL': { teacher: 'James Wilson', room: 'Room 204' },
-    'English': { teacher: 'Michael Brooks', room: 'Room 108' },
-    'Economics': { teacher: 'Emily Thompson', room: 'Room 210' },
-  };
-
-  classes.forEach((clsName, idx) => {
-    const p = periods[idx % periods.length];
-    const info = teacherMap[clsName] || { teacher: 'Maya Iyer', room: 'Room 101' };
+  dp2Schedule.forEach((item, idx) => {
     rows.push({
-      id: `timetable-${idx + 1}`,
+      id: `timetable-dp2-${idx + 1}`,
       kind: 'timetable',
-      name: `${clsName} · Period ${idx + 1}`,
+      name: `${item.class} · Period ${item.p.replace('P', '')}`,
       quantity: 1,
       data: {
-        classId: `class-${idx + 1}`,
-        class: clsName,
-        period: p.period,
-        weekdays: [1, 2, 3, 4, 5],
-        startTime: p.start,
-        endTime: p.end,
-        room: info.room,
-        teacher: info.teacher,
+        classId: `class-${item.code.toLowerCase()}`,
+        class: item.class,
+        code: item.code,
+        period: item.p,
+        weekdays: [item.day],
+        startTime: item.start,
+        endTime: item.end,
+        room: item.room,
+        teacher: item.teacher,
         substitution: '',
-        description: 'Term 1 teaching schedule',
+        description: 'DP2 Timetable 2026–27',
       },
     });
   });
@@ -224,7 +262,7 @@ export function buildMockRows(): any[] {
       class: 'Physics HL',
       teacher: 'Maya Iyer',
       studentId: 'student-1',
-      studentName: 'Aarav Sharma',
+      studentName: 'Nithin Selvaraj',
       text: 'For the dynamics trolley, weight and the normal reaction force balance vertically. A net horizontal force of 2.4 N acting on a 0.8 kg trolley produced an acceleration of 3.0 m/s², confirming F = ma within 1.8% experimental uncertainty.',
       score: 29,
       maxScore: 30,
@@ -239,7 +277,7 @@ export function buildMockRows(): any[] {
       class: 'Chemistry HL',
       teacher: 'David Park',
       studentId: 'student-1',
-      studentName: 'Aarav Sharma',
+      studentName: 'Nithin Selvaraj',
       text: 'Using Henderson-Hasselbalch equation pH = pKa + log([A-]/[HA]), the buffer capacity was measured across 5 titrations. The equivalence point matched theoretical pH 8.72.',
       score: 19,
       maxScore: 20,
@@ -254,7 +292,7 @@ export function buildMockRows(): any[] {
       class: 'Physics HL',
       teacher: 'Maya Iyer',
       studentId: 'student-1',
-      studentName: 'Aarav Sharma',
+      studentName: 'Nithin Selvaraj',
       text: 'Kirchhoff’s voltage and current laws were validated using digital multimeters across bridge circuit configurations.',
       score: null,
       maxScore: 25,
@@ -461,7 +499,7 @@ export function buildMockRows(): any[] {
         senderId: 'dev-teacher-member',
         senderName: 'Maya Iyer',
         recipientId: 'dev-student-member',
-        recipientName: 'Aarav Sharma',
+        recipientName: 'Nithin Selvaraj',
         class: 'Physics HL',
         timestamp: '2026-09-06T14:22:00Z',
         body: 'Hi Aarav, your proposal on analyzing damping coefficients of oscillating springs in different fluids looks great. We have glycerin and mineral oil ready in Lab 101 whenever you want to begin preliminary trials.',
@@ -474,7 +512,7 @@ export function buildMockRows(): any[] {
       quantity: 1,
       data: {
         senderId: 'dev-student-member',
-        senderName: 'Aarav Sharma',
+        senderName: 'Nithin Selvaraj',
         recipientId: 'dev-teacher-member',
         recipientName: 'Maya Iyer',
         class: 'Physics HL',
@@ -565,7 +603,7 @@ export function buildMockAudits(): any[] {
       actorName: 'Daniel Moore',
       timestamp: '2026-09-01T09:00:00Z',
       before: '{}',
-      after: JSON.stringify({ book: 'University Physics with Modern Physics', borrower: 'Aarav Sharma' }),
+      after: JSON.stringify({ book: 'University Physics with Modern Physics', borrower: 'Nithin Selvaraj' }),
     },
     {
       id: 105,
@@ -623,7 +661,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
 
   if (role === 'Student') {
     userId = 'dev:student';
-    name = 'Aarav Sharma';
+    name = 'Nithin Selvaraj';
     email = 'student.dev@schoolos.local';
     studentId = 'student-1';
     memberClasses = 'Physics HL|Chemistry HL|Biology HL|Math AA HL|English|Economics';
@@ -768,7 +806,7 @@ export function handleMockMutation(payload: any, activeMember: any) {
         ...payload.data,
         ...payload,
         studentId: activeMember?.studentId || 'student-1',
-        studentName: activeMember?.name || 'Aarav Sharma',
+        studentName: activeMember?.name || 'Nithin Selvaraj',
         submittedAt: nowStr,
         status: 'Submitted',
       },
@@ -811,7 +849,7 @@ export function handleMockMutation(payload: any, activeMember: any) {
         ...payload,
         type: payload.type || (payload.kind === 'book' ? 'library' : 'lab'),
         status: 'Pending',
-        requestedBy: activeMember?.name || 'Aarav Sharma',
+        requestedBy: activeMember?.name || 'Nithin Selvaraj',
         requestedAt: nowStr,
       },
     };

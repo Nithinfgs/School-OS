@@ -893,8 +893,8 @@ export function ProfileMenu({
     },
     {
       role: 'student',
-      name: 'Aarav Sharma',
-      title: 'Grade 12 Student (IBDP)',
+      name: 'Nithin Selvaraj',
+      title: 'DP-2 Student (IBDP)',
       badge: 'Student',
       email: 'student.dev@schoolos.local',
       icon: User,

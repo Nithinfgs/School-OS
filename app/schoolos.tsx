@@ -35,6 +35,7 @@ import {
   User,
   Wrench,
   Check,
+  Sun,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -557,7 +558,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
                   <div className="eyebrow">YOUR SCHOOL, CONNECTED</div>
                   <h1>
                     Welcome back, {ws.member.name?.split(' ')[0] || 'Alex'}{' '}
-                    <span className="sun">☀</span>
+                    <Sun size={20} className="inline-block text-amber-500 ml-1 align-sub" />
                   </h1>
                   <p>Here’s what’s happening at Westbridge today.</p>
                 </div>

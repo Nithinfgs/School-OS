@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
+  CalendarCheck,
   Clock,
   CheckCircle2,
   Bell,
@@ -19,6 +20,11 @@ import {
   Sparkles,
   Layers,
   Atom,
+  HeartPulse,
+  UtensilsCrossed,
+  FileText,
+  Megaphone,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -189,6 +195,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     [error, setError] = useState(''),
     [recordsTab, setRecordsTab] = useState<'Attendance' | 'Medical' | 'Cafeteria' | 'Documents'>('Attendance'),
     [academicsTab, setAcademicsTab] = useState<'assignments' | 'classes' | 'grades' | 'resources' | 'feedback'>('assignments'),
+    [facilitiesTab, setFacilitiesTab] = useState<'Labs' | 'Library'>('Labs'),
     [casTab, setCasTab] = useState<'all' | 'cas' | 'projects'>('all'),
     [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all');
   const rows = ws.rows,
@@ -251,6 +258,12 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           } else if (rawKey === 'resources') {
             targetSection = 'Academics';
             setAcademicsTab('resources');
+          } else if (rawKey === 'labs') {
+            targetSection = 'Facilities';
+            setFacilitiesTab('Labs');
+          } else if (rawKey === 'library') {
+            targetSection = 'Facilities';
+            setFacilitiesTab('Library');
           } else if (rawKey === 'projects') {
             targetSection = 'CAS';
             setCasTab('projects');
@@ -939,12 +952,44 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         </div>
       </>
     );
-  } else if (['Labs', 'Library'].includes(section)) {
-    const lab = section === 'Labs',
+  } else if (['Facilities', 'Labs', 'Library'].includes(section)) {
+    const lab = facilitiesTab === 'Labs',
       items = of(lab ? 'inventory' : 'book');
     content = (
       <>
-        <div className="teacher-toolbar" style={{ flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+        <div
+          className="teacher-toolbar"
+          style={{ flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}
+        >
+          <div
+            className="sub-tabs-pill"
+            style={{
+              display: 'flex',
+              gap: '6px',
+              padding: '4px',
+              background: 'var(--muted, #f1f5f9)',
+              borderRadius: '8px',
+            }}
+          >
+            <button
+              type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${facilitiesTab === 'Labs' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setFacilitiesTab('Labs')}
+            >
+              <FlaskConical size={14} />
+              <span>Science & Tech Labs ({of('inventory').length})</span>
+            </button>
+            <button
+              type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${facilitiesTab === 'Library' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setFacilitiesTab('Library')}
+            >
+              <BookOpen size={14} />
+              <span>Library Catalog ({of('book').length})</span>
+            </button>
+          </div>
           <TeachingSelect
             label={lab ? 'Lab' : 'Subject'}
             value={subject}
@@ -1230,9 +1275,13 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                   fontWeight: 600,
                   marginBottom: '12px',
                   color: 'var(--foreground)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
                 }}
               >
-                📢 School Announcements
+                <Megaphone size={16} />
+                <span>School Announcements</span>
               </h2>
               <List
                 rows={matched(announcements)}
@@ -1252,9 +1301,13 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                 fontWeight: 600,
                 marginBottom: '12px',
                 color: 'var(--foreground)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
               }}
             >
-              🔔 Personal Alerts & Notifications
+              <Bell size={16} />
+              <span>Personal Alerts & Notifications</span>
             </h2>
             {notifications
               .filter(
@@ -1443,31 +1496,39 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           >
             <button
               type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Attendance' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setRecordsTab('Attendance')}
             >
-              📊 Attendance
+              <CalendarCheck size={14} />
+              <span>Attendance</span>
             </button>
             <button
               type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Medical' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setRecordsTab('Medical')}
             >
-              🏥 Medical
+              <HeartPulse size={14} />
+              <span>Medical</span>
             </button>
             <button
               type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Cafeteria' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setRecordsTab('Cafeteria')}
             >
-              🍱 Cafeteria
+              <UtensilsCrossed size={14} />
+              <span>Cafeteria</span>
             </button>
             <button
               type="button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Documents' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setRecordsTab('Documents')}
             >
-              📁 Documents
+              <FileText size={14} />
+              <span>Documents</span>
             </button>
           </div>
 
@@ -1583,25 +1644,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         )}
       </>
     );
-  } else if (section === 'House')
-    content = (
-      <>
-        <h2>{profile?.data.house || 'Your house community'}</h2>
-        {of('house').map((h: any) => (
-          <section key={h.id} className="teacher-panel">
-            <h3>{h.name}</h3>
-            <p>{h.data.description}</p>
-            {h.data.standings?.map((s: any) => (
-              <p className="master-related" key={s.house}>
-                <b>{s.house}</b>
-                <span>{s.points} house points</span>
-              </p>
-            ))}
-          </section>
-        ))}
-        {pane('Your points & recognition', of('housePoint'))}
-      </>
-    );
+  }
   else if (['Messages', 'Chat', 'Communication'].includes(section)) {
     content = <ChatRoomView ws={ws} />;
   } else {

@@ -186,7 +186,11 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     [day, setDay] = useState(localDate()),
     [calendarMode, setCalendarMode] = useState('Week'),
     [category, setCategory] = useState(''),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [recordsTab, setRecordsTab] = useState<'Attendance' | 'Medical' | 'Cafeteria' | 'Documents'>('Attendance'),
+    [academicsTab, setAcademicsTab] = useState<'assignments' | 'classes' | 'feedback'>('assignments'),
+    [casTab, setCasTab] = useState<'all' | 'cas' | 'projects'>('all'),
+    [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all');
   const rows = ws.rows,
     own = ws.member.studentId,
     today = localDate(),
@@ -235,9 +239,33 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       if (root !== 'student') return;
       const key = decodeURIComponent(id || '');
       if (type === 'page') {
-        setSection(
-          studentSections.find((name) => webSlug(name) === key) || 'Home',
-        );
+        const rawKey = key.toLowerCase();
+        let targetSection = studentSections.find((name) => webSlug(name) === rawKey);
+        if (!targetSection) {
+          if (rawKey === 'assignments') {
+            targetSection = 'Academics';
+            setAcademicsTab('assignments');
+          } else if (rawKey === 'projects') {
+            targetSection = 'CAS';
+            setCasTab('projects');
+          } else if (rawKey === 'announcements') {
+            targetSection = 'Notifications';
+            setNotificationsTab('announcements');
+          } else if (rawKey === 'attendance') {
+            targetSection = 'Records';
+            setRecordsTab('Attendance');
+          } else if (rawKey === 'medical') {
+            targetSection = 'Records';
+            setRecordsTab('Medical');
+          } else if (rawKey === 'cafeteria') {
+            targetSection = 'Records';
+            setRecordsTab('Cafeteria');
+          } else if (rawKey === 'documents') {
+            targetSection = 'Records';
+            setRecordsTab('Documents');
+          }
+        }
+        setSection(targetSection || 'Home');
         setSelected(null);
         setClassId('');
       }
@@ -651,53 +679,105 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         ))}
       </div>
     );
-  else if (['Assignments', 'Academics'].includes(section))
+  else if (['Assignments', 'Academics'].includes(section)) {
     content = (
       <>
-        <div className="teacher-toolbar">
-          <TeachingSelect
-            label="Subject"
-            value={subject}
-            onChange={setSubject}
-            options={[
-              { id: '', name: 'All subjects' },
-              ...classes.map((c: any) => ({ id: c.name, name: c.name })),
-            ]}
-          />
-          <TeachingSelect
-            label="Status"
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { id: '', name: 'All statuses' },
-              'NotStarted',
-              'InProgress',
-              'Submitted',
-              'Late',
-              'Graded',
-            ]}
-          />
-        </div>
-        <List
-          rows={matched(of('assignment')).sort((a: any, b: any) =>
-            (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
+        <div className="teacher-toolbar" style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+          <div className="sub-tabs-pill" style={{ display: 'flex', gap: '6px', padding: '4px', background: 'var(--muted, #f1f5f9)', borderRadius: '8px' }}>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'assignments' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAcademicsTab('assignments')}
+            >
+              Assignments & Tasks ({of('assignment').length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'classes' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAcademicsTab('classes')}
+            >
+              Enrolled Classes ({classes.length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'feedback' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAcademicsTab('feedback')}
+            >
+              Returned Work & Feedback
+            </button>
+          </div>
+          {academicsTab === 'assignments' && (
+            <>
+              <TeachingSelect
+                label="Subject"
+                value={subject}
+                onChange={setSubject}
+                options={[
+                  { id: '', name: 'All subjects' },
+                  ...classes.map((c: any) => ({ id: c.name, name: c.name })),
+                ]}
+              />
+              <TeachingSelect
+                label="Status"
+                value={filter}
+                onChange={setFilter}
+                options={[
+                  { id: '', name: 'All statuses' },
+                  'NotStarted',
+                  'InProgress',
+                  'Submitted',
+                  'Late',
+                  'Graded',
+                ]}
+              />
+            </>
           )}
-          open={open}
-          meta={(r: any) =>
-            `${r.data.class} · ${submissionState(r, own, rows).status} · Due ${r.data.dueAt}`
-          }
-        />
-        {section === 'Academics' && (
+        </div>
+        {academicsTab === 'assignments' ? (
+          <List
+            rows={matched(of('assignment')).sort((a: any, b: any) =>
+              (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
+            )}
+            open={open}
+            meta={(r: any) =>
+              `${r.data.class} · ${submissionState(r, own, rows).status} · Due ${r.data.dueAt}`
+            }
+          />
+        ) : academicsTab === 'classes' ? (
+          <div className="student-classes-grid">
+            {classes.map((c: any) => (
+              <button
+                className="teacher-panel student-class-card"
+                onClick={() => open(c)}
+                key={c.id}
+              >
+                <BookOpen />
+                <h2>{c.name}</h2>
+                <p>{c.data.teacher}</p>
+                <small>
+                  {c.data.room} ·{' '}
+                  {
+                    of('assignment').filter((a: any) => a.data.class === c.name)
+                      .length
+                  }{' '}
+                  assignments
+                </small>
+                <ArrowUpRight />
+              </button>
+            ))}
+          </div>
+        ) : (
           <div className="teacher-grid">
             {pane(
-              'Recent returned work',
+              'Recent returned work & grades',
               of('submission').filter((r: any) => r.data.returned),
             )}
-            {pane('Resources', of('resource').slice(0, 5))}
+            {pane('Academic Resources & Course Materials', of('resource').slice(0, 8))}
           </div>
         )}
       </>
     );
+  }
   else if (section === 'Grades')
     content = (
       <>
@@ -728,38 +808,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         })}
       </>
     );
-  else if (section === 'Attendance') {
-    const attendance = of('attendance');
-    content = (
-      <>
-        <div className="student-counts">
-          {['Present', 'Absent', 'Late', 'Excused'].map((s) => (
-            <button key={s} onClick={() => setFilter(filter === s ? '' : s)}>
-              <strong>
-                {attendance.filter((r: any) => r.data.status === s).length}
-              </strong>
-              <span>{s}</span>
-            </button>
-          ))}
-        </div>
-        {of('servicePolicy')[0]?.data.absenceRequests && (
-          <Button onClick={() => quick('absenceRequest')}>
-            Request absence / excuse
-          </Button>
-        )}
-        <List
-          rows={matched(attendance).sort((a: any, b: any) =>
-            b.data.date.localeCompare(a.data.date),
-          )}
-          open={open}
-          meta={(r: any) =>
-            `${r.data.date} · ${r.data.class} · ${r.data.period || 'Daily'} · ${r.data.status}${r.data.arrivalTime ? ' · ' + r.data.arrivalTime : ''}`
-          }
-        />
-        {pane('Your excuse requests', of('absenceRequest'))}
-      </>
-    );
-  } else if (section === 'Calendar') {
+  else if (section === 'Calendar') {
     const start = new Date(day + 'T12:00'),
       count =
         calendarMode === 'Day'
@@ -985,24 +1034,74 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         </div>
       </>
     );
-  } else if (['CAS', 'Projects'].includes(section))
+  } else if (['CAS', 'Projects'].includes(section)) {
+    const casRows = of('cas');
+    const projectRows = of('project');
+    const combinedRows =
+      casTab === 'cas'
+        ? casRows
+        : casTab === 'projects'
+          ? projectRows
+          : [...casRows, ...projectRows];
     content = (
       <>
-        {section === 'CAS' && (
-          <Button onClick={() => quick('portfolio')}>Add CAS experience</Button>
-        )}
+        <div
+          className="teacher-toolbar"
+          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
+        >
+          <div
+            className="sub-tabs-pill"
+            style={{
+              display: 'flex',
+              gap: '6px',
+              padding: '4px',
+              background: 'var(--muted, #f1f5f9)',
+              borderRadius: '8px',
+            }}
+          >
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'all' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setCasTab('all')}
+            >
+              All Portfolio ({casRows.length + projectRows.length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'cas' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setCasTab('cas')}
+            >
+              CAS Experiences ({casRows.length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'projects' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setCasTab('projects')}
+            >
+              Supervised Projects ({projectRows.length})
+            </button>
+          </div>
+          <Button onClick={() => quick('portfolio')}>Add CAS Experience</Button>
+        </div>
         <List
-          rows={matched(of(section === 'CAS' ? 'cas' : 'project'))}
+          rows={matched(combinedRows)}
           open={open}
           empty={
-            section === 'CAS'
+            casTab === 'cas'
               ? 'Start your first CAS experience.'
-              : 'Your supervisor has not assigned a project yet.'
+              : casTab === 'projects'
+                ? 'Your supervisor has not assigned a project yet.'
+                : 'No CAS or project records found.'
+          }
+          meta={(r: any) =>
+            r.kind === 'cas'
+              ? `CAS · ${r.data.strand || 'Creativity/Activity/Service'} · ${r.data.status || 'Active'}`
+              : `Project · ${r.data.supervisor || 'Supervisor'} · ${r.data.status || 'In Progress'}`
           }
         />
       </>
     );
-  else if (section === 'Messages')
+  } else if (section === 'Messages')
     content = (
       <>
         <Button onClick={() => quick('message')}>Message a teacher</Button>
@@ -1012,59 +1111,147 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         />
       </>
     );
-  else if (section === 'Notifications')
+  else if (['Notifications', 'Announcements'].includes(section)) {
+    const announcements = of('announcement');
     content = (
       <>
-        <div className="teacher-toolbar">
-          <TeachingSelect
-            label="Read status"
-            value={filter}
-            onChange={setFilter}
-            options={[{ id: '', name: 'All updates' }, 'Unread', 'Read']}
-          />
-        </div>
-        {notifications
-          .filter(
-            (n) =>
-              (!filter || (filter === 'Unread' ? !n.read : n.read)) &&
-              (!query ||
-                `${n.source.name} ${n.detail}`
-                  .toLowerCase()
-                  .includes(query.toLowerCase())),
-          )
-          .map((n) => (
-            <article
-              className={'student-notification ' + (!n.read ? 'unread' : '')}
-              key={n.id}
+        <div
+          className="teacher-toolbar"
+          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
+        >
+          <div
+            className="sub-tabs-pill"
+            style={{
+              display: 'flex',
+              gap: '6px',
+              padding: '4px',
+              background: 'var(--muted, #f1f5f9)',
+              borderRadius: '8px',
+            }}
+          >
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'all' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setNotificationsTab('all')}
             >
-              <button
-                onClick={() => {
-                  open(n.source);
-                  void readNotification(n, true);
+              All Updates ({announcements.length + notifications.length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'announcements' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setNotificationsTab('announcements')}
+            >
+              School Announcements ({announcements.length})
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'alerts' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setNotificationsTab('alerts')}
+            >
+              Personal Alerts ({unread} unread)
+            </button>
+          </div>
+          {notificationsTab !== 'announcements' && (
+            <TeachingSelect
+              label="Read status"
+              value={filter}
+              onChange={setFilter}
+              options={[{ id: '', name: 'All alerts' }, 'Unread', 'Read']}
+            />
+          )}
+        </div>
+
+        {(notificationsTab === 'all' || notificationsTab === 'announcements') &&
+          announcements.length > 0 && (
+            <div
+              className="announcements-section"
+              style={{ marginBottom: '24px' }}
+            >
+              <h2
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                  color: 'var(--foreground)',
                 }}
               >
-                <b>{n.source.name}</b>
-                <span>{n.detail}</span>
-              </button>
-              <Button
-                variant="ghost"
-                onClick={() => readNotification(n, !n.read)}
-              >
-                {n.read ? 'Mark unread' : 'Mark read'}
-              </Button>
-            </article>
-          ))}
+                📢 School Announcements
+              </h2>
+              <List
+                rows={matched(announcements)}
+                open={open}
+                meta={(r: any) =>
+                  `${r.data.author || 'School Office'} · ${r.data.date || 'Recent'} · ${r.data.audience || 'All students'}`
+                }
+              />
+            </div>
+          )}
+
+        {(notificationsTab === 'all' || notificationsTab === 'alerts') && (
+          <div className="personal-alerts-section">
+            <h2
+              style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                marginBottom: '12px',
+                color: 'var(--foreground)',
+              }}
+            >
+              🔔 Personal Alerts & Notifications
+            </h2>
+            {notifications
+              .filter(
+                (n) =>
+                  (!filter || (filter === 'Unread' ? !n.read : n.read)) &&
+                  (!query ||
+                    `${n.source.name} ${n.detail}`
+                      .toLowerCase()
+                      .includes(query.toLowerCase())),
+              )
+              .map((n) => (
+                <article
+                  className={
+                    'student-notification ' + (!n.read ? 'unread' : '')
+                  }
+                  key={n.id}
+                >
+                  <button
+                    onClick={() => {
+                      open(n.source);
+                      void readNotification(n, true);
+                    }}
+                  >
+                    <b>{n.source.name}</b>
+                    <span>{n.detail}</span>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => readNotification(n, !n.read)}
+                  >
+                    {n.read ? 'Mark unread' : 'Mark read'}
+                  </Button>
+                </article>
+              ))}
+          </div>
+        )}
       </>
     );
-  else if (section === 'Profile')
+  } else if (section === 'Profile')
     content = (
       <>
         <div className="student-profile-account-bar">
           <div className="student-profile-account-info">
-            <span className="avatar">{(profile?.name || ws.member.name || 'AS').slice(0, 2).toUpperCase()}</span>
+            <span className="avatar">
+              {(profile?.name || ws.member.name || 'AS')
+                .slice(0, 2)
+                .toUpperCase()}
+            </span>
             <div>
               <b>{profile?.name || ws.member.name}</b>
-              <small>Student · Grade 12 · {ws.member.email || 'student.dev@schoolos.local'}</small>
+              <small>
+                Student · Grade 12 ·{' '}
+                {ws.member.email || 'student.dev@schoolos.local'}
+              </small>
             </div>
           </div>
           <div className="student-profile-account-actions">
@@ -1120,50 +1307,223 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         />
       </>
     );
-  else if (section === 'Cafeteria')
+  else if (section === 'Counselling') {
+    const enabled = of('servicePolicy')[0]?.data.counsellingEnabled !== false;
     content = (
       <>
-        <p>Daily and weekly menus</p>
-        <List rows={matched(of('meal'))} open={open} />
-        {pane('Your orders', of('mealOrder'))}
-        {!of('servicePolicy')[0]?.data.preordersEnabled && (
-          <p className="teacher-empty">
-            Meal preorders are not enabled by your school.
-          </p>
-        )}
+        <div
+          className="teacher-toolbar"
+          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
+        >
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '13px',
+                color: 'var(--muted-foreground)',
+              }}
+            >
+              Confidential pastoral care, mental wellbeing support, and academic guidance.
+            </p>
+          </div>
+          {enabled ? (
+            <Button onClick={() => quick('counsellingRequest')}>
+              Request Counselling Appointment
+            </Button>
+          ) : (
+            <p className="teacher-empty">
+              Online booking unavailable. Please visit the counselling suite.
+            </p>
+          )}
+        </div>
+        <div className="teacher-grid">
+          {pane(
+            'Your confidential appointment requests',
+            of('counsellingRequest'),
+          )}
+          {pane(
+            'Available counsellor appointment slots',
+            of('appointmentSlot'),
+          )}
+        </div>
       </>
     );
-  else if (['Counselling', 'Medical'].includes(section)) {
-    const medical = section === 'Medical',
-      enabled =
-        of('servicePolicy')[0]?.data[
-          medical ? 'medicalEnabled' : 'counsellingEnabled'
-        ];
+  } else if (
+    [
+      'Records',
+      'Record',
+      'Attendance',
+      'Medical',
+      'Cafeteria',
+      'Documents',
+    ].includes(section)
+  ) {
+    const attendance = of('attendance');
+    const medicalRequests = of('medicalRequest');
+    const meals = of('meal');
+    const mealOrders = of('mealOrder');
+    const documents = of('document');
+    const medicalEnabled =
+      of('servicePolicy')[0]?.data.medicalEnabled !== false;
+    const preordersEnabled =
+      of('servicePolicy')[0]?.data.preordersEnabled !== false;
+
     content = (
       <>
-        <p>
-          {medical
-            ? 'Student-facing medical requests'
-            : 'Private appointment requests and your confirmed appointments'}
-        </p>
-        {enabled ? (
-          <Button
-            onClick={() =>
-              quick(medical ? 'medicalRequest' : 'counsellingRequest')
-            }
+        <div
+          className="teacher-toolbar"
+          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
+        >
+          <div
+            className="sub-tabs-pill"
+            style={{
+              display: 'flex',
+              gap: '6px',
+              padding: '4px',
+              background: 'var(--muted, #f1f5f9)',
+              borderRadius: '8px',
+            }}
           >
-            Request {medical ? 'a visit' : 'an appointment'}
-          </Button>
-        ) : (
-          <p className="teacher-empty">
-            This service is not enabled online. Contact the school office.
-          </p>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Attendance' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setRecordsTab('Attendance')}
+            >
+              📊 Attendance
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Medical' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setRecordsTab('Medical')}
+            >
+              🏥 Medical
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Cafeteria' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setRecordsTab('Cafeteria')}
+            >
+              🍱 Cafeteria
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Documents' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setRecordsTab('Documents')}
+            >
+              📁 Documents
+            </button>
+          </div>
+
+          {recordsTab === 'Attendance' &&
+            of('servicePolicy')[0]?.data.absenceRequests && (
+              <Button onClick={() => quick('absenceRequest')}>
+                Request Absence / Excuse
+              </Button>
+            )}
+          {recordsTab === 'Medical' && medicalEnabled && (
+            <Button onClick={() => quick('medicalRequest')}>
+              Request Nurse Visit
+            </Button>
+          )}
+          {recordsTab === 'Cafeteria' && preordersEnabled && (
+            <Button onClick={() => quick('mealOrder')}>Preorder Meal</Button>
+          )}
+        </div>
+
+        {recordsTab === 'Attendance' && (
+          <div className="records-attendance-tab">
+            <div className="student-counts">
+              {['Present', 'Absent', 'Late', 'Excused'].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilter(filter === s ? '' : s)}
+                >
+                  <strong>
+                    {attendance.filter((r: any) => r.data.status === s).length}
+                  </strong>
+                  <span>{s}</span>
+                </button>
+              ))}
+            </div>
+            <List
+              rows={matched(attendance).sort((a: any, b: any) =>
+                b.data.date.localeCompare(a.data.date),
+              )}
+              open={open}
+              meta={(r: any) =>
+                `${r.data.date} · ${r.data.class} · ${r.data.period || 'Daily'} · ${r.data.status}${r.data.arrivalTime ? ' · ' + r.data.arrivalTime : ''}`
+              }
+            />
+            {pane(
+              'Your submitted absence & excuse requests',
+              of('absenceRequest'),
+            )}
+          </div>
         )}
-        {!medical && pane('Available appointment times', of('appointmentSlot'))}
-        <List
-          rows={of(medical ? 'medicalRequest' : 'counsellingRequest')}
-          open={open}
-        />
+
+        {recordsTab === 'Medical' && (
+          <div className="records-medical-tab">
+            <p
+              style={{
+                fontSize: '13px',
+                color: 'var(--muted-foreground)',
+                marginBottom: '14px',
+              }}
+            >
+              Student medical profile, nurse station visits, and health records.
+            </p>
+            <List
+              rows={medicalRequests}
+              open={open}
+              empty="No active medical requests or incident records."
+              meta={(r: any) =>
+                `Nurse Visit · ${r.data.status || 'Logged'} · ${r.data.createdAt || 'Record'}`
+              }
+            />
+          </div>
+        )}
+
+        {recordsTab === 'Cafeteria' && (
+          <div className="records-cafeteria-tab">
+            <p
+              style={{
+                fontSize: '13px',
+                color: 'var(--muted-foreground)',
+                marginBottom: '14px',
+              }}
+            >
+              Daily dining hall menus, dietary tags, and pre-ordered lunches.
+            </p>
+            <List
+              rows={matched(meals)}
+              open={open}
+              empty="No cafeteria meal items listed for today."
+            />
+            {pane('Your meal preorders', mealOrders)}
+          </div>
+        )}
+
+        {recordsTab === 'Documents' && (
+          <div className="records-documents-tab">
+            <p
+              style={{
+                fontSize: '13px',
+                color: 'var(--muted-foreground)',
+                marginBottom: '14px',
+              }}
+            >
+              Official transcripts, enrolment certificates, and handbooks.
+            </p>
+            <List
+              rows={matched(documents)}
+              open={open}
+              empty="No downloadable documents on file."
+              meta={(r: any) =>
+                `${r.data.category || 'Official Document'} · ${r.data.date || 'Current'}`
+              }
+            />
+          </div>
+        )}
       </>
     );
   } else if (section === 'House')
@@ -1234,31 +1594,6 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           </button>
         ))}
       </nav>
-      <div
-        className="teacher-quick student-quick"
-        aria-label="Student quick actions"
-      >
-        {[
-          ['Today', 'View today'],
-          ['Assignments', 'Submit assignment'],
-          ['Classes', 'View homework'],
-          ['Labs', 'Search labs'],
-          ['Library', 'Search library'],
-          ['Calendar', 'Calendar'],
-          ['CAS', 'Update CAS'],
-          ['Projects', 'Open project'],
-        ].map(([s, l]) => (
-          <button key={s} className="resource-link" onClick={() => go(s)}>
-            {l}
-          </button>
-        ))}
-        <button className="resource-link" onClick={() => quick('message')}>
-          Message teacher
-        </button>
-        <button className="resource-link" onClick={() => quick('maintenance')}>
-          Report issue
-        </button>
-      </div>
       {(ws.error || error) && (
         <div className="error-banner" role="alert">
           {error || ws.error}

@@ -3604,33 +3604,70 @@ dd {
   transform: translateY(0);
 }
 
-@media (max-width: 1050px) {
-  .student-quick {
-    justify-content: flex-start;
-    padding: 8px 16px;
+.sub-tabs-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 9px;
+  padding: 3px;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.sub-tabs-pill button {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.sub-tabs-pill button:hover {
+  color: #1e293b;
+}
+
+.sub-tabs-pill button.font-bold,
+.sub-tabs-pill button.bg-white {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+.records-attendance-tab,
+.records-medical-tab,
+.records-cafeteria-tab,
+.records-documents-tab {
+  animation: tabFade 0.2s ease-out;
+}
+
+@keyframes tabFade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
   }
-  .student-quick .resource-link {
-    min-width: 105px;
-    flex: 0 0 auto;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @media (max-width: 768px) {
-  .student-dashboard {
-    padding-bottom: 70px;
-  }
   .student-tabs {
     top: 58px;
     margin-inline: -12px;
     width: calc(100% + 24px);
     padding-inline: 12px;
   }
-  .student-quick {
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    padding: 8px 12px;
+  .sub-tabs-pill {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 }
 

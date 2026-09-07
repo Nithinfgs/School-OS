@@ -230,7 +230,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             ['Post announcement', '/notifications'],
           ]
         : [
-            ['View assignments', '/student/page/assignments'],
+            ['View academics & work', '/student/page/academics'],
             ['Open calendar', '/student/page/calendar'],
             ['Add CAS reflection', '/student/page/cas'],
             ['Message a teacher', '/student/page/messages'],

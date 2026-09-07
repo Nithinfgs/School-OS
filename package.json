@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "prebuild": "node -e \"try { if (process.platform === 'linux') require('child_process').execSync('npm install --os=linux --cpu=x64 @esbuild/linux-x64 lightningcss-linux-x64-gnu --no-save', { stdio: 'inherit' }); } catch (e) {}\"",
     "build": "NITRO_PRESET=netlify vite build",
     "build:cloudflare": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",

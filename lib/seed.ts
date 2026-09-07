@@ -7,12 +7,12 @@ export type Entry = {
   version?: number;
 };
 export const classes = [
-  'Physics HL',
-  'Chemistry HL',
-  'Biology HL',
-  'Math AA HL',
+  'Physics',
+  'Chemistry',
+  'Digital Society',
+  'Math AA',
   'English',
-  'Economics',
+  'French B',
 ];
 export const students = [
   'Nithin Selvaraj',
@@ -266,22 +266,22 @@ export function seed(): Entry[] {
   classes.forEach((name, i) =>
     add('class', name, {
       teacher: [
-        'Dr. Sarah Mitchell',
-        'David Park',
-        'Dr. Maya Rao',
-        'James Wilson',
-        'Emily Thompson',
-        'Michael Brooks',
+        'Ms. Shalaba',
+        'Dr. Mallu',
+        'Mr. Rishikesh',
+        'Mr. Pramod',
+        'Dr. Rajesh Vasudevan & Ms. Sangeetha',
+        'Ms. Brindha',
       ][i],
-      room: ['P1', 'C1', 'B1', '204', '301', '205'][i],
+      room: ['Lab 101', 'Lab 103', 'Lab 102', 'Room 204', 'Room 108', 'Room 210'][i],
       time: ['08:30', '09:30', '10:45', '11:45', '13:30', '14:30'][i],
       department: [
         'Science',
         'Science',
-        'Science',
+        'Humanities & Tech',
         'Mathematics',
+        'Languages & Literature',
         'Languages',
-        'Humanities',
       ][i],
     }),
   );

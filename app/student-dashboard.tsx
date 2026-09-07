@@ -309,12 +309,20 @@ export function DP2TimetableMatrix() {
                 </th>
                 <th className="dp2-th-period">1</th>
                 <th className="dp2-th-period">2</th>
-                <th className="dp2-th-break-time">09:50 – 10:00</th>
+                <th rowSpan={2} className="dp2-th-break-time">
+                  <div>09:50</div>
+                  <div>–</div>
+                  <div>10:00</div>
+                </th>
                 <th className="dp2-th-period">3</th>
                 <th className="dp2-th-period">4</th>
                 <th className="dp2-th-period">5</th>
                 <th className="dp2-th-period">6</th>
-                <th className="dp2-th-break-time">12:40 – 01:20</th>
+                <th rowSpan={2} className="dp2-th-break-time">
+                  <div>12:40</div>
+                  <div>–</div>
+                  <div>01:20</div>
+                </th>
                 <th className="dp2-th-period">7</th>
                 <th className="dp2-th-period">8</th>
                 <th className="dp2-th-period">9</th>
@@ -322,23 +330,17 @@ export function DP2TimetableMatrix() {
               <tr className="dp2-header-row-times">
                 <th className="dp2-th-time">08:30–09:10</th>
                 <th className="dp2-th-time">09:10–09:50</th>
-                <th className="dp2-th-break-title" rowSpan={6}>
-                  <div className="dp2-break-label-vertical">SHORT BREAK</div>
-                </th>
                 <th className="dp2-th-time">10:00–10:40</th>
                 <th className="dp2-th-time">10:40–11:20</th>
                 <th className="dp2-th-time">11:20–12:00</th>
                 <th className="dp2-th-time">12:00–12:40</th>
-                <th className="dp2-th-break-title" rowSpan={6}>
-                  <div className="dp2-break-label-vertical">LUNCH BREAK</div>
-                </th>
                 <th className="dp2-th-time">01:20–02:00</th>
                 <th className="dp2-th-time">02:00–02:40</th>
                 <th className="dp2-th-time">02:40–03:20</th>
               </tr>
             </thead>
             <tbody>
-              {days.map((d) => {
+              {days.map((d, dayIndex) => {
                 const daySchedule = gridData[d.name];
                 return (
                   <tr key={d.name} className="dp2-data-row">
@@ -363,7 +365,14 @@ export function DP2TimetableMatrix() {
                         {daySchedule.p2.code}
                       </button>
                     </td>
-                    {/* Short break spans across rows */}
+
+                    {/* Short break: Render with rowSpan=5 on the first day */}
+                    {dayIndex === 0 && (
+                      <td rowSpan={5} className="dp2-th-break-title">
+                        <div className="dp2-break-label-vertical">SHORT BREAK</div>
+                      </td>
+                    )}
+
                     <td className="dp2-cell-wrapper">
                       <button
                         type="button"
@@ -400,7 +409,14 @@ export function DP2TimetableMatrix() {
                         {daySchedule.p6.code}
                       </button>
                     </td>
-                    {/* Lunch break spans across rows */}
+
+                    {/* Lunch break: Render with rowSpan=5 on the first day */}
+                    {dayIndex === 0 && (
+                      <td rowSpan={5} className="dp2-th-break-title">
+                        <div className="dp2-break-label-vertical">LUNCH BREAK</div>
+                      </td>
+                    )}
+
                     <td className="dp2-cell-wrapper">
                       <button
                         type="button"

@@ -324,9 +324,17 @@ export function AdminMasterDashboard({ ws, navigate, select }: any) {
             Find a record, follow an update, or act on what needs attention.
           </p>
         </div>
-        <Button variant="outline" onClick={() => ws.refresh()}>
-          <RefreshCw size={16} /> Refresh
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => navigate('Teacher Inquiry')}>
+            <Users size={16} /> Teacher Inquiry
+          </Button>
+          <Button variant="outline" onClick={() => navigate('Student Search')}>
+            <Search size={16} /> Student Search
+          </Button>
+          <Button variant="outline" onClick={() => ws.refresh()}>
+            <RefreshCw size={16} /> Refresh
+          </Button>
+        </div>
       </div>
       <p className="master-sync" suppressHydrationWarning>
         <span className="live-dot" />{' '}
@@ -350,7 +358,7 @@ export function AdminMasterDashboard({ ws, navigate, select }: any) {
           <Search size={18} />
           <Input
             aria-label="Search all school records"
-            placeholder="Search topics, homework, people, items, notes…"
+            placeholder="Search anything across the school…"
             value={filters.search}
             onChange={(e) => change('search', e.target.value)}
           />

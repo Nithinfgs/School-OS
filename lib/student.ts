@@ -6,14 +6,13 @@ export const studentSections = [
   'Classes',
   'Academics',
   'Records',
+  'Reports',
   'Facilities',
   'Calendar',
-  'Exams',
   'CAS',
   'Counselling',
   'Notifications',
   'Messages',
-  'Maintenance',
   'Profile',
 ];
 export function studentScope(rows: any[], member: any) {
@@ -41,16 +40,23 @@ export function studentScope(rows: any[], member: any) {
           'submission',
           'loan',
           'request',
+          'transportNotice',
           'maintenance',
           'absenceRequest',
           'mealOrder',
           'housePoint',
+          'damageBrokenLog',
+          'attendanceReport',
         ].includes(r.kind)
       )
         return (
-          d.studentId === own &&
-          (r.kind !== 'record' || d.studentVisible === true)
+          (d.studentId === own || d.relatedStudentId === own || d.metadata?.studentId === own) &&
+          (r.kind !== 'record' || d.studentVisible === true || d.visibility?.studentVisible === true) &&
+          d.visibility?.studentVisible !== false &&
+          d.visibility?.restricted !== true
         );
+      if (r.kind === 'activityEvent')
+        return (d.relatedStudentId === own || d.metadata?.studentId === own) && d.visibility?.studentVisible === true;
       if (r.kind === 'reading') return d.userId === member.userId;
       if (['counsellingRequest', 'medicalRequest'].includes(r.kind))
         return d.studentId === own && d.studentFacing === true;

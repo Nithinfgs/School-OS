@@ -1,13 +1,21 @@
 import { db } from './server';
+import { demoTrackingRows } from './platform/demo-data';
 export async function seedStudentDemo(org: string) {
+  if (org !== 'schoolos-dev') return;
+
+  // Tracked records are idempotently added on every seed pass so existing demo
+  // databases receive newly introduced report types without a destructive reset.
+  const tracked = demoTrackingRows().filter((row) => row.kind !== 'activityEvent') as any[];
+  await db().batch(tracked.map((row) => db().prepare(
+    'INSERT OR IGNORE INTO records (id,organizationId,kind,name,data,quantity,version,updatedBy,updatedAt) VALUES (?,?,?,?,?,1,0,?,?)',
+  ).bind(org + ':' + row.id, org, row.kind, row.name, JSON.stringify(row.data), 'system:seed', row.data.updatedAt || new Date().toISOString())));
+
   if (
-    org !== 'schoolos-dev' ||
-    (await db()
+    await db()
       .prepare('SELECT id FROM records WHERE id=?')
       .bind(org + ':student-service-policy')
-      .first())
-  )
-    return;
+      .first()
+  ) return;
   const entries: any[] = [
     [
       'student-handbook',

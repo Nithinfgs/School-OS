@@ -1,5 +1,22 @@
-import { getDatabase } from '@netlify/database';
 import { getStore } from '@netlify/blobs';
+import postgres from 'postgres';
+
+const databaseUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+const sql = databaseUrl ? postgres(databaseUrl, { max: 1 }) : null;
+
+function databaseClient() {
+  if (!sql) {
+    throw new Error(
+      'No server database configured. Set DATABASE_URL for persistent server data or use DATA_MODE=demo.',
+    );
+  }
+  return sql;
+}
+
+async function runQuery(client: any, query: string, values: unknown[]) {
+  const rows = await client.unsafe(query, values);
+  return { rows, rowCount: rows.length };
+}
 
 const columnNames: Record<string, string> = {
   ownerid: 'ownerId',
@@ -68,8 +85,8 @@ class NetlifyStatement {
     this.values = values;
     return this;
   }
-  async execute(client = getDatabase().pool) {
-    return client.query(postgresQuery(this.query), this.values);
+  async execute(client = databaseClient()) {
+    return runQuery(client, postgresQuery(this.query), this.values);
   }
   async all<T>() {
     const result = await this.execute();
@@ -90,22 +107,15 @@ const netlifyDatabase = {
     return new NetlifyStatement(query);
   },
   async batch(statements: NetlifyStatement[]) {
-    const client = await getDatabase().pool.connect();
-    try {
-      await client.query('BEGIN');
+    const client = databaseClient();
+    return client.begin(async (transaction: any) => {
       const results = [];
       for (const statement of statements) {
-        const result = await statement.execute(client);
+        const result = await statement.execute(transaction);
         results.push({ meta: { changes: result.rowCount || 0 } });
       }
-      await client.query('COMMIT');
       return results;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   },
 };
 const netlifyFiles = {

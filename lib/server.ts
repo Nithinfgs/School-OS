@@ -3,6 +3,7 @@ import { getChatGPTUser } from '@/app/chatgpt-auth';
 import { seed } from './seed';
 import { studentScope } from './student';
 import { isMasterVisible, ordinaryData } from './master-dashboard';
+import { demoTeacherEntries, MAYA_HOMEROOM, MAYA_SUBJECT, MAYA_TEACHER_ID } from './demo-teacher';
 export function db() {
   return env.DB as D1Database;
 }
@@ -61,6 +62,15 @@ export async function context() {
 }
 
 const DEV_MEMBERS: Record<string, any> = {
+  'dev:transport-staff': {
+    id: 'dev-transport-member', organizationId: 'schoolos-dev', userId: 'dev:transport-staff',
+    role: 'Transport Staff', name: 'Leena Joseph', email: 'transport.dev@schoolos.local', classes: '', studentId: '', department: 'Transport',
+  },
+  'dev:hos': {
+    id: 'dev-hos-member', organizationId: 'schoolos-dev', userId: 'dev:hos',
+    role: 'Head of School', name: 'Dr. Aisha Rahman', email: 'hos.dev@schoolos.local',
+    classes: '', studentId: '', department: 'Leadership',
+  },
   'dev:admin': {
     id: 'dev-admin-member',
     organizationId: 'schoolos-dev',
@@ -79,7 +89,7 @@ const DEV_MEMBERS: Record<string, any> = {
     role: 'Teacher',
     name: 'Maya Iyer',
     email: 'teacher.dev@schoolos.local',
-    classes: 'Physics HL|Math AA HL',
+    classes: `${MAYA_HOMEROOM}|${MAYA_SUBJECT}`,
     studentId: '',
     department: 'Physics',
   },
@@ -93,6 +103,28 @@ const DEV_MEMBERS: Record<string, any> = {
     classes: 'Physics|Chemistry|Digital Society|Math AA|English|French B|Theory of Knowledge (TOK)|CAS Experience|DEAR (Drop Everything And Read)|Physical Education (PE)|Extended Essay (EE Workshop)',
     studentId: 'student-1',
     department: 'DP-2',
+  },
+  'dev:lab-assistant': {
+    id: 'dev-lab-assistant-member',
+    organizationId: 'schoolos-dev',
+    userId: 'dev:lab-assistant',
+    role: 'Lab Assistant',
+    name: 'Olivia Reed',
+    email: 'lab.assistant.dev@schoolos.local',
+    classes: '',
+    studentId: '',
+    department: 'Science Labs',
+  },
+  'dev:library-assistant': {
+    id: 'dev-library-assistant-member',
+    organizationId: 'schoolos-dev',
+    userId: 'dev:library-assistant',
+    role: 'Library Assistant',
+    name: 'Daniel Moore',
+    email: 'library.assistant.dev@schoolos.local',
+    classes: '',
+    studentId: '',
+    department: 'Library Services',
   },
 };
 
@@ -140,6 +172,13 @@ async function devContext(
         .prepare('SELECT * FROM members WHERE organizationId=? AND userId=?')
         .bind(org, user.userId)
         .first<any>();
+    } else if (user.userId === 'dev:teacher') {
+      await db()
+        .prepare('UPDATE members SET classes=?,department=? WHERE id=? AND organizationId=?')
+        .bind(defaultMember.classes, defaultMember.department, defaultMember.id, org)
+        .run()
+        .catch(() => {});
+      existing = { ...existing, classes: defaultMember.classes, department: defaultMember.department };
     }
 
     return { user, member: existing || defaultMember, org };
@@ -178,6 +217,8 @@ export async function ensureSeed(org: string, actor: string) {
 }
 export const rolePermissions: Record<string, string[]> = {
   Admin: ['*'],
+  'Head of School': ['*', 'inquiries.viewAll', 'inquiries.reply', 'inquiries.assign', 'inquiries.manage', 'calendar.manage', 'teacherRecords.viewAll', 'studentRecords.viewAll'],
+  'Transport Staff': ['transport.view', 'transport.manage', 'transport.recordArrival', 'transport.recordDeparture', 'transport.manageNotices'],
   Teacher: [
     'inventory.view',
     'request.create',
@@ -196,11 +237,24 @@ export const rolePermissions: Record<string, string[]> = {
   'Lab Assistant': [
     'inventory.view',
     'inventory.edit',
+    'lab.manageInventory',
+    'lab.requests.manage',
+    'lab.usage.record',
+    'lab.orders.create',
+    'lab.orders.receive',
     'request.approve',
     'request.create',
     'book.view',
   ],
   Librarian: [
+    'book.view',
+    'book.edit',
+    'loan.edit',
+    'request.create',
+    'request.approve',
+    'student.view',
+  ],
+  'Library Assistant': [
     'book.view',
     'book.edit',
     'loan.edit',
@@ -268,7 +322,7 @@ function legacyScopeRows(rows: any[], member: any) {
         (r.kind === 'file' && r.data.ownerId === member.userId),
     )
     .map((r) => ({ ...r, data: ordinaryData(r.data) }));
-  if (member.role === 'Admin') return rows;
+  if (['Admin', 'Head of School'].includes(member.role)) return rows;
   const enrolled = new Set((member.classes || '').split('|').filter(Boolean));
   const ownStudent = member.studentId;
   const allowedStudents = new Set(
@@ -279,7 +333,11 @@ function legacyScopeRows(rows: any[], member: any) {
           (member.role === 'Student'
             ? r.id === ownStudent
             : enrolled.has(r.data.class) ||
-              r.data.classes?.some((c: string) => enrolled.has(c))),
+              r.data.classes?.some((c: string) => enrolled.has(c)) ||
+              r.data.classTeacherId === member.id ||
+              r.data.classTeacherId === member.userId ||
+              r.data.subjectTeacherIds?.includes(member.id) ||
+              r.data.subjectTeacherIds?.includes(member.userId)),
       )
       .map((r) => r.id),
   );
@@ -300,7 +358,7 @@ function legacyScopeRows(rows: any[], member: any) {
         );
       if (r.kind === 'student')
         return (
-          member.role === 'Librarian' ||
+          ['Librarian', 'Library Assistant'].includes(member.role) ||
           (['Student', 'Teacher', 'Department Head'].includes(member.role) &&
             allowedStudents.has(r.id))
         );
@@ -315,7 +373,14 @@ function legacyScopeRows(rows: any[], member: any) {
         return (
           ['Student', 'Teacher', 'Department Head'].includes(member.role) &&
           allowedStudents.has(r.data.studentId) &&
-          (member.role !== 'Student' || r.data.studentVisible === true)
+            (member.role !== 'Student' || r.data.studentVisible === true)
+        );
+      if (r.kind === 'transportNotice')
+        return (
+          ['Admin', 'Head of School', 'Transport Staff'].includes(member.role) ||
+          (member.role === 'Student' && r.data.studentId === ownStudent) ||
+          (['Teacher', 'Department Head'].includes(member.role) &&
+            allowedStudents.has(r.data.studentId))
         );
       if (r.kind === 'submission')
         return !['Student', 'Teacher', 'Department Head'].includes(member.role)
@@ -326,7 +391,13 @@ function legacyScopeRows(rows: any[], member: any) {
       if (['assignment', 'class'].includes(r.kind))
         return (
           ['Student', 'Teacher', 'Department Head'].includes(member.role) &&
-          enrolled.has(r.kind === 'class' ? r.name : r.data.class)
+          (enrolled.has(r.kind === 'class' ? r.name : r.data.class) ||
+            r.data.teacherId === member.id ||
+            r.data.teacherId === member.userId ||
+            r.data.classTeacherId === member.id ||
+            r.data.classTeacherId === member.userId ||
+            r.data.subjectTeacherId === member.id ||
+            r.data.subjectTeacherId === member.userId)
         );
       if (r.kind === 'loan')
         return (
@@ -355,7 +426,14 @@ export function scopeRows(rows: any[], member: any) {
   const assigned = new Set((member.classes || '').split('|').filter(Boolean));
   const teacher = ['Teacher', 'Department Head'].includes(member.role);
   const own = member.studentId;
-  const related = (r: any) => assigned.has(r.data.class);
+  const related = (r: any) =>
+    assigned.has(r.data.class) ||
+    r.data.teacherId === member.id ||
+    r.data.teacherId === member.userId ||
+    r.data.classTeacherId === member.id ||
+    r.data.classTeacherId === member.userId ||
+    r.data.subjectTeacherId === member.id ||
+    r.data.subjectTeacherId === member.userId;
   const base = legacyScopeRows(rows, member);
   const added = rows.filter((r) => {
     const d = r.data || {};
@@ -369,6 +447,8 @@ export function scopeRows(rows: any[], member: any) {
       return (
         Array.isArray(d.participants) && d.participants.includes(member.userId)
       );
+    if (r.kind === 'transportNotice')
+      return ['Admin', 'Head of School', 'Transport Staff'].includes(member.role) || (teacher && related(r));
     if (!isMasterVisible(r)) return false;
     if (
       r.kind === 'file' &&

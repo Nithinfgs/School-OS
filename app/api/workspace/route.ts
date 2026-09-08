@@ -16,8 +16,17 @@ import {
   profileMetrics,
 } from '@/lib/master-dashboard';
 import { getMockWorkspaceData, handleMockMutation } from '@/lib/mock-workspace';
+import { backendConfig } from '@/lib/platform/config';
+import { loadSupabaseWorkspace } from '@/lib/platform/supabase-workspace';
+import { handleSupabaseWorkspaceMutation } from '@/lib/platform/supabase-mutations';
+import { getChatGPTUser } from '@/app/chatgpt-auth';
 export async function GET() {
   try {
+    if (backendConfig.adapter === 'supabase') {
+      const user=await getChatGPTUser();
+      if(!user) return Response.json({error:'UNAUTHORIZED'},{status:401});
+      if (!user.userId.startsWith('dev:')) return Response.json(await loadSupabaseWorkspace(user));
+    }
     const { user, member, org } = await context();
     await ensureSeed(org, user.userId);
     await seedTeachingDemo(org);
@@ -121,26 +130,18 @@ export async function GET() {
         ? (
             await db()
               .prepare(
-                "SELECT id,name,classes FROM members WHERE organizationId=? AND role IN ('Teacher','Department Head')",
+                "SELECT id,name,email,role,department,classes FROM members WHERE organizationId=? AND role IN ('Teacher','Department Head')",
               )
               .bind(org)
               .all<any>()
           ).results
-            .filter((m) =>
-              (m.classes || '')
-                .split('|')
-                .some((c: string) =>
-                  (member.classes || '').split('|').includes(c),
-                ),
-            )
             .map((m) => ({
               id: m.id,
               name: m.name,
-              classes: (m.classes || '')
-                .split('|')
-                .filter((c: string) =>
-                  (member.classes || '').split('|').includes(c),
-                ),
+              email: m.email,
+              role: m.role,
+              department: m.department,
+              classes: (m.classes || '').split('|').filter(Boolean),
             }))
         : [];
     return Response.json(
@@ -180,10 +181,22 @@ export async function POST(req: Request) {
     const origin = req.headers.get('origin');
     if (origin && origin !== new URL(req.url).origin)
       throw new Error('FORBIDDEN');
+    if (backendConfig.adapter === 'supabase') {
+      const user=await getChatGPTUser();
+      if(!user) throw new Error('UNAUTHORIZED');
+      if (!user.userId.startsWith('dev:')) {
+        const payload=await req.json();
+        return Response.json(await handleSupabaseWorkspaceMutation(payload,user));
+      }
+    }
     const { user, member, org } = await context();
     const b: any = await req.json();
     if (!b || typeof b.action !== 'string') throw new Error('Invalid action');
     const action = b.action;
+    // HOS/Admin workflows keep their demo state in the client session while
+    // preserving the same payload contract used by the Supabase adapter.
+    if (['calendarEvent', 'inquiryUpdate', 'busArrival', 'busDeparture', 'transportNoticeUpdate'].includes(action))
+      return Response.json({ ok: true, demo: true });
     const row = b.id
       ? await db()
           .prepare('SELECT * FROM records WHERE id = ? AND organizationId = ?')
@@ -192,6 +205,26 @@ export async function POST(req: Request) {
       : null;
     const now = new Date().toISOString();
     let data = row ? JSON.parse(row.data) : {};
+    if (action === 'notificationRead' || action === 'read') {
+      if (!row || row.kind !== 'notification') throw new Error('Notification not found');
+      await db()
+        .prepare('UPDATE records SET data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?')
+        .bind(JSON.stringify({ ...data, read: b.read !== false }), user.userId, now, row.id, org)
+        .run();
+    } else if (action === 'notificationsReadAll') {
+      const notifications = (await db()
+        .prepare('SELECT id,data FROM records WHERE organizationId=? AND kind=\'notification\'')
+        .bind(org)
+        .all<any>()).results;
+      for (const notification of notifications) {
+        const notificationData = JSON.parse(notification.data);
+        if (notificationData.read) continue;
+        await db()
+          .prepare('UPDATE records SET data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?')
+          .bind(JSON.stringify({ ...notificationData, read: true }), user.userId, now, notification.id, org)
+          .run();
+      }
+    } else
     if (
       row &&
       ['assignment', 'submission', 'record', 'student'].includes(row.kind) &&
@@ -313,6 +346,7 @@ export async function POST(req: Request) {
         'Lab Assistant',
         'Librarian',
         'Admin',
+        'Head of School',
         'Department Head',
       ];
       if (
@@ -477,6 +511,39 @@ export async function POST(req: Request) {
         requestedBy: user.userId,
         notes: b.notes || '',
       });
+    } else if (action === 'labOrderStatus') {
+      allow(member.role, 'lab.orders.approve');
+      if (!row || !['labOrder', 'order'].includes(row.kind))
+        throw new Error('Lab order not found');
+      const allowedStatuses = [
+        'Draft',
+        'Submitted',
+        'Approved',
+        'Ordered',
+        'PartiallyReceived',
+        'Received',
+        'Cancelled',
+      ];
+      if (!allowedStatuses.includes(b.status)) throw new Error('Invalid lab order status');
+      await db()
+        .prepare(
+          'UPDATE records SET data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?',
+        )
+        .bind(
+          JSON.stringify({
+            ...data,
+            status: b.status,
+            approvalHistory: [
+              ...(Array.isArray(data.approvalHistory) ? data.approvalHistory : []),
+              { status: b.status, actor: user.userId, time: now },
+            ],
+          }),
+          user.userId,
+          now,
+          row.id,
+          org,
+        )
+        .run();
     } else if (action === 'requestStatus') {
       allow(member.role, 'request.approve');
       if (!row || row.kind !== 'request') throw new Error('Request not found');

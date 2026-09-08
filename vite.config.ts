@@ -6,7 +6,18 @@ import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import hostingConfig from './.openai/hosting.json';
+import { existsSync, readFileSync } from 'node:fs';
+
+type LocalHostingConfig = { d1?: string; r2?: string };
+
+// Codex supplies this local-only file for Cloudflare previews. It is ignored
+// by Git and is intentionally absent from Netlify deploys.
+const localHostingConfigPath = fileURLToPath(
+  new URL('./.openai/hosting.json', import.meta.url),
+);
+const hostingConfig: LocalHostingConfig = existsSync(localHostingConfigPath)
+  ? JSON.parse(readFileSync(localHostingConfigPath, 'utf8'))
+  : {};
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   '00000000-0000-4000-8000-000000000000';

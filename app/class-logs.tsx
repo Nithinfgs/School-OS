@@ -32,10 +32,10 @@ export function ClassLogDetail({ row }: any) {
           <p className="log-text">{d.homework}</p>
         </>
       )}
-      {d.resources.length > 0 && (
+      {(d.resources || []).length > 0 && (
         <>
           <h4>Resources</h4>
-          {d.resources.map((url: string) => (
+          {(d.resources || []).map((url: string) => (
             <a
               className="resource-link"
               key={url}

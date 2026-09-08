@@ -214,6 +214,7 @@ const allowed: Record<string, string[]> = {
   Teacher: ['assignment', 'record'],
   'Lab Assistant': ['inventory'],
   Librarian: ['book', 'loan'],
+  'Library Assistant': ['book', 'loan'],
   'Department Head': ['assignment', 'record'],
   Student: [],
 };
@@ -239,7 +240,20 @@ export function GlobalSearch({
   navigate,
   select,
   adminOpen,
+  role,
 }: any) {
+  const destinations = [
+    'Home',
+    'Labs',
+    'Library',
+    'Academics',
+    'Students',
+    ...(['Admin', 'Head of School'].includes(role) ? ['Teacher Inquiry', 'Student Search'] : []),
+    ...(role === 'Student' ? ['Directory'] : []),
+    'Calendar',
+    'Notifications',
+    'Settings',
+  ];
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="search-dialog">
@@ -252,16 +266,7 @@ export function GlobalSearch({
           <CommandList>
             <CommandEmpty>No matching results.</CommandEmpty>
             <CommandGroup heading="Go to">
-              {[
-                'Home',
-                'Labs',
-                'Library',
-                'Academics',
-                'Students',
-                'Calendar',
-                'Notifications',
-                'Settings',
-              ].map((p) => (
+              {destinations.map((p) => (
                 <CommandItem
                   key={p}
                   onSelect={() => {
@@ -274,6 +279,16 @@ export function GlobalSearch({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {['Admin', 'Head of School'].includes(role) && (
+              <CommandGroup heading="Open unified record">
+                {rows.filter((r: any) => r.kind === 'student' || (r.kind === 'staff' && /teacher/i.test(`${r.data?.role || ''} ${r.data?.title || ''}`))).slice(0, 40).map((r: any) => {
+                  const isTeacher = r.kind === 'staff'; const target = isTeacher ? 'Teacher Inquiry' : 'Student Search';
+                  return <CommandItem key={`lookup-${r.id}`} value={`${isTeacher ? 'teacher' : 'student'} ${r.name} ${JSON.stringify(r.data)}`} onSelect={() => { sessionStorage.setItem('schoolos-record-lookup', JSON.stringify({ kind: isTeacher ? 'teacher' : 'student', id: r.id })); navigate(target); setOpen(false); }}>
+                    {isTeacher ? 'Teacher' : 'Student'}: {r.name}<ArrowUpRight className="ml-auto" size={14} />
+                  </CommandItem>;
+                })}
+              </CommandGroup>
+            )}
             {[...new Set<string>(rows.map((r: any) => r.kind))].map((kind) => (
               <CommandGroup
                 key={kind}
@@ -729,8 +744,22 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                           badge: 'Student',
                           icon: User,
                         },
+                        {
+                          role: 'lab-assistant',
+                          name: 'Olivia Reed',
+                          title: 'Science Lab Assistant',
+                          badge: 'Lab Assistant',
+                          icon: FlaskConical,
+                        },
+                        {
+                          role: 'library-assistant',
+                          name: 'Daniel Moore',
+                          title: 'Library Assistant',
+                          badge: 'Library Assistant',
+                          icon: BookOpen,
+                        },
                       ].map((p) => {
-                        const isActive = (member.role || '').toLowerCase() === p.role;
+                        const isActive = (member.role || '').toLowerCase().replace(/\s+/g, '-') === p.role;
                         const Icon = p.icon;
                         return (
                           <a
@@ -870,31 +899,49 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
             <Calendar rows={rows} open={open} />
           ) : page === 'Notifications' ? (
             <section className="panel">
+              <div className="notification-panel-heading">
+                <div>
+                  <h2>Notifications</h2>
+                  <p>{kinds('notification').filter((r: any) => !r.data.read).length} unread</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!kinds('notification').some((r: any) => !r.data.read)}
+                  onClick={() => void act({ action: 'notificationsReadAll' })}
+                >
+                  Mark all as read
+                </Button>
+              </div>
               {kinds('notification').map((r: any) => (
-                <button
-                  className="notification-row"
+                <div
+                  className={'notification-row ' + (r.data.read ? 'is-read' : 'is-unread')}
                   key={r.id}
-                  onClick={async () => {
-                    try {
-                      await act({ action: 'read', id: r.id });
-                      navigate(r.data.target);
-                    } catch (e: any) {
-                      ws.refresh();
-                    }
-                  }}
                 >
                   <span
                     className={'read-dot ' + (r.data.read ? 'is-read' : '')}
                   />
-                  <div>
+                  <button
+                    className="notification-row-content"
+                    onClick={async () => {
+                      await act({ action: 'notificationRead', id: r.id, read: true });
+                      if (r.data.target) navigate(r.data.target);
+                    }}
+                  >
                     <b>{r.name}</b>
                     <p>{r.data.description}</p>
                     <small>
-                      {r.data.date} · {r.data.target}
+                      {r.data.date} · {r.data.target || 'SchoolOS'}
                     </small>
-                  </div>
+                  </button>
+                  <button
+                    className="notification-read-toggle"
+                    onClick={() => void act({ action: 'notificationRead', id: r.id, read: !r.data.read })}
+                  >
+                    {r.data.read ? 'Mark unread' : 'Mark read'}
+                  </button>
                   <ChevronRight size={16} />
-                </button>
+                </div>
               ))}
             </section>
           ) : page === 'Academics' && tab === 'Resources' ? (
@@ -1910,6 +1957,7 @@ function Workflow({ form, close, act, rows }: any) {
                     'Student',
                     'Lab Assistant',
                     'Librarian',
+                    'Library Assistant',
                     'Admin',
                     'Department Head',
                   ])}

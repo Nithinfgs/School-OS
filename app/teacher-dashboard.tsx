@@ -14,6 +14,7 @@ import {
   FlaskConical,
   Upload,
   AlertTriangle,
+  BusFront,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,6 +140,8 @@ const formNames: any = {
   attendance: 'Take attendance',
   lesson: 'Log lesson',
   studentRecord: 'Student record',
+  behaviorReport: 'Student behaviour report',
+  transportNotice: 'Transport notice',
   assignment: 'Assignment',
   gradeWork: 'Grade and return work',
   resource: 'Class resource',
@@ -183,7 +186,10 @@ export function TeacherDashboard({ ws }: any) {
     !cls ||
     r.id === cls.id ||
     r.data.class === cls.name ||
-    (r.kind === 'student' && studentInClass(r, cls.name)) ||
+    (r.kind === 'student' && (studentInClass(r, cls.name) ||
+      (cls.data?.isHomeroom &&
+        (r.data.classTeacherId === ws.member.id ||
+          r.data.classTeacherId === ws.member.userId)))) ||
     r.data.classId === cls.id ||
     (!r.data.class &&
       r.data.studentId &&
@@ -383,6 +389,8 @@ export function TeacherDashboard({ ws }: any) {
           ['attendance', 'Take attendance', ClipboardCheck],
           ['lesson', 'Log lesson', BookOpen],
           ['studentRecord', 'Add record', Plus],
+          ['behaviorReport', 'Behaviour report', AlertTriangle],
+          ['transportNotice', 'Transport notice', BusFront],
           ['assignment', 'Create assignment', Plus],
           ['gradeWork', 'Grade work', CheckCircle2],
           ['resource', 'Upload resource', Upload],
@@ -876,11 +884,13 @@ export function TeacherDashboard({ ws }: any) {
               <>
                 <div className="section-heading">
                   <h2>Student records & follow-ups</h2>
-                  <Button onClick={() => quick('studentRecord')}>
-                    Add student record
-                  </Button>
+                  <div className="detail-actions">
+                    <Button onClick={() => quick('studentRecord')}>Add student record</Button>
+                    <Button variant="outline" onClick={() => quick('behaviorReport')}>Behaviour report</Button>
+                    <Button variant="outline" onClick={() => quick('transportNotice')}>Transport notice</Button>
+                  </div>
                 </div>
-                <Entries rows={kind('record')} open={open} />
+                <Entries rows={kind('record', 'transportNotice')} open={open} />
               </>
             ) : tab === 'Resources' ? (
               <>
@@ -1102,6 +1112,12 @@ export function TeacherDashboard({ ws }: any) {
                     <Button onClick={() => quick('studentRecord', selected)}>
                       Add student record
                     </Button>
+                    <Button variant="outline" onClick={() => quick('behaviorReport', selected)}>
+                      Behaviour report
+                    </Button>
+                    <Button variant="outline" onClick={() => quick('transportNotice', selected)}>
+                      Transport notice
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => quick('message', selected)}
@@ -1156,7 +1172,7 @@ export function TeacherDashboard({ ws }: any) {
                       const map: any = {
                         Attendance: ['attendance'],
                         Academics: ['assignment', 'submission'],
-                        Records: ['record'],
+                        Records: ['record', 'transportNotice'],
                         Labs: ['request', 'labUsage'],
                         Library: ['loan'],
                         'Projects & CAS': ['project', 'cas'],
@@ -1601,6 +1617,13 @@ function TeachingForm({ ws, form, close }: any) {
     studentVisible: old.studentVisible ?? false,
     parentNotify: old.parentNotify ?? false,
     followUp: old.followUp || '',
+    whatHappened: old.whatHappened || old.description || '',
+    note: old.note || old.internalNote || '',
+    changeType: old.changeType || 'NotUsingBus',
+    route: old.route || '',
+    bus: old.bus || '',
+    pickup: old.pickup || '',
+    dropoff: old.dropoff || '',
     grade: old.grade ?? '',
     feedback: old.feedback || '',
     internalNotes: old.internalNotes || '',
@@ -1631,7 +1654,13 @@ function TeachingForm({ ws, form, close }: any) {
     [uploaded, setUploaded] = useState<any[]>([]);
   const cls = classes.find((c: any) => c.id === v.classId),
     students = ws.rows.filter(
-      (r: any) => r.kind === 'student' && studentInClass(r, cls?.name),
+      (r: any) =>
+        r.kind === 'student' &&
+        (studentInClass(r, cls?.name) ||
+          r.data.classTeacherId === ws.member.id ||
+          r.data.classTeacherId === ws.member.userId ||
+          r.data.subjectTeacherIds?.includes(ws.member.id) ||
+          r.data.subjectTeacherIds?.includes(ws.member.userId)),
     );
   const set = (key: string, value: any) =>
     setV((old: any) => ({ ...old, [key]: value }));
@@ -1782,7 +1811,7 @@ function TeachingForm({ ws, form, close }: any) {
               notes: v.notes,
             });
           } else {
-            await ws.act({
+            const result = await ws.act({
               ...v,
               teaching: true,
               action,
@@ -1793,6 +1822,7 @@ function TeachingForm({ ws, form, close }: any) {
                 .map((s: string) => s.trim())
                 .filter(Boolean),
             });
+            if (result?.ok === false) throw Error(result.error || 'Unable to save this notice');
           }
           close();
         } catch (e: any) {
@@ -1888,6 +1918,39 @@ function TeachingForm({ ws, form, close }: any) {
             'parentNotify',
             'Flag parent contact for staff follow-up (does not send a message)',
           )}
+        </>
+      )}
+      {action === 'behaviorReport' && (
+        <>
+          {pick('studentId', 'Student', students)}
+          <div className="teacher-form-grid">
+            {pick('category', 'Category', ['Late', 'Uniform', 'MissingHomework', 'Disruption', 'DeviceUse', 'AcademicConcern', 'BehaviourConcern', 'PositiveBehaviour', 'Achievement', 'Other'])}
+            {field('occurredAt', 'Date & time', 'datetime-local', true)}
+            {field('class', 'Class / section')}
+            {field('location', 'Location')}
+            {pick('severity', 'Severity', ['Low', 'Medium', 'High'])}
+          </div>
+          {area('whatHappened', 'What happened', true)}
+          {area('actionTaken', 'Action taken')}
+          {area('note', 'Internal note')}
+          {field('followUp', 'Follow-up date', 'date')}
+          {pick('status', 'Status', ['Open', 'Monitoring', 'Resolved'])}
+          {check('studentVisible', 'Allow the student to see this report')}
+        </>
+      )}
+      {action === 'transportNotice' && (
+        <>
+          {pick('studentId', 'Student', students)}
+          <div className="teacher-form-grid">
+            {field('date', 'Date', 'date', true)}
+            {pick('changeType', 'Change type', ['NotComingByBus', 'NotGoingByBus', 'PickupChange', 'DropoffChange', 'Other'])}
+            {field('route', 'Route (optional)')}
+            {field('bus', 'Bus (optional)')}
+            {field('pickup', 'Pickup change (optional)')}
+            {field('dropoff', 'Drop-off change (optional)')}
+          </div>
+          {area('reason', 'Reason')}
+          {area('notes', 'Notes')}
         </>
       )}
       {action === 'gradeWork' && (

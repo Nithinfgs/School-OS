@@ -58,6 +58,7 @@ export const moduleNames = [
   'Staff',
   'Houses',
   'Documents',
+  'Transport',
   'System',
 ];
 export function moduleFor(r: SchoolRow): string {
@@ -100,6 +101,7 @@ export function moduleFor(r: SchoolRow): string {
     houseTransaction: 'Houses',
     announcement: 'Announcements',
     notification: 'Announcements',
+    transportNotice: 'Transport',
     maintenance: 'Maintenance',
     leave: 'Staff',
     duty: 'Staff',
@@ -339,6 +341,40 @@ export function recordDate(r: SchoolRow) {
       '',
   ).slice(0, 10);
 }
+/**
+ * Build the single search index used by the master dashboard. The index is
+ * derived from the shared row projection so names, module labels, record
+ * types, field values, and linked people/classes are all discoverable without
+ * maintaining a second dashboard-only dataset.
+ */
+export function searchableText(r: SchoolRow, all: SchoolRow[]) {
+  const rel = relationships(r, all);
+  const linkedNames = all
+    .filter((candidate) => {
+      if (candidate.id === r.id) return false;
+      if (candidate.kind === 'student') return rel.students.has(candidate.id);
+      if (['staff', 'teacher'].includes(candidate.kind))
+        return (
+          rel.teachers.has(candidate.id) || rel.teachers.has(candidate.name)
+        );
+      if (candidate.kind === 'class') return rel.classes.has(candidate.name);
+      if (candidate.kind === 'department')
+        return rel.departments.has(candidate.name);
+      return false;
+    })
+    .map((candidate) => candidate.name);
+  return [
+    r.name,
+    r.kind,
+    moduleFor(r),
+    recordDate(r),
+    JSON.stringify(r.data || {}),
+    ...linkedNames,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
 export function matchesFilters(
   r: SchoolRow,
   all: SchoolRow[],
@@ -350,9 +386,7 @@ export function matchesFilters(
     return false;
   if (
     f.search &&
-    !(r.name + ' ' + JSON.stringify(r.data))
-      .toLowerCase()
-      .includes(f.search.toLowerCase())
+    !searchableText(r, all).includes(f.search.trim().toLowerCase())
   )
     return false;
   const rel = relationships(r, all);

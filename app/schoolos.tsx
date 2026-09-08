@@ -1,11 +1,18 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Modules, GlobalSearch, useWorkspace } from './modules';
 import { AdminMasterDashboard } from './admin-dashboard';
 import { TeacherDashboard } from './teacher-dashboard';
 import { StudentDashboard } from './student-dashboard';
 import { ChatRoomView } from './chat-room';
-import { personalNotifications } from '@/lib/student';
+import { LabAssistantWorkspace } from './lab-assistant/LabAssistantWorkspace';
+import { AdminLabView } from './lab-assistant/AdminLabView';
+import { LibraryAssistantWorkspace } from './library-assistant/LibraryAssistantWorkspace';
+import { AdminLibraryView } from './library-assistant/AdminLibraryView';
+import { HOSDashboard } from './hos-dashboard';
+import { TransportDashboard } from './transport-dashboard';
+import { RecordLookup } from './record-lookup';
+import { personalNotifications, studentSections } from '@/lib/student';
 import {
   migrateLegacyHash,
   navigateWebsite,
@@ -36,7 +43,11 @@ import {
   Wrench,
   Check,
   Sun,
+  FileText,
+  Inbox,
+  BusFront,
 } from 'lucide-react';
+
 import {
   SidebarProvider,
   Sidebar,
@@ -48,6 +59,21 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+
+let persistedSidebarScrollTop = 0;
+
+// Embedded assistants historically used hash routes for their standalone
+// builds. Resolve those legacy paths back to their host SchoolOS module so a
+// stale browser URL cannot strand navigation on the Home dashboard.
+const embeddedRouteModule: Record<string, string> = {
+  'staff-dashboard': 'Library',
+  'student-hub': 'Library',
+  'book-store': 'Library',
+  'reading-tracker': 'Library',
+  'my-loans': 'Library',
+  'lab-store': 'Labs',
+};
+
 const apps = [
   {
     name: 'Labs',
@@ -93,14 +119,53 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
   const profileRef = useRef<HTMLDivElement>(null);
   const sidebarProfileRef = useRef<HTMLDivElement>(null);
 
+  useLayoutEffect(() => {
+    const sidebar = document.querySelector<HTMLElement>(
+      "[data-slot='sidebar-content']",
+    );
+    if (!sidebar) return;
+
+    sidebar.scrollTop = persistedSidebarScrollTop;
+    const rememberScroll = () => {
+      persistedSidebarScrollTop = sidebar.scrollTop;
+    };
+    sidebar.addEventListener('scroll', rememberScroll, { passive: true });
+    return () => sidebar.removeEventListener('scroll', rememberScroll);
+  }, []);
+
+  const preserveSidebarScroll = (action: () => void) => {
+    const sidebar = document.querySelector<HTMLElement>(
+      "[data-slot='sidebar-content']",
+    );
+    const scrollTop = sidebar?.scrollTop ?? null;
+    const restore = () => {
+      const currentSidebar = document.querySelector<HTMLElement>(
+        "[data-slot='sidebar-content']",
+      );
+      if (currentSidebar && scrollTop !== null) {
+        currentSidebar.scrollTop = scrollTop;
+      }
+    };
+    action();
+    restore();
+    requestAnimationFrame(restore);
+  };
+
   const navigate = (p: string) => {
-    setPage(p);
-    navigateWebsite(pagePath(p), true);
+    preserveSidebarScroll(() => {
+      setPage(p);
+      navigateWebsite(pagePath(p), true);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    });
   };
   useEffect(() => {
     migrateLegacyHash();
     const p = decodeURIComponent(location.pathname.slice(1));
-    if (
+    const studentPage = p.startsWith('student/page/')
+      ? studentSections.find((name) => webSlug(name) === p.slice('student/page/'.length))
+      : undefined;
+    if (studentPage) setPage(studentPage);
+    else if (
       p.startsWith('admin/record/') ||
       p.startsWith('teacher/') ||
       p.startsWith('student/')
@@ -112,12 +177,19 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       'Library',
       'Academics',
       'Students',
+      'Directory',
+      'Chat',
       'Calendar',
       'Notifications',
+      'Inquiries',
+      'Transport',
+      'Teacher Inquiry',
+      'Student Search',
       'Settings',
       'Help & support',
     ].find((x) => webSlug(x) === p);
     if (match) setPage(match);
+    else if (embeddedRouteModule[p]) setPage(embeddedRouteModule[p]);
     const h = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -148,7 +220,12 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     document.addEventListener('mousedown', handleClickOutside);
 
     const route = () => {
-      if (
+      const currentPath = decodeURIComponent(location.pathname.slice(1));
+      const studentPage = currentPath.startsWith('student/page/')
+        ? studentSections.find((name) => webSlug(name) === currentPath.slice('student/page/'.length))
+        : undefined;
+      if (studentPage) setPage(studentPage);
+      else if (
         location.pathname.startsWith('/admin/record/') ||
         location.pathname.startsWith('/teacher/') ||
         location.pathname.startsWith('/student/')
@@ -162,12 +239,20 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Library',
           'Academics',
           'Students',
+          'Directory',
+          'Chat',
           'Calendar',
           'Notifications',
+          'Inquiries',
+          'Transport',
+          'Teacher Inquiry',
+          'Student Search',
           'Settings',
           'Help & support',
         ].find((name) => webSlug(name) === current);
         if (next) setPage(next);
+        else if (embeddedRouteModule[current])
+          setPage(embeddedRouteModule[current]);
       }
     };
     window.addEventListener('popstate', route);
@@ -187,34 +272,67 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
   const visibleClasses = ws.rows
     .filter((row: any) => row.kind === 'class')
     .slice(0, 6);
-  const navGroups = [
-    {
-      label: '',
-      items: [
-        ['Home', LayoutDashboard],
-        ['Calendar', CalendarDays],
-        ['Notifications', Bell],
-      ],
-    },
-    {
-      label: 'LEARNING',
-      items: [
-        ['Academics', GraduationCap],
-        ['Students', Users],
-        ['Library', BookOpen],
-      ],
-    },
-    {
-      label: 'COMMUNICATION',
-      items: [['Chat', MessageSquare]],
-    },
-    {
-      label: 'SCHOOL SERVICES',
-      items: [['Labs', FlaskConical]],
-    },
-  ];
+  const navGroups =
+    ['Lab Assistant', 'Library Assistant', 'Transport Staff'].includes(role)
+      ? [
+          {
+            label: role === 'Library Assistant' ? 'LIBRARY OPERATIONS' : role === 'Transport Staff' ? 'TRANSPORT OPERATIONS' : 'LAB OPERATIONS',
+            items: role === 'Library Assistant'
+              ? [['Library', BookOpen]]
+              : role === 'Transport Staff' ? [['Transport', BusFront]] : [['Labs', FlaskConical]],
+          },
+        ]
+      : [
+          {
+            label: '',
+            items: [
+              ['Calendar', CalendarDays],
+              ['Notifications', Bell],
+              ...(['Head of School', 'Admin'].includes(role) ? [['Inquiries', Inbox]] : []),
+            ],
+          },
+          {
+            label: 'LEARNING',
+            items: [
+              ['Academics', GraduationCap],
+              ['Students', Users],
+              ...(['Head of School', 'Admin'].includes(role) ? [['Teacher Inquiry', Users], ['Student Search', Search]] : []),
+              ...(role === 'Student' ? [['Reports', FileText]] : []),
+              ['Library', BookOpen],
+            ],
+          },
+          {
+            label: 'COMMUNICATION',
+            items: [['Chat', MessageSquare]],
+          },
+          {
+            label: 'SCHOOL SERVICES',
+            items:
+              role === 'Student'
+                ? [
+                    ['Directory', Users],
+                    ['Labs', FlaskConical],
+                  ]
+                : [...(['Admin', 'Head of School'].includes(role) ? [['Transport', BusFront]] : []), ['Labs', FlaskConical]],
+          },
+        ];
   const quickActions =
-    role === 'Teacher'
+    role === 'Lab Assistant'
+      ? [
+          ['Open laboratory', '/labs'],
+          ['Review lab requests', '/labs'],
+        ]
+      : role === 'Library Assistant'
+        ? [
+            ['Open library', '/library'],
+            ['Review overdue books', '/library'],
+          ]
+      : role === 'Transport Staff'
+      ? [
+          ['Open transport dashboard', '/transport'],
+          ['Review student notices', '/transport'],
+        ]
+      : role === 'Teacher'
       ? [
           ['Take attendance', '/teacher/action/attendance'],
           ['Log lesson', '/teacher/action/lesson'],
@@ -223,11 +341,24 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           ['Message class', '/teacher/action/message'],
           ['Upload resource', '/teacher/action/resource'],
         ]
+      : role === 'Head of School'
+        ? [
+            ['Open inquiry inbox', '/inquiries'],
+            ['Teacher inquiry', '/teacher-inquiry'],
+            ['Student search', '/student-search'],
+            ['Review school calendar', '/calendar'],
+            ['Open student directory', '/students'],
+            ['Review transport status', '/transport'],
+          ]
       : role === 'Admin'
         ? [
             ['Open student directory', '/students'],
             ['Review classes', '/academics'],
             ['Review lab requests', '/labs'],
+            ['Review transport status', '/transport'],
+            ['Open inquiry inbox', '/inquiries'],
+            ['Teacher inquiry', '/teacher-inquiry'],
+            ['Student search', '/student-search'],
             ['Post announcement', '/notifications'],
           ]
         : [
@@ -246,9 +377,14 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
         'Labs',
         'Library',
         'Academics',
+        'Reports',
         'Students',
         'Calendar',
         'Notifications',
+        'Inquiries',
+        'Transport',
+        'Teacher Inquiry',
+        'Student Search',
       ].find((item) => webSlug(item) === next);
       if (name) setPage(name);
     }
@@ -272,10 +408,15 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
                   'Home',
                   'Labs',
                   'Library',
-                  'Academics',
+          'Academics',
+          'Reports',
                   'Students',
                   'Calendar',
                   'Notifications',
+                  'Inquiries',
+                  'Transport',
+                  'Teacher Inquiry',
+                  'Student Search',
                   'Settings',
                 ],
               },
@@ -292,8 +433,10 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
                 'Library',
                 'Academics',
                 'Students',
-                'Calendar',
-                'Notifications',
+                  'Calendar',
+                  'Notifications',
+                  'Inquiries',
+                  'Transport',
                 'Settings',
               ].includes(module)
             )
@@ -332,6 +475,17 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           </button>
         </SidebarHeader>
         <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={page === 'Home'}
+                onClick={() => navigate('Home')}
+              >
+                <LayoutDashboard />
+                <span>Home</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
           {navGroups.map((group) => (
             <SidebarMenu key={group.label || 'primary'}>
               {group.label && <p className="nav-label">{group.label}</p>}
@@ -365,18 +519,18 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ))}
             </SidebarMenu>
           ))}
-          {visibleClasses.length > 0 && role !== 'Admin' && (
+          {visibleClasses.length > 0 && !['Admin', 'Lab Assistant', 'Library Assistant'].includes(role) && (
             <SidebarMenu className="class-shortcuts">
               <p className="nav-label">MY CLASSES</p>
               {visibleClasses.map((classRow: any, index: number) => (
                 <SidebarMenuItem key={classRow.id}>
                   <SidebarMenuButton
                     onClick={() =>
-                      navigateWebsite(
+                      preserveSidebarScroll(() => navigateWebsite(
                         role === 'Teacher'
                           ? `/teacher/class/${classRow.id}`
                           : `/student/class/${classRow.id}`,
-                      )
+                      ))
                     }
                   >
                     <span className={`class-dot dot-${(index % 5) + 1}`} />
@@ -500,38 +654,60 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           </div>
         </header>
         <main className="page" suppressHydrationWarning>
-          {ws.member.role === 'Teacher' && page !== 'Home' && (
-            <div className="teacher-quick" aria-label="Teacher quick actions">
-              {[
-                ['attendance', 'Take attendance'],
-                ['lesson', 'Log lesson'],
-                ['studentRecord', 'Add record'],
-                ['assignment', 'Create assignment'],
-                ['gradeWork', 'Grade work'],
-                ['resource', 'Upload resource'],
-                ['message', 'Message class'],
-                ['labRequest', 'Request lab item'],
-                ['announcement', 'Add announcement'],
-              ].map(([action, label]) => (
-                <button
-                  className="resource-link"
-                  key={action}
-                  onClick={() => {
-                    navigate('Home');
-                    navigateWebsite('/teacher/action/' + action);
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
           {ws.loading && !ws.member.role ? (
             <div className="workspace-loader">
               <div className="loader-spinner" />
             </div>
           ) : ['Chat', 'Messages'].includes(page) ? (
             <ChatRoomView ws={ws} />
+          ) : role === 'Head of School' && page === 'Transport' ? (
+            <TransportDashboard ws={ws} mode="oversight" />
+          ) : role === 'Admin' && page === 'Transport' ? (
+            <TransportDashboard ws={ws} mode="oversight" />
+          ) : role === 'Transport Staff' && !['Settings', 'Help & support'].includes(page) ? (
+            <TransportDashboard ws={ws} />
+          ) : ['Admin', 'Head of School'].includes(role) && page === 'Teacher Inquiry' ? (
+            <RecordLookup ws={ws} kind="teacher" navigate={navigate} />
+          ) : ['Admin', 'Head of School'].includes(role) && page === 'Student Search' ? (
+            <RecordLookup ws={ws} kind="student" navigate={navigate} />
+          ) : ['Teacher Inquiry', 'Student Search'].includes(page) ? (
+            <section className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
+          ) : role === 'Head of School' && ['Home', 'Calendar', 'Inquiries'].includes(page) ? (
+            <HOSDashboard ws={ws} navigate={navigate} page={page} />
+          ) : role === 'Admin' && page === 'Inquiries' ? (
+            <HOSDashboard ws={ws} navigate={navigate} page={page} mode="admin" />
+          ) : role === 'Admin' && page === 'Labs' ? (
+            <AdminLabView
+              member={ws.member}
+              sharedRows={ws.masterRows || ws.rows || []}
+            />
+          ) : role === 'Admin' && page === 'Library' ? (
+            <AdminLibraryView
+              member={ws.member}
+              sharedRows={ws.masterRows || ws.rows || []}
+            />
+          ) : role === 'Lab Assistant' &&
+          !['Settings', 'Help & support'].includes(page) ? (
+            <LabAssistantWorkspace
+              member={ws.member}
+              sharedRows={ws.rows || []}
+            />
+          ) : page === 'Labs' ? (
+            <LabAssistantWorkspace
+              member={ws.member}
+              sharedRows={ws.rows || []}
+            />
+          ) : role === 'Library Assistant' &&
+          !['Settings', 'Help & support'].includes(page) ? (
+            <LibraryAssistantWorkspace
+              member={ws.member}
+              sharedRows={ws.rows || []}
+            />
+          ) : page === 'Library' ? (
+            <LibraryAssistantWorkspace
+              member={ws.member}
+              sharedRows={ws.member.role === 'Admin' ? ws.masterRows || [] : ws.rows || []}
+            />
           ) : ws.member.role === 'Student' &&
           !['Settings', 'Help & support'].includes(page) ? (
             <StudentDashboard ws={ws} page={page} />
@@ -814,7 +990,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           <GlobalSearch
             open={searchOpen}
             setOpen={setSearchOpen}
-            rows={ws.member.role === 'Admin' ? ws.masterRows || [] : ws.rows}
+            rows={['Admin', 'Head of School'].includes(ws.member.role) ? ws.masterRows || [] : ws.rows}
+            role={ws.member.role}
             adminOpen={
               ws.member.role === 'Admin'
                 ? (r: any) => {
@@ -866,7 +1043,7 @@ export function ProfileMenu({
   align?: 'top' | 'sidebar';
 }) {
   const member = ws.member || {};
-  const currentRole = (member.role || 'Student').toLowerCase();
+  const currentRole = (member.role || 'Student').toLowerCase().replace(/\s+/g, '-');
   const initials = (member.name || 'Alex Carter')
     .split(/\s+/)
     .map((part: string) => part[0])
@@ -875,6 +1052,16 @@ export function ProfileMenu({
     .toUpperCase();
 
   const devProfiles = [
+    {
+      role: 'head-of-school',
+      authRole: 'hos',
+      name: 'Dr. Aisha Rahman',
+      title: 'Head of School',
+      badge: 'HOS',
+      email: 'hos.dev@schoolos.local',
+      icon: GraduationCap,
+      landing: '/home',
+    },
     {
       role: 'admin',
       name: 'Nithin Selvaraj',
@@ -898,6 +1085,31 @@ export function ProfileMenu({
       badge: 'Student',
       email: 'student.dev@schoolos.local',
       icon: User,
+    },
+    {
+      role: 'lab-assistant',
+      name: 'Olivia Reed',
+      title: 'Science Lab Assistant',
+      badge: 'Lab Assistant',
+      email: 'lab.assistant.dev@schoolos.local',
+      icon: FlaskConical,
+    },
+    {
+      role: 'library-assistant',
+      name: 'Daniel Moore',
+      title: 'Library Assistant',
+      badge: 'Library Assistant',
+      email: 'library.assistant.dev@schoolos.local',
+      icon: BookOpen,
+    },
+    {
+      role: 'transport-staff',
+      name: 'Leena Joseph',
+      title: 'Transport Operations',
+      badge: 'Transport Staff',
+      email: 'transport.dev@schoolos.local',
+      icon: BusFront,
+      landing: '/transport',
     },
   ];
 
@@ -930,7 +1142,7 @@ export function ProfileMenu({
           return (
             <a
               key={p.role}
-              href={`/api/dev-login?role=${p.role}&return_to=/`}
+              href={`/api/dev-login?role=${(p as any).authRole || p.role}&return_to=${encodeURIComponent((p as any).landing || '/')}`}
               className={`profile-switch-item ${isActive ? 'active' : ''}`}
             >
               <span className={`profile-switch-avatar ${p.role}`}>

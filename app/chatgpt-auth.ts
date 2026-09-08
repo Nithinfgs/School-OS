@@ -1,5 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { resolveSupabaseBearer } from '@/lib/platform/supabase-auth';
 
 export type ChatGPTUser = {
   userId: string;
@@ -23,6 +24,24 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const devUser = await getDevUser();
   if (devUser) return devUser;
 
+  if (process.env.DATA_MODE === 'supabase') {
+    const store = await cookies();
+    const accessToken = store.get('schoolos-supabase-access')?.value;
+    if (accessToken) {
+      try {
+        const member = await resolveSupabaseBearer(accessToken);
+        return {
+          userId: member.id,
+          displayName: member.name || member.email,
+          email: member.email,
+          fullName: member.name || null,
+        };
+      } catch {
+        return null;
+      }
+    }
+  }
+
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
@@ -44,6 +63,8 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
 }
 
 async function getDevUser(): Promise<ChatGPTUser | null> {
+  // Development profiles are intentionally available on the hosted demo so
+  // presenters can open each role without provisioning accounts.
   const requestHeaders = await headers();
   const hostHeader = requestHeaders.get('host') || requestHeaders.get('x-forwarded-host') || '';
   const hostname = hostHeader.split(':')[0];
@@ -106,6 +127,30 @@ async function getDevUser(): Promise<ChatGPTUser | null> {
       displayName: 'Nithin Selvaraj',
       email: 'admin.dev@schoolos.local',
       fullName: 'Nithin Selvaraj',
+    },
+    'lab-assistant': {
+      userId: 'dev:lab-assistant',
+      displayName: 'Olivia Reed',
+      email: 'lab.assistant.dev@schoolos.local',
+      fullName: 'Olivia Reed',
+    },
+    'library-assistant': {
+      userId: 'dev:library-assistant',
+      displayName: 'Daniel Moore',
+      email: 'library.assistant.dev@schoolos.local',
+      fullName: 'Daniel Moore',
+    },
+    hos: {
+      userId: 'dev:hos',
+      displayName: 'Dr. Aisha Rahman',
+      email: 'hos.dev@schoolos.local',
+      fullName: 'Dr. Aisha Rahman',
+    },
+    'transport-staff': {
+      userId: 'dev:transport-staff',
+      displayName: 'Leena Joseph',
+      email: 'transport.dev@schoolos.local',
+      fullName: 'Leena Joseph',
     },
   };
 

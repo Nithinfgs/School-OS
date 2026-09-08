@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ArrowUpRight,
   ArrowLeft,
@@ -57,6 +57,7 @@ import {
 } from '@/lib/student';
 import { navigateWebsite, webSlug } from '@/lib/web-navigation';
 import { AppleCalendarView } from '@/app/components/apple-calendar-view';
+import { LabAssistantWorkspace } from './lab-assistant/LabAssistantWorkspace';
 
 const labels: any = {
   assignment: 'Assignment',
@@ -518,11 +519,16 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     [category, setCategory] = useState(''),
     [error, setError] = useState(''),
     [recordsTab, setRecordsTab] = useState<'Attendance' | 'Medical' | 'Cafeteria' | 'Documents'>('Attendance'),
-    [academicsTab, setAcademicsTab] = useState<'assignments' | 'classes' | 'grades' | 'resources' | 'feedback'>('assignments'),
+    [documentsCategory, setDocumentsCategory] = useState<'All' | 'Academic' | 'Official' | 'Forms'>('All'),
+    [academicsTab, setAcademicsTab] = useState<'assignments' | 'grades' | 'resources' | 'feedback' | 'exams'>('assignments'),
     [facilitiesTab, setFacilitiesTab] = useState<'Labs' | 'Library'>('Labs'),
     [casTab, setCasTab] = useState<'all' | 'cas' | 'projects'>('all'),
     [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all'),
-    [timetableTab, setTimetableTab] = useState<'schedule' | 'grid'>('schedule');
+    [timetableTab, setTimetableTab] = useState<'schedule' | 'grid'>('schedule'),
+    [directoryQuery, setDirectoryQuery] = useState(''),
+    [directoryDepartment, setDirectoryDepartment] = useState('All');
+  const assignmentOrigin = useRef<any>(null);
+  const closingAssignment = useRef(false);
   const rows = ws.rows,
     own = ws.member.studentId,
     today = localDate(),
@@ -532,6 +538,60 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     notifications = personalNotifications(rows, own),
     unread = notifications.filter((n) => !n.read).length;
   const of = (k: string) => rows.filter((r: any) => r.kind === k);
+  const classKey = (value: any) =>
+    String(value || '')
+      .replace(/^mathematics\b/i, 'math')
+      .replace(/\s+(HL|SL)$/i, '')
+      .trim()
+      .toLowerCase();
+  const sameClass = (left: any, right: any) => classKey(left) === classKey(right);
+  const documentCategory = (row: any) => {
+    const category = String(row.data?.category || '').toLowerCase();
+    if (category.includes('academic') || category.includes('curriculum') || category.includes('report')) return 'Academic';
+    if (category.includes('form') || category.includes('template')) return 'Forms';
+    return 'Official';
+  };
+  const downloadDocument = (row: any) => {
+    const data = row.data || {};
+    if (data.url || data.fileUrl) {
+      window.open(data.url || data.fileUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    const body = `${row.name}\n\n${data.description || 'School-issued document'}\nIssued: ${data.date || 'Current'}\nCategory: ${documentCategory(row)}`;
+    const url = URL.createObjectURL(new Blob([body], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${row.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'school-document'}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const classLabel = (value: any) => {
+    const name = String(value || '');
+    if (name === 'Physics') return 'Physics HL';
+    if (name === 'Chemistry') return 'Chemistry HL';
+    if (name === 'Math AA') return 'Mathematics AA HL';
+    return name;
+  };
+  const directoryTeachers = (ws.contacts || [])
+    .filter((contact: any) => {
+      const role = String(contact.role || '').toLowerCase();
+      return role === 'teacher' || role === 'department head' || role.includes('teacher');
+    })
+    .map((contact: any) => ({
+      ...contact,
+      directoryDepartment: contact.department || contact.section || 'Teaching staff',
+      email: contact.email || '',
+    }));
+  const directoryDepartments = Array.from(
+    new Set(directoryTeachers.map((teacher: any) => teacher.directoryDepartment).filter(Boolean)),
+  ).sort((a: any, b: any) => String(a).localeCompare(String(b)));
+  const visibleDirectoryTeachers = directoryTeachers.filter((teacher: any) => {
+    const matchesDepartment = directoryDepartment === 'All' || teacher.directoryDepartment === directoryDepartment;
+    const haystack = [teacher.name, teacher.email, teacher.directoryDepartment, ...(teacher.classes || [])]
+      .join(' ')
+      .toLowerCase();
+    return matchesDepartment && haystack.includes(directoryQuery.trim().toLowerCase());
+  });
   const route = (part: string, id?: string) => {
     navigateWebsite(
       '/student/' + part + (id ? '/' + encodeURIComponent(id) : ''),
@@ -545,6 +605,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     setClassId('');
     setSelected(null);
     setSection(s);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (typeof window !== 'undefined') {
       const target = '/student/page/' + webSlug(s);
       if (location.pathname !== target) {
@@ -553,13 +614,85 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     }
   };
   const open = (r: any) => {
+    if (r.kind === 'assignment' && typeof window !== 'undefined') {
+      const sidebar = document.querySelector<HTMLElement>(
+        "[data-slot='sidebar-content']",
+      );
+      assignmentOrigin.current = {
+        path: location.pathname + location.search + location.hash,
+        section,
+        classId,
+        classTab,
+        day,
+        calendarMode,
+        query,
+        filter,
+        subject,
+        category,
+        academicsTab,
+        facilitiesTab,
+        casTab,
+        notificationsTab,
+        recordsTab,
+        timetableTab,
+        scrollTop: window.scrollY,
+        sidebarScrollTop: sidebar?.scrollTop ?? null,
+      };
+    }
     if (r.kind === 'class') {
       route('class', r.id);
       return;
     }
     route('record', r.id);
   };
-  useEffect(() => {
+  const closeAssignment = () => {
+    if (closingAssignment.current) return;
+    closingAssignment.current = true;
+    const origin = assignmentOrigin.current;
+    setSelected(null);
+    if (!origin) {
+      history.back();
+      requestAnimationFrame(() => {
+        closingAssignment.current = false;
+      });
+      return;
+    }
+
+    setSection(origin.section);
+    setClassId(origin.classId);
+    setClassTab(origin.classTab);
+    setDay(origin.day);
+    setCalendarMode(origin.calendarMode);
+    setQuery(origin.query);
+    setFilter(origin.filter);
+    setSubject(origin.subject);
+    setCategory(origin.category);
+    setAcademicsTab(origin.academicsTab);
+    setFacilitiesTab(origin.facilitiesTab);
+    setCasTab(origin.casTab);
+    setNotificationsTab(origin.notificationsTab);
+    setRecordsTab(origin.recordsTab);
+    setTimetableTab(origin.timetableTab);
+    // The assignment route was pushed on top of the originating view. Going
+    // back restores that exact browser entry and lets the existing route
+    // listener restore the matching page/view state.
+    history.back();
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: origin.scrollTop, left: 0, behavior: 'instant' });
+      const sidebar = document.querySelector<HTMLElement>(
+        "[data-slot='sidebar-content']",
+      );
+      if (sidebar && origin.sidebarScrollTop !== null) {
+        sidebar.scrollTop = origin.sidebarScrollTop;
+      }
+    });
+    requestAnimationFrame(() => {
+      assignmentOrigin.current = null;
+      closingAssignment.current = false;
+    });
+  };
+  useLayoutEffect(() => {
     setSection(page === 'Students' ? 'Profile' : page);
     setQuery('');
     setFilter('');
@@ -583,6 +716,9 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           } else if (rawKey === 'resources') {
             targetSection = 'Academics';
             setAcademicsTab('resources');
+          } else if (rawKey === 'exams') {
+            targetSection = 'Academics';
+            setAcademicsTab('exams');
           } else if (rawKey === 'labs') {
             targetSection = 'Facilities';
             setFacilitiesTab('Labs');
@@ -607,6 +743,8 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           } else if (rawKey === 'documents') {
             targetSection = 'Records';
             setRecordsTab('Documents');
+          } else if (rawKey === 'maintenance') {
+            targetSection = 'Maintenance';
           }
         }
         setSection(targetSection || 'Home');
@@ -635,7 +773,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           JSON.stringify([r.name, r.data])
             .toLowerCase()
             .includes(query.toLowerCase())) &&
-        (!subject || r.data.class === subject) &&
+        (!subject || sameClass(r.data.class, subject)) &&
         (!filter ||
           r.data.status === filter ||
           (r.kind === 'assignment' &&
@@ -693,8 +831,21 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       setError(e.message);
     }
   };
-  const timetable = (date: string) => {
-    const items = scheduleFor(rows, date);
+  const timetable = (date: string, compact = false) => {
+    const scheduledItems = scheduleFor(rows, date);
+    const items = compact
+      ? scheduledItems
+          .reduce((grouped: any[], item: any) => {
+            const previous = grouped[grouped.length - 1];
+            if (previous && previous.data.class === item.data.class && previous.data.endTime === item.data.startTime) {
+              previous.data = { ...previous.data, endTime: item.data.endTime };
+              return grouped;
+            }
+            grouped.push({ ...item, data: { ...item.data } });
+            return grouped;
+          }, [])
+          .slice(0, 4)
+      : scheduledItems;
     return (
       <div className="student-day" suppressHydrationWarning>
         {items.length ? (
@@ -715,7 +866,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               )[0];
             const c = classes.find((c: any) => c.name === r.data.class);
             return (
-              <article className="student-lesson" key={r.id}>
+              <article className={`student-lesson${compact ? ' student-lesson-compact' : ''}`} key={r.id}>
                 <div className="student-lesson-time">
                   <b>{r.data.startTime}</b>
                   <small>{r.data.endTime}</small>
@@ -726,7 +877,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                     className="student-title-link"
                     onClick={() => c && open(c)}
                   >
-                    {r.data.class}
+                    {classLabel(r.data.class)}
                   </button>
                   <p>
                     {r.data.substitution || r.data.teacher} · {r.data.room}
@@ -741,10 +892,10 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                       Room change: {r.data.roomChange}
                     </p>
                   )}
-                  <span className="student-status">
+                  {!compact && <span className="student-status">
                     {attendance?.data.status || 'Attendance not recorded'}
-                  </span>
-                  {log && (
+                  </span>}
+                  {!compact && log && (
                     <button
                       className="student-lesson-log"
                       onClick={() => open(log)}
@@ -756,7 +907,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                       )}
                     </button>
                   )}
-                  {i < items.length - 1 &&
+                  {!compact && i < items.length - 1 &&
                     r.data.endTime < items[i + 1].data.startTime && (
                       <small className="student-free">
                         Break / free time · {r.data.endTime}–
@@ -777,10 +928,10 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
   if (section === 'Home')
     content = (
       <>
-        <div className="student-focus" suppressHydrationWarning>
+        <div className="student-focus student-home-next" suppressHydrationWarning>
           <section suppressHydrationWarning>
             <span className="eyebrow">NEXT CLASS</span>
-            <h2 suppressHydrationWarning>{next?.data.class || 'Your school day is clear'}</h2>
+            <h2 suppressHydrationWarning>{next ? classLabel(next.data.class) : 'Your school day is clear'}</h2>
             <p suppressHydrationWarning>
               {next
                 ? `${next.nextDate === today ? 'Today' : next.nextDate} · ${next.data.startTime} · ${next.data.room} · ${next.data.substitution || next.data.teacher}`
@@ -799,26 +950,6 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               </Button>
             )}
           </section>
-          <div className="student-counts" suppressHydrationWarning>
-            {[
-              [upcoming.length, 'Assignments to do', 'Assignments'],
-              [
-                of('attendance').filter(
-                  (r: any) =>
-                    r.data.date === today &&
-                    ['Late', 'Absent'].includes(r.data.status),
-                ).length,
-                'Late / absent today',
-                'Attendance',
-              ],
-              [unread, 'Unread updates', 'Notifications'],
-            ].map(([n, label, s]) => (
-              <button key={String(label)} onClick={() => go(String(s))} suppressHydrationWarning>
-                <strong suppressHydrationWarning>{n}</strong>
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
         </div>
         <div className="teacher-grid">
           <section className="teacher-panel">
@@ -828,73 +959,36 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                 Full day
               </Button>
             </div>
-            {timetable(today)}
+            {timetable(today, true)}
           </section>
-          <div>
-            {pane(
-              'Work to do',
-              upcoming.slice(0, 5),
-              'You’re up to date with submitted work.',
-            )}
-            {pane(
-              'Recent feedback',
-              of('submission')
-                .filter((r: any) => r.data.returned)
-                .slice(0, 4),
-              'No returned feedback yet.',
-            )}
-          </div>
+          {pane('To Do', upcoming.slice(0, 5), 'You’re up to date with submitted work.')}
         </div>
         <div className="teacher-grid">
           {pane(
-            'Upcoming exams',
-            of('exam')
-              .filter((r: any) => r.data.dueAt >= today)
-              .slice(0, 4),
-          )}
-          {pane(
-            'Projects & CAS',
-            rows
-              .filter(
-                (r: any) =>
-                  ['project', 'cas'].includes(r.kind) &&
-                  r.data.status !== 'Approved',
-              )
-              .slice(0, 4),
-          )}
-          {pane(
-            'Class updates',
-            rows
-              .filter((r: any) =>
-                ['classLog', 'announcement', 'resource'].includes(r.kind),
-              )
-              .sort((a: any, b: any) =>
-                (b.updatedAt || '').localeCompare(a.updatedAt || ''),
-              )
-              .slice(0, 5),
-          )}
-          {pane(
-            'Requests & borrowed books',
-            rows
-              .filter(
-                (r: any) =>
-                  ['request', 'loan', 'maintenance'].includes(r.kind) &&
-                  !['Completed', 'Returned', 'Closed'].includes(r.data.status),
-              )
-              .slice(0, 5),
-          )}
-          {pane('Messages', of('message').slice(-4))}
-          {pane(
-            'Coming up',
-            Array.from({ length: 7 }, (_, i) => {
-              const d = new Date(today + 'T12:00');
-              d.setDate(d.getDate() + i);
-              return personalEvents(rows, d.toLocaleDateString('en-CA')).filter(
-                (r: any) => r.kind !== 'timetable',
-              );
-            })
-              .flat()
+            'Updates',
+            [
+              ...of('submission').filter((r: any) => r.data.returned),
+              ...of('request').filter((r: any) => ['Approved', 'Ready', 'Completed'].includes(r.data.status)),
+              ...of('loan').filter((r: any) => !['Returned', 'Closed'].includes(r.data.status)),
+              ...of('announcement'),
+              ...of('timetable').filter((r: any) => r.data.roomChange),
+            ]
+              .sort((a: any, b: any) => (b.updatedAt || b.data.date || '').localeCompare(a.updatedAt || a.data.date || ''))
               .slice(0, 6),
+            'No new updates.',
+          )}
+        </div>
+        <div className="teacher-grid">
+          {pane(
+            'Upcoming',
+            [
+              ...of('exam').filter((r: any) => (r.data.dueAt || r.data.date || '') >= today),
+              ...of('event'),
+              ...rows.filter((r: any) => ['project', 'cas'].includes(r.kind) && r.data.status !== 'Approved'),
+            ]
+              .sort((a: any, b: any) => (a.data.dueAt || a.data.date || a.data.deadline || '').localeCompare(b.data.dueAt || b.data.date || b.data.deadline || ''))
+              .slice(0, 8),
+            'No upcoming exams, events, or CAS milestones.',
           )}
         </div>
       </>
@@ -938,16 +1032,14 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       </>
     );
   else if (section === 'Classes' && cls) {
-    const related = rows.filter((r: any) => r.data.class === cls.name),
+    const related = rows.filter((r: any) => sameClass(r.data.class, cls.name)),
       names = [
         'Overview',
-        'Stream',
-        'Class history',
+        'Lessons',
         'Assignments',
         'Resources',
         'Grades',
-        'Teacher',
-        'Calendar',
+        'Attendance',
       ];
     content = (
       <>
@@ -955,7 +1047,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           <ArrowLeft size={16} /> All classes
         </Button>
         <div className="student-class-heading">
-          <h2>{cls.name}</h2>
+          <h2>{classLabel(cls.name)}</h2>
           <p>
             {cls.data.teacher} · {cls.data.room}
           </p>
@@ -971,25 +1063,8 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             </button>
           ))}
         </nav>
-        {classTab === 'Class history' ? (
+        {classTab === 'Lessons' ? (
           <ClassHistory ws={ws} classId={cls.id} />
-        ) : classTab === 'Teacher' ? (
-          <section className="teacher-panel">
-            <h2>{cls.data.teacher}</h2>
-            <p>{cls.data.room}</p>
-            <Button onClick={() => quick('message', cls)}>
-              Message teacher
-            </Button>
-          </section>
-        ) : classTab === 'Calendar' ? (
-          <List
-            rows={related.filter((r: any) =>
-              ['timetable', 'exam', 'assignment', 'classLog', 'event'].includes(
-                r.kind,
-              ),
-            )}
-            open={open}
-          />
         ) : (
           <List
             rows={related.filter((r: any) =>
@@ -1001,15 +1076,10 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                     'announcement',
                     'resource',
                   ],
-                  Stream: [
-                    'announcement',
-                    'resource',
-                    'assignment',
-                    'classLog',
-                  ],
                   Assignments: ['assignment'],
                   Resources: ['resource', 'file'],
                   Grades: ['submission', 'exam'],
+                  Attendance: ['attendance'],
                 }) as any
               )[classTab]?.includes(r.kind),
             )}
@@ -1028,12 +1098,12 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             key={c.id}
           >
             <BookOpen />
-            <h2>{c.name}</h2>
+            <h2>{classLabel(c.name)}</h2>
             <p>{c.data.teacher}</p>
             <small>
               {c.data.room} ·{' '}
               {
-                of('assignment').filter((a: any) => a.data.class === c.name)
+                of('assignment').filter((a: any) => sameClass(a.data.class, c.name))
                   .length
               }{' '}
               assignments
@@ -1069,13 +1139,6 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'classes' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAcademicsTab('classes')}
-            >
-              Enrolled Classes ({classes.length})
-            </button>
-            <button
-              type="button"
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'grades' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setAcademicsTab('grades')}
             >
@@ -1095,6 +1158,13 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             >
               Returned Work & Feedback
             </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'exams' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAcademicsTab('exams')}
+            >
+              Exams ({of('exam').length})
+            </button>
           </div>
           {academicsTab === 'assignments' && (
             <>
@@ -1104,7 +1174,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                 onChange={setSubject}
                 options={[
                   { id: '', name: 'All subjects' },
-                  ...classes.map((c: any) => ({ id: c.name, name: c.name })),
+                  ...classes.map((c: any) => ({ id: c.name, name: classLabel(c.name) })),
                 ]}
               />
               <TeachingSelect
@@ -1129,12 +1199,21 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               onChange={setSubject}
               options={[
                 { id: '', name: 'All subjects' },
-                ...classes.map((c: any) => ({ id: c.name, name: c.name })),
+                ...classes.map((c: any) => ({ id: c.name, name: classLabel(c.name) })),
               ]}
             />
           )}
         </div>
-        {academicsTab === 'assignments' ? (
+        {academicsTab === 'exams' ? (
+          <List
+            rows={matched(of('exam')).sort((a: any, b: any) =>
+              (a.data.dueAt || a.data.date || '').localeCompare(b.data.dueAt || b.data.date || ''),
+            )}
+            open={open}
+            empty="No exams are scheduled for your classes."
+            meta={(r: any) => `${r.data.class || 'School-wide'} · ${r.data.date || r.data.dueAt || 'Date to be announced'}`}
+          />
+        ) : academicsTab === 'assignments' ? (
           <List
             rows={matched(of('assignment')).sort((a: any, b: any) =>
               (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
@@ -1144,43 +1223,20 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               `${r.data.class} · ${submissionState(r, own, rows).status} · Due ${r.data.dueAt}`
             }
           />
-        ) : academicsTab === 'classes' ? (
-          <div className="student-classes-grid">
-            {classes.map((c: any) => (
-              <button
-                className="teacher-panel student-class-card"
-                onClick={() => open(c)}
-                key={c.id}
-              >
-                <BookOpen />
-                <h2>{c.name}</h2>
-                <p>{c.data.teacher}</p>
-                <small>
-                  {c.data.room} ·{' '}
-                  {
-                    of('assignment').filter((a: any) => a.data.class === c.name)
-                      .length
-                  }{' '}
-                  assignments
-                </small>
-                <ArrowUpRight />
-              </button>
-            ))}
-          </div>
         ) : academicsTab === 'grades' ? (
           <div className="academics-grades-grid">
             {classes.map((c: any) => {
               const grades = of('submission').filter(
                   (r: any) =>
-                    r.data.class === c.name && r.data.returned === true,
+                    sameClass(r.data.class, c.name) && r.data.returned === true,
                 ),
                 exams = of('exam').filter(
                   (r: any) =>
-                    r.data.class === c.name && r.data.results?.length,
+                    sameClass(r.data.class, c.name) && r.data.results?.length,
                 );
               return (
                 <section className="teacher-panel" key={c.id}>
-                  <h2>{c.name}</h2>
+                  <h2>{classLabel(c.name)}</h2>
                   <List
                     rows={[...grades, ...exams].sort((a: any, b: any) =>
                       (b.updatedAt || '').localeCompare(a.updatedAt || ''),
@@ -1231,6 +1287,8 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         onOpenClass={open}
       />
     );
+  } else if (section === 'Facilities' && facilitiesTab === 'Labs') {
+    content = <LabAssistantWorkspace member={ws.member} />;
   } else if (['Facilities', 'Labs', 'Library'].includes(section)) {
     const lab = facilitiesTab === 'Labs',
       items = of(lab ? 'inventory' : 'book');
@@ -1254,16 +1312,20 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
               type="button"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${facilitiesTab === 'Labs' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setFacilitiesTab('Labs')}
+              onClick={() => {
+                navigateWebsite('/labs');
+              }}
             >
               <FlaskConical size={14} />
-              <span>Science & Tech Labs ({of('inventory').length})</span>
+              <span>Science & Tech Labs</span>
             </button>
             <button
               type="button"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${facilitiesTab === 'Library' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setFacilitiesTab('Library')}
+              onClick={() => {
+                navigateWebsite('/library');
+              }}
             >
               <BookOpen size={14} />
               <span>Library Catalog ({of('book').length})</span>
@@ -1625,7 +1687,52 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         )}
       </>
     );
-  } else if (section === 'Profile')
+  } else if (section === 'Directory')
+    content = (
+      <section className="teacher-panel student-directory" aria-labelledby="student-directory-title">
+        <div className="teacher-panel-heading student-directory-heading">
+          <div>
+            <span className="eyebrow">STUDENT SERVICES</span>
+            <h2 id="student-directory-title">School Directory</h2>
+            <p className="student-directory-intro">Find a teacher’s school email by department or section.</p>
+          </div>
+          <Users size={22} aria-hidden="true" />
+        </div>
+        <div className="student-directory-toolbar">
+          <label className="student-directory-search">
+            <Search size={17} aria-hidden="true" />
+            <span className="sr-only">Search teachers</span>
+            <input value={directoryQuery} onChange={(event) => setDirectoryQuery(event.target.value)} placeholder="Search by name or email" />
+          </label>
+          <label className="student-directory-filter">
+            <span>Department / section</span>
+            <select value={directoryDepartment} onChange={(event) => setDirectoryDepartment(event.target.value)}>
+              <option value="All">All departments</option>
+              {directoryDepartments.map((department: any) => (
+                <option key={String(department)} value={String(department)}>{String(department)}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {visibleDirectoryTeachers.length ? (
+          <div className="student-directory-grid">
+            {visibleDirectoryTeachers.map((teacher: any) => (
+              <article className="student-directory-card" key={teacher.id || teacher.email || teacher.name}>
+                <div className="student-directory-avatar" aria-hidden="true">
+                  {(teacher.name || 'T').split(' ').map((part: string) => part[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div className="student-directory-card-body">
+                  <h3>{teacher.name}</h3>
+                  <span>{teacher.directoryDepartment}</span>
+                  {teacher.email ? <a href={`mailto:${teacher.email}`} className="student-directory-email">{teacher.email}</a> : <small className="student-directory-unavailable">Email unavailable</small>}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : <p className="student-directory-empty">No teachers match your search.</p>}
+      </section>
+    );
+  else if (section === 'Profile')
     content = (
       <>
         <div className="student-profile-account-bar">
@@ -1669,9 +1776,38 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             </a>
           </div>
         </div>
-        <section className="teacher-panel">
-          <h2>{profile?.name || ws.member.name}</h2>
+        <section className="teacher-panel student-profile-overview">
+          <div className="student-profile-overview-heading">
+            <div>
+              <span className="eyebrow">STUDENT PROFILE</span>
+              <h2>{profile?.name || ws.member.name}</h2>
+            </div>
+            <button
+              type="button"
+              className="profile-maintenance-tab"
+              onClick={() => document.getElementById('student-profile-maintenance')?.scrollIntoView({ behavior: 'instant', block: 'start' })}
+            >
+              Maintenance
+            </button>
+          </div>
           {profile && <Details row={profile} />}
+          <div className="student-profile-metrics" aria-label="Profile metrics">
+            <div>
+              <span>Attendance</span>
+              <strong>{profile?.data?.attendance == null ? '—' : `${profile.data.attendance}%`}</strong>
+              <small>{profile?.data?.markedSessions ? `${profile.data.markedSessions} sessions marked` : 'No sessions recorded'}</small>
+            </div>
+            <div>
+              <span>Academic average</span>
+              <strong>{profile?.data?.average == null ? '—' : `${profile.data.average}%`}</strong>
+              <small>{profile?.data?.gradedSubmissions ? `${profile.data.gradedSubmissions} graded submissions` : 'No graded work yet'}</small>
+            </div>
+            <div>
+              <span>Enrolled classes</span>
+              <strong>{profile?.data?.classes?.length || classes.length}</strong>
+              <small>Current timetable</small>
+            </div>
+          </div>
         </section>
         <div className="teacher-grid">
           {pane('Recognition & visible records', of('record'))}
@@ -1685,6 +1821,19 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             'Projects & CAS',
             rows.filter((r: any) => ['project', 'cas'].includes(r.kind)),
           )}
+          <section className="teacher-panel" id="student-profile-maintenance">
+            <div className="teacher-panel-heading">
+              <h2>Maintenance</h2>
+              <Button variant="outline" onClick={() => quick('maintenance')}>
+                Report an issue
+              </Button>
+            </div>
+            <List
+              rows={of('maintenance')}
+              open={open}
+              empty="No maintenance reports yet."
+            />
+          </section>
         </div>
       </>
     );
@@ -1740,6 +1889,36 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         </div>
       </>
     );
+  } else if (section === 'Reports') {
+    const reportKinds = new Set(['record', 'damageBrokenLog', 'transportNotice', 'attendance', 'labDamage', 'libraryDamage', 'activityEvent']);
+    const reports = rows
+      .filter((row: any) => {
+        const data = row.data || {};
+        const trackedStudent = data.studentId || data.relatedStudentId || data.metadata?.studentId;
+        const recordType = String(data.recordType || data.eventType || '');
+        const relevantKind = reportKinds.has(row.kind) || recordType.startsWith('ATTENDANCE_') || ['STUDENT_BEHAVIOUR', 'STUDENT_POSITIVE', 'DAMAGE_BROKEN_LOG', 'LIBRARY_DAMAGE', 'LAB_DAMAGE', 'TRANSPORT_NOTICE', 'LATE_ARRIVAL'].includes(recordType);
+        return relevantKind && trackedStudent === own && data.visibility?.studentVisible !== false && data.studentVisible !== false && !data.visibility?.restricted;
+      })
+      .map((row: any) => {
+        const data = row.data || {}; const type = data.recordType || data.eventType || row.kind;
+        return {
+          id: row.id, type: String(type).replace(/_/g, ' '), title: data.title || row.name || 'School report',
+          dateTime: data.dateTime || data.occurredAt || data.date || data.createdAt || data.reportedAt || row.updatedAt,
+          module: data.module || data.sourceModule || (row.kind === 'transportNotice' ? 'Transport' : row.kind === 'attendance' ? 'Classroom' : 'School'),
+          status: data.status || 'Recorded', relatedItem: data.assetName || data.itemName || data.relatedItem,
+          relatedClass: data.class || data.classId || data.relatedClass, description: data.description || data.whatHappened || data.metadata?.description || '',
+          action: data.actionTaken || data.resolution || data.action || data.metadata?.actionTaken, reportedBy: data.reportedBy || data.createdByName,
+        };
+      })
+      .filter((report: any) => !query.trim() || [report.type, report.title, report.module, report.status, report.relatedItem, report.relatedClass, report.description, report.action, report.reportedBy].join(' ').toLowerCase().includes(query.trim().toLowerCase()))
+      .sort((a: any, b: any) => String(b.dateTime || '').localeCompare(String(a.dateTime || '')));
+    content = <section className="teacher-panel student-reports-panel">
+      <div className="teacher-panel-heading"><div><span className="eyebrow">MY REPORTS</span><h2>Reports & history</h2><p>Only records your school has made visible to you are shown here.</p></div></div>
+      <div className="student-reports-list">
+        {reports.map((report: any) => <article key={report.id} className="student-report-card"><div className="student-report-top"><div><span className="student-report-type">{report.type}</span><h3>{report.title}</h3></div><span className="student-report-status">{report.status}</span></div><div className="student-report-meta">{report.module} · {report.dateTime ? new Date(report.dateTime).toLocaleString() : 'Date not recorded'}{report.relatedClass ? ` · ${report.relatedClass}` : ''}</div>{report.relatedItem && <p><b>Related item:</b> {report.relatedItem}</p>}{report.description && <p>{report.description}</p>}{report.action && <p><b>Action / status:</b> {report.action}</p>}{report.reportedBy && <p><b>Reported by:</b> {report.reportedBy}</p>}</article>)}
+        {!reports.length && <p className="teacher-empty">No student-visible reports have been recorded.</p>}
+      </div>
+    </section>;
   } else if (
     [
       'Records',
@@ -1905,23 +2084,54 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
 
         {recordsTab === 'Documents' && (
           <div className="records-documents-tab">
-            <p
-              style={{
-                fontSize: '13px',
-                color: 'var(--muted-foreground)',
-                marginBottom: '14px',
-              }}
-            >
-              Official transcripts, enrolment certificates, and handbooks.
-            </p>
-            <List
-              rows={matched(documents)}
-              open={open}
-              empty="No downloadable documents on file."
-              meta={(r: any) =>
-                `${r.data.category || 'Official Document'} · ${r.data.date || 'Current'}`
-              }
-            />
+            <div className="documents-heading">
+              <div>
+                <span className="eyebrow">MY DOCUMENTS</span>
+                <h2>School Documents</h2>
+                <p>View and download documents the school has released to you.</p>
+              </div>
+              <FileText size={24} aria-hidden="true" />
+            </div>
+            <div className="documents-category-tabs" role="tablist" aria-label="Document categories">
+              {(['All', 'Academic', 'Official', 'Forms'] as const).map((category) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={documentsCategory === category}
+                  className={documentsCategory === category ? 'active' : ''}
+                  key={category}
+                  onClick={() => setDocumentsCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            {(() => {
+              const visibleDocuments = documents.filter((row: any) => {
+                const matchesCategory = documentsCategory === 'All' || documentCategory(row) === documentsCategory;
+                const matchesSearch = !query || JSON.stringify([row.name, row.data]).toLowerCase().includes(query.toLowerCase());
+                return matchesCategory && matchesSearch;
+              });
+              return visibleDocuments.length ? (
+                <div className="documents-grid">
+                  {visibleDocuments.map((row: any) => (
+                    <article className="document-card" key={row.id}>
+                      <div className="document-card-icon"><FileText size={20} /></div>
+                      <div className="document-card-body">
+                        <span className="document-card-category">{documentCategory(row)}</span>
+                        <h3>{row.name}</h3>
+                        <p>{row.data?.description || 'School-issued document'}</p>
+                        <small>Issued {row.data?.date || 'recently'}{row.data?.version ? ` · Version ${row.data.version}` : ''}</small>
+                      </div>
+                      <div className="document-card-actions">
+                        <Button variant="outline" onClick={() => open(row)}>View</Button>
+                        <Button onClick={() => downloadDocument(row)}>Download</Button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : <p className="student-directory-empty">No documents in this category.</p>;
+            })()}
           </div>
         )}
       </>
@@ -1996,13 +2206,24 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         </p>
       )}
       {!['Home', 'Today', 'Calendar'].includes(section) && (
-        <Input
-          className="student-search"
-          aria-label={'Search ' + section}
-          placeholder={'Search ' + section.toLowerCase() + '…'}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <>
+          <Input
+            className="student-search"
+            aria-label={'Search ' + section}
+            placeholder={'Search ' + section.toLowerCase() + '…'}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {section === 'Facilities' && (
+            <button
+              type="button"
+              className="facility-inline-library"
+              onClick={() => navigateWebsite('/library')}
+            >
+              <BookOpen size={16} /> Library
+            </button>
+          )}
+        </>
       )}{' '}
       <div
         key={section + (classId || '')}
@@ -2014,13 +2235,37 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         open={!!selected}
         onOpenChange={(v) => {
           if (!v) {
-            setSelected(null);
-            navigateWebsite('/student/page/' + webSlug(section), true);
+            if (selected?.kind === 'assignment' || assignmentOrigin.current)
+              closeAssignment();
+            else {
+              setSelected(null);
+              navigateWebsite('/student/page/' + webSlug(section), true);
+            }
           }
         }}
       >
-        <SheetContent className="teacher-sheet">
-          <SheetHeader>
+        <SheetContent
+          className={
+            selected?.kind === 'assignment'
+              ? 'teacher-sheet teacher-sheet-centered'
+              : 'teacher-sheet'
+          }
+          style={
+            selected?.kind === 'assignment'
+              ? {
+                  width: 'min(680px, calc(100vw - 40px))',
+                  maxWidth: '680px',
+                }
+              : undefined
+          }
+        >
+          <SheetHeader
+            className={
+              selected?.kind === 'assignment'
+                ? 'student-assignment-header'
+                : undefined
+            }
+          >
             <SheetTitle>{selected?.name}</SheetTitle>
             <SheetDescription>
               {selected ? labels[selected.kind] || selected.kind : ''}
@@ -2148,6 +2393,15 @@ function StudentAssignment({ ws, row }: any) {
       Date.parse(current.data.dueAt) < Date.now()) ||
     (current.data.allowReplacement === false &&
       ['Submitted', 'Late', 'Graded'].includes(status));
+  const dueAt = current.data.dueAt
+    ? new Date(current.data.dueAt).toLocaleString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : 'No due date';
   const save = async (draft: boolean) => {
     setBusy(true);
     setError('');
@@ -2174,16 +2428,16 @@ function StudentAssignment({ ws, row }: any) {
     }
   };
   return (
-    <section className="teacher-form">
+    <section className="teacher-form student-assignment-form">
       <p className="student-status">
-        {status} · Due {current.data.dueAt}
+        {status.replace(/([a-z])([A-Z])/g, '$1 $2')} · Due {dueAt}
       </p>
-      <p className="log-text">
+      <p className="log-text assignment-instructions">
         {current.data.instructions || current.data.description}
       </p>
-      <p>
-        Maximum marks:{' '}
-        {current.data.maximumMarks || current.data.maxMarks || '—'}
+      <p className="assignment-marks">
+        Maximum marks{' '}
+        <strong>{current.data.maximumMarks || current.data.maxMarks || '—'}</strong>
       </p>
       {current.data.rubric && (
         <div className="detail-note">
@@ -2237,7 +2491,7 @@ function StudentAssignment({ ws, row }: any) {
             files={files}
             setFiles={setFiles}
           />
-          <div className="teacher-toolbar">
+          <div className="teacher-toolbar student-assignment-actions">
             <Button
               variant="outline"
               disabled={busy}

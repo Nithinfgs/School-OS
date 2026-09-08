@@ -1,10 +1,12 @@
 export const recordCategories = [
+  'Late',
   'LateArrival',
   'Uniform',
   'MissingHomework',
   'Disruption',
   'AcademicConcern',
   'UnauthorizedDevice',
+  'DeviceUse',
   'BehaviourConcern',
   'PositiveBehaviour',
   'Achievement',

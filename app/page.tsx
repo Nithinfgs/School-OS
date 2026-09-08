@@ -1,6 +1,7 @@
 import SchoolOS from './schoolos';
 import { getChatGPTUser, chatGPTSignInPath } from './chatgpt-auth';
 import { headers } from 'next/headers';
+import SupabaseLogin from './supabase-login';
 import {
   GraduationCap,
   ArrowRight,
@@ -28,7 +29,7 @@ export default async function Page() {
             School<span className="brand-os">OS</span>
           </div>
           <div className="eyebrow">WESTBRIDGE INTERNATIONAL</div>
-          <h1>Dev Mode</h1>
+          <h1>{showDemoLogins ? 'Dev Mode' : 'SchoolOS sign in'}</h1>
           <p>
             {showDemoLogins
               ? 'Choose a test account to open the SchoolOS website.'
@@ -48,8 +49,17 @@ export default async function Page() {
                 <Users size={16} />
                 Dev teacher
               </a>
+              <a href="/api/dev-login?role=hos&return_to=/" target="_top">
+                <GraduationCap size={16} />
+                Dev HOS
+              </a>
+              <a href="/api/dev-login?role=transport-staff&return_to=/" target="_top">
+                <Users size={16} />
+                Dev transport
+              </a>
             </div>
           )}
+          {!showDemoLogins && process.env.DATA_MODE === 'supabase' && <SupabaseLogin />}
           {!isNetlify && (
             <a
               className="login-button login-button-secondary"

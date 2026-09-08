@@ -1,9 +1,19 @@
 import { context, db, encode, scopeRows, schoolRows } from '@/lib/server';
 import { recordCategories } from '@/lib/teaching';
 import { isMasterVisible } from '@/lib/master-dashboard';
+import { backendConfig } from '@/lib/platform/config';
+import { handleSupabaseWorkspaceMutation } from '@/lib/platform/supabase-mutations';
+import { getChatGPTUser } from '@/app/chatgpt-auth';
 
 export async function POST(req: Request) {
   try {
+    if (backendConfig.adapter === 'supabase') {
+      const user = await getChatGPTUser();
+      if (!user) throw Error('UNAUTHORIZED');
+      const body: any = await req.json();
+      if (body.action === 'transportNotice')
+        return Response.json(await handleSupabaseWorkspaceMutation({ action: 'transportNotice', ...body, data: body }, user));
+    }
     const { user, member, org } = await context();
     if (
       req.headers.get('origin') &&
@@ -45,7 +55,13 @@ export async function POST(req: Request) {
       if (
         !c ||
         (member.role !== 'Admin' &&
-          !(member.classes || '').split('|').includes(c.name))
+          !(member.classes || '').split('|').includes(c.name) &&
+          c.data?.teacherId !== member.id &&
+          c.data?.teacherId !== member.userId &&
+          c.data?.classTeacherId !== member.id &&
+          c.data?.classTeacherId !== member.userId &&
+          c.data?.subjectTeacherId !== member.id &&
+          c.data?.subjectTeacherId !== member.userId)
       )
         throw Error('FORBIDDEN');
       return c;
@@ -55,7 +71,12 @@ export async function POST(req: Request) {
         (r) =>
           r.id === id &&
           r.kind === 'student' &&
-          (r.data.class === cls.name || r.data.classes?.includes(cls.name)),
+          (r.data.class === cls.name ||
+            r.data.classes?.includes(cls.name) ||
+            r.data.classTeacherId === member.id ||
+            r.data.classTeacherId === member.userId ||
+            r.data.subjectTeacherIds?.includes(member.id) ||
+            r.data.subjectTeacherIds?.includes(member.userId)),
       );
       if (!s) throw Error('Student is outside this class');
       return s;
@@ -387,7 +408,7 @@ export async function POST(req: Request) {
         resources: links(),
         attachments: attachments(),
       };
-    } else if (b.action === 'studentRecord') {
+    } else if (b.action === 'studentRecord' || b.action === 'behaviorReport') {
       kind = 'record';
       const student = getStudent(b.studentId, cls);
       name = one('category', recordCategories);
@@ -397,17 +418,51 @@ export async function POST(req: Request) {
         studentName: student.name,
         category: name,
         occurredAt: date('occurredAt'),
+        class: b.class || cls.name,
         location: text('location', 200),
         severity: one('severity', ['Low', 'Medium', 'High'], 'Low'),
-        description: text('description', 10000, true),
+        description: text(b.action === 'behaviorReport' ? 'whatHappened' : 'description', 10000, true),
+        whatHappened: text('whatHappened', 10000),
         actionTaken: text('actionTaken'),
-        internalNote: text('internalNote'),
+        internalNote: text(b.action === 'behaviorReport' ? 'note' : 'internalNote'),
+        note: text('note'),
         studentVisible: b.studentVisible === true,
         parentNotify: b.parentNotify === true,
         followUp: date('followUp', false),
         status: one('status', ['Open', 'Monitoring', 'Resolved'], 'Open'),
       };
       // A parent contact request is a staff follow-up flag; no external message is sent.
+    } else if (b.action === 'transportNotice') {
+      if (member.role !== 'Teacher' && member.role !== 'Department Head' && member.role !== 'Admin') throw Error('FORBIDDEN');
+      const student = getStudent(b.studentId, cls);
+      const noticeDate = date('date');
+      const duplicate = all.find((r) =>
+        r.kind === 'transportNotice' &&
+        r.data.studentId === student.id &&
+        r.data.date === noticeDate &&
+        r.data.status !== 'Resolved',
+      );
+      if (duplicate && !old) throw Error('A transport notice already exists for this student and date');
+      kind = 'transportNotice';
+      name = `${student.name} · Transport notice`;
+      data = {
+        ...data,
+        studentId: student.id,
+        studentName: student.name,
+        date: noticeDate,
+        class: cls.name,
+        route: text('route', 200),
+        bus: text('bus', 200),
+        changeType: one('changeType', ['NotComingByBus', 'NotGoingByBus', 'PickupChange', 'DropoffChange', 'Other', 'NotUsingBus', 'UsingBus'], 'Other'),
+        reason: text('reason', 5000),
+        pickup: text('pickup', 500),
+        dropoff: text('dropoff', 500),
+        notes: text('notes', 5000),
+        status: old?.data.status || 'Submitted',
+        submittedBy: member.id,
+        submittedByName: member.name,
+        submittedAt: old?.data.submittedAt || now,
+      };
     } else if (b.action === 'gradeWork') {
       if (!old || old.kind !== 'submission')
         throw Error('Submission not found');
@@ -593,7 +648,52 @@ export async function POST(req: Request) {
       };
     } else throw Error('Unknown teaching action');
     const id = old?.id || crypto.randomUUID();
-    await db().batch([write(id, kind, name, data, old)]);
+    const operations: any[] = [write(id, kind, name, data, old)];
+    const auditAction = old ? `Updated ${kind}` : `Created ${kind}`;
+    operations.push(
+      db()
+        .prepare('INSERT INTO audits (organizationId,entityId,action,after,actor,timestamp) VALUES (?,?,?,?,?,?)')
+        .bind(org, org + ':' + id, auditAction, JSON.stringify({ kind, name, data }), user.userId, now),
+    );
+    if (!old && kind === 'record' && data.studentVisible) {
+      operations.push(
+        write(
+          crypto.randomUUID(),
+          'notification',
+          `New ${data.category} record`,
+          {
+            studentId: data.studentId,
+            audience: 'student',
+            studentFacing: true,
+            description: 'A new student record is available in your Records area.',
+            sourceId: id,
+            date: now.slice(0, 10),
+          },
+          null,
+        ),
+      );
+    }
+    if (!old && kind === 'transportNotice') {
+      operations.push(
+        write(
+          crypto.randomUUID(),
+          'notification',
+          'Transport notice submitted',
+          {
+            studentId: data.studentId,
+            audience: 'transport',
+            authorizedRoles: ['Admin', 'Transport Department'],
+            transportAuthorized: true,
+            studentFacing: true,
+            description: `${data.changeType} notice submitted for ${data.date}.`,
+            sourceId: id,
+            date: data.date,
+          },
+          null,
+        ),
+      );
+    }
+    await db().batch(operations);
     return Response.json({ ok: true, id });
   } catch (e: any) {
     const conflict =

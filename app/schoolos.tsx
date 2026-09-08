@@ -16,6 +16,7 @@ import { ReportCards } from './report-cards';
 import { AdmissionsDashboard } from './admissions-dashboard';
 import { StaffLeaveDashboard } from './staff-leave-dashboard';
 import { ProcurementDashboard } from './procurement-dashboard';
+import { StudentDocuments } from './student-documents';
 import { personalNotifications, studentSections } from '@/lib/student';
 import {
   migrateLegacyHash,
@@ -193,6 +194,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       'Admissions',
       'Staff Leave',
       'Procurement',
+      'Documents',
       'Settings',
       'Help & support',
     ].find((x) => webSlug(x) === p);
@@ -259,6 +261,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Admissions',
           'Staff Leave',
           'Procurement',
+          'Documents',
           'Settings',
           'Help & support',
         ].find((name) => webSlug(name) === current);
@@ -315,6 +318,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ...(role === 'Admin' ? [['Admissions', ClipboardList]] : []),
               ...(role === 'Admin' ? [['Staff Leave', CalendarDays]] : []),
               ...(role === 'Admin' ? [['Procurement', ClipboardList]] : []),
+              ...(role === 'Admin' || role === 'Student' ? [['Documents', FileText]] : []),
               ['Library', BookOpen],
             ],
           },
@@ -697,6 +701,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <StaffLeaveDashboard ws={ws} />
           ) : page === 'Procurement' && role === 'Admin' ? (
             <ProcurementDashboard ws={ws} />
+          ) : page === 'Documents' && ['Admin', 'Student'].includes(role) ? (
+            <StudentDocuments ws={ws} role={role} />
           ) : ['Teacher Inquiry', 'Student Search'].includes(page) ? (
             <section className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
           ) : role === 'Head of School' && ['Home', 'Calendar', 'Inquiries'].includes(page) ? (

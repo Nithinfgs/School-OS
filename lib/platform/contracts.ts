@@ -17,6 +17,7 @@ export interface InquiryRepository extends EntityRepository {}
 export interface CalendarRepository extends EntityRepository {}
 export interface TransportRepository extends EntityRepository { arrivals(filters?: QueryFilters): Promise<BaseTrackedEntity[]>; departures(filters?: QueryFilters): Promise<BaseTrackedEntity[]>; notices(filters?: QueryFilters): Promise<BaseTrackedEntity[]>; }
 export interface NotificationRepository extends EntityRepository<NotificationEntity> {}
+export interface ReportCycleRepository extends EntityRepository { reports(cycleId: string, filters?: QueryFilters): Promise<BaseTrackedEntity[]>; }
 export interface ActivityRepository { emit(event: ActivityEvent): Promise<void>; list(filters?: QueryFilters): Promise<ActivityEvent[]> }
 export interface AuditRepository { append(entry: AuditTrail): Promise<void>; list(filters?: QueryFilters): Promise<AuditTrail[]> }
-export type DataPlatform = { students: StudentRepository; teachers: TeacherRepository; attendance: AttendanceRepository; assignments: AssignmentRepository; library: LibraryRepository; labs: LabRepository; transport: TransportRepository; damage: DamageRepository; inquiries: InquiryRepository; calendar: CalendarRepository; notifications: NotificationRepository; activity: ActivityRepository; audit: AuditRepository };
+export type DataPlatform = { students: StudentRepository; teachers: TeacherRepository; attendance: AttendanceRepository; assignments: AssignmentRepository; library: LibraryRepository; labs: LabRepository; transport: TransportRepository; damage: DamageRepository; inquiries: InquiryRepository; calendar: CalendarRepository; notifications: NotificationRepository; activity: ActivityRepository; audit: AuditRepository; reportCards?: ReportCycleRepository };

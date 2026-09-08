@@ -12,6 +12,7 @@ import { AdminLibraryView } from './library-assistant/AdminLibraryView';
 import { HOSDashboard } from './hos-dashboard';
 import { TransportDashboard } from './transport-dashboard';
 import { RecordLookup } from './record-lookup';
+import { ReportCards } from './report-cards';
 import { personalNotifications, studentSections } from '@/lib/student';
 import {
   migrateLegacyHash,
@@ -185,6 +186,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       'Transport',
       'Teacher Inquiry',
       'Student Search',
+      'Report Cards',
       'Settings',
       'Help & support',
     ].find((x) => webSlug(x) === p);
@@ -247,6 +249,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Transport',
           'Teacher Inquiry',
           'Student Search',
+          'Report Cards',
           'Settings',
           'Help & support',
         ].find((name) => webSlug(name) === current);
@@ -298,6 +301,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ['Students', Users],
               ...(['Head of School', 'Admin'].includes(role) ? [['Teacher Inquiry', Users], ['Student Search', Search]] : []),
               ...(role === 'Student' ? [['Reports', FileText]] : []),
+              ...(role === 'Student' ? [['Report Cards', FileText]] : []),
+              ...(['Admin', 'Head of School', 'Teacher'].includes(role) ? [['Report Cards', FileText]] : []),
               ['Library', BookOpen],
             ],
           },
@@ -340,6 +345,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           ['Add student record', '/teacher/action/studentRecord'],
           ['Message class', '/teacher/action/message'],
           ['Upload resource', '/teacher/action/resource'],
+          ['Report cards', '/report-cards'],
         ]
       : role === 'Head of School'
         ? [
@@ -360,6 +366,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             ['Teacher inquiry', '/teacher-inquiry'],
             ['Student search', '/student-search'],
             ['Post announcement', '/notifications'],
+            ['Manage report cards', '/report-cards'],
           ]
         : [
             ['View academics & work', '/student/page/academics'],
@@ -670,6 +677,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <RecordLookup ws={ws} kind="teacher" navigate={navigate} />
           ) : ['Admin', 'Head of School'].includes(role) && page === 'Student Search' ? (
             <RecordLookup ws={ws} kind="student" navigate={navigate} />
+          ) : page === 'Report Cards' && ['Admin', 'Head of School', 'Teacher', 'Student'].includes(role) ? (
+            <ReportCards ws={ws} role={role} navigate={navigate} />
           ) : ['Teacher Inquiry', 'Student Search'].includes(page) ? (
             <section className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
           ) : role === 'Head of School' && ['Home', 'Calendar', 'Inquiries'].includes(page) ? (

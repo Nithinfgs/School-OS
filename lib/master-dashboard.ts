@@ -60,6 +60,7 @@ export const moduleNames = [
   'Documents',
   'Transport',
   'System',
+  'Report Cards',
 ];
 export function moduleFor(r: SchoolRow): string {
   const names: Record<string, string> = {

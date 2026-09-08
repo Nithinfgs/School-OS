@@ -7,6 +7,7 @@ export const studentSections = [
   'Academics',
   'Records',
   'Reports',
+  'Report Cards',
   'Facilities',
   'Calendar',
   'CAS',

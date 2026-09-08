@@ -13,6 +13,7 @@ import { HOSDashboard } from './hos-dashboard';
 import { TransportDashboard } from './transport-dashboard';
 import { RecordLookup } from './record-lookup';
 import { ReportCards } from './report-cards';
+import { AdmissionsDashboard } from './admissions-dashboard';
 import { personalNotifications, studentSections } from '@/lib/student';
 import {
   migrateLegacyHash,
@@ -187,6 +188,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       'Teacher Inquiry',
       'Student Search',
       'Report Cards',
+      'Admissions',
       'Settings',
       'Help & support',
     ].find((x) => webSlug(x) === p);
@@ -250,6 +252,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Teacher Inquiry',
           'Student Search',
           'Report Cards',
+          'Admissions',
           'Settings',
           'Help & support',
         ].find((name) => webSlug(name) === current);
@@ -303,6 +306,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ...(role === 'Student' ? [['Reports', FileText]] : []),
               ...(role === 'Student' ? [['Report Cards', FileText]] : []),
               ...(['Admin', 'Head of School', 'Teacher'].includes(role) ? [['Report Cards', FileText]] : []),
+              ...(role === 'Admin' ? [['Admissions', ClipboardList]] : []),
               ['Library', BookOpen],
             ],
           },
@@ -679,6 +683,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <RecordLookup ws={ws} kind="student" navigate={navigate} />
           ) : page === 'Report Cards' && ['Admin', 'Head of School', 'Teacher', 'Student'].includes(role) ? (
             <ReportCards ws={ws} role={role} navigate={navigate} />
+          ) : page === 'Admissions' && role === 'Admin' ? (
+            <AdmissionsDashboard ws={ws} />
           ) : ['Teacher Inquiry', 'Student Search'].includes(page) ? (
             <section className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
           ) : role === 'Head of School' && ['Home', 'Calendar', 'Inquiries'].includes(page) ? (

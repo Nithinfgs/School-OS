@@ -1,0 +1,33 @@
+'use client';
+
+import { FormEvent, useState } from 'react';
+import { CheckCircle2, Paperclip, Send } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+
+const categories = ['Academic','Attendance','Transport','Behaviour','Administration','Fees','Library','Laboratory','Student Support','Other'];
+export default function ParentInquiryPage() {
+  const [form, setForm] = useState({ parentGuardianName:'', studentName:'', studentGrade:'', studentClass:'', parentPhone:'', parentEmail:'', category:'Academic', subject:'', message:'', preferredContactMethod:'Email', consentAccepted:false });
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [state, setState] = useState<'idle'|'sending'|'success'|'error'>('idle');
+  const [reference, setReference] = useState('');
+  const [error, setError] = useState('');
+  const update = (key: string, value: string | boolean) => setForm((current) => ({ ...current, [key]: value }));
+  async function submit(e: FormEvent) {
+    e.preventDefault(); setError('');
+    if (!form.consentAccepted) { setError('Please accept the privacy and contact consent before submitting.'); return; }
+    if (attachment && (attachment.size > 5 * 1024 * 1024 || !['application/pdf','image/png','image/jpeg'].includes(attachment.type))) { setError('Attachments must be a PDF, PNG or JPG smaller than 5 MB.'); return; }
+    setState('sending');
+    try {
+      const response = await fetch('/api/parent-inquiry', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ ...form, attachment: attachment ? { name: attachment.name, type: attachment.type, size: attachment.size } : undefined }) });
+      const data: any = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to submit inquiry.');
+      const inquiry = { id: `public-${Date.now()}`, referenceNumber: data.referenceNumber, senderName: form.parentGuardianName, senderType: 'ExternalParentGuardian', relatedStudent: form.studentName, category: form.category, subject: form.subject, message: form.message, dateCreated: new Date().toISOString(), priority: 'Normal', status: 'New', assignedTo: '', replies: [], notes: [] };
+      try { const current = JSON.parse(window.localStorage.getItem('schoolos-parent-inquiries') || '[]'); window.localStorage.setItem('schoolos-parent-inquiries', JSON.stringify([inquiry, ...current].slice(0, 50))); } catch {}
+      setReference(data.referenceNumber); setState('success');
+    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to submit inquiry.'); setState('error'); }
+  }
+  if (state === 'success') return <main className="public-inquiry-page"><section className="public-inquiry-card inquiry-success"><CheckCircle2 size={48} /><div className="eyebrow">INQUIRY RECEIVED</div><h1>Thank you for contacting the school</h1><p>Your message has been sent to the school administration.</p><strong className="inquiry-reference">{reference}</strong><p className="muted">Keep this reference number for follow-up. The school will contact you using your preferred method.</p><Button onClick={() => { setState('idle'); setReference(''); setForm((current) => ({ ...current, subject:'', message:'', consentAccepted:false })); }}>Submit another inquiry</Button></section></main>;
+  return <main className="public-inquiry-page"><section className="public-inquiry-card"><div className="eyebrow">WESTBRIDGE INTERNATIONAL</div><h1>Contact the School</h1><p className="public-inquiry-subtitle">Submit an inquiry regarding a student. The school administration will review your message.</p><form onSubmit={submit} className="public-inquiry-form"><div className="inquiry-form-grid"><label className="field"><span>Your name *</span><Input required value={form.parentGuardianName} onChange={(e) => update('parentGuardianName', e.target.value)} placeholder="Parent or guardian name" /></label><label className="field"><span>Student name *</span><Input required value={form.studentName} onChange={(e) => update('studentName', e.target.value)} placeholder="Student name" /></label><label className="field"><span>Student grade</span><Input value={form.studentGrade} onChange={(e) => update('studentGrade', e.target.value)} placeholder="e.g. Grade 10" /></label><label className="field"><span>Student class</span><Input value={form.studentClass} onChange={(e) => update('studentClass', e.target.value)} placeholder="e.g. 10A" /></label><label className="field"><span>Phone *</span><Input required type="tel" value={form.parentPhone} onChange={(e) => update('parentPhone', e.target.value)} placeholder="+91 …" /></label><label className="field"><span>Email *</span><Input required type="email" value={form.parentEmail} onChange={(e) => update('parentEmail', e.target.value)} placeholder="you@example.com" /></label><label className="field"><span>Category *</span><select value={form.category} onChange={(e) => update('category', e.target.value)}>{categories.map((x) => <option key={x}>{x}</option>)}</select></label><label className="field"><span>Preferred contact</span><select value={form.preferredContactMethod} onChange={(e) => update('preferredContactMethod', e.target.value)}><option>Email</option><option>Phone</option><option>Either</option></select></label></div><label className="field"><span>Subject *</span><Input required value={form.subject} onChange={(e) => update('subject', e.target.value)} placeholder="What can we help with?" /></label><label className="field"><span>Message *</span><Textarea required minLength={10} value={form.message} onChange={(e) => update('message', e.target.value)} placeholder="Tell us how we can help…" rows={6} /></label><label className="inquiry-file"><Paperclip size={16} /><span>{attachment ? attachment.name : 'Attach a file (optional, PDF/PNG/JPG up to 5 MB)'}</span><input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => setAttachment(e.target.files?.[0] || null)} /></label><label className="inquiry-consent"><input type="checkbox" checked={form.consentAccepted} onChange={(e) => update('consentAccepted', e.target.checked)} /> <span>I consent to the school using these details to respond to this inquiry. *</span></label>{error && <p className="error-banner" role="alert">{error}</p>}<Button type="submit" disabled={state === 'sending'}><Send size={16} /> {state === 'sending' ? 'Sending…' : 'Send inquiry'}</Button></form></section></main>;
+}

@@ -26,6 +26,12 @@ export function HOSDashboard({ ws, navigate, page, mode = 'hos' }: HOSProps) {
   useEffect(() => { if (page === 'Calendar' || page === 'Inquiries' || page === 'Home') setTab(page); }, [page]);
   const [events, setEvents] = useState(seedEvents);
   const [inquiries, setInquiries] = useState(seedInquiries);
+  useEffect(() => {
+    try {
+      const external = JSON.parse(window.localStorage.getItem('schoolos-parent-inquiries') || '[]');
+      if (Array.isArray(external) && external.length) setInquiries((current) => [...external, ...current.filter((item) => !external.some((x: any) => x.id === item.id))]);
+    } catch {}
+  }, []);
   const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
   const [calendarView, setCalendarView] = useState<'Day' | 'Week' | 'Month'>('Week');
   const [query, setQuery] = useState('');

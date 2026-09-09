@@ -180,6 +180,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     if (studentPage) setPage(studentPage);
     else if (
       p.startsWith('admin/record/') ||
+      p.startsWith('hos/record/') ||
       p.startsWith('teacher/') ||
       p.startsWith('student/')
     )
@@ -248,6 +249,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       if (studentPage) setPage(studentPage);
       else if (
         location.pathname.startsWith('/admin/record/') ||
+        location.pathname.startsWith('/hos/record/') ||
         location.pathname.startsWith('/teacher/') ||
         location.pathname.startsWith('/student/')
       )
@@ -293,6 +295,17 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     };
   }, []);
   const role = ws.member.role || 'Student';
+  // A bookmarked or manually edited role route must never keep the previous
+  // role's URL. The server handles demo landings; this also protects client
+  // navigation after a profile switch or browser back/forward action.
+  useEffect(() => {
+    const expectedPrefix = role === 'Admin' ? '/admin' : role === 'Head of School' ? '/hos' : '';
+    const actualPrefix = location.pathname.startsWith('/admin') ? '/admin' : location.pathname.startsWith('/hos') ? '/hos' : '';
+    if (expectedPrefix && actualPrefix !== expectedPrefix) {
+      const suffix = location.pathname.replace(/^\/(?:admin|hos)/, '');
+      navigateWebsite(`${expectedPrefix}${suffix || ''}`, true);
+    }
+  }, [role]);
   const initials = (ws.member.name || 'Alex Carter')
     .split(/\s+/)
     .map((part: string) => part[0])
@@ -1087,11 +1100,11 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             rows={['Admin', 'Head of School'].includes(ws.member.role) ? ws.masterRows || [] : ws.rows}
             role={ws.member.role}
             adminOpen={
-              ws.member.role === 'Admin'
+              ['Admin', 'Head of School'].includes(ws.member.role)
                 ? (r: any) => {
                     navigate('Home');
                     navigateWebsite(
-                      '/admin/record/' + encodeURIComponent(r.id),
+                      `${ws.member.role === 'Head of School' ? '/hos' : '/admin'}/record/` + encodeURIComponent(r.id),
                     );
                   }
                 : ws.member.role === 'Teacher'

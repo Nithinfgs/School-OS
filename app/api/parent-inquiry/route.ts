@@ -22,8 +22,10 @@ export async function POST(request: Request) {
   if ((process.env.DATA_MODE || 'demo') === 'supabase' && supabaseConfig.url && supabaseConfig.secretKey) {
     try {
       const client = createClient(supabaseConfig.url, supabaseConfig.secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
-      const org = organizationId || (await client.from('organizations').select('id').limit(1).single()).data?.id;
-      if (!org) throw new Error('No organization configured');
+      // A public form must never guess a tenant by taking the first database
+      // organization. Configure the intended school explicitly at deployment.
+      const org = organizationId;
+      if (!org) throw new Error('DEFAULT_ORGANIZATION_ID is required');
       const id = crypto.randomUUID();
       const metadata = { referenceNumber, senderType:'ExternalParentGuardian', parentName:clean(body.parentGuardianName,200), studentNameSubmitted:clean(body.studentName,200), studentGrade:clean(body.studentGrade,100), studentClass:clean(body.studentClass,100), phone:clean(body.parentPhone,80), email:clean(body.parentEmail,200), category:clean(body.category,80), preferredContactMethod:clean(body.preferredContactMethod,20), attachment: attachment ? { name:clean(attachment.name,200), type:clean(attachment.type,80), size:Number(attachment.size) } : null };
       const tags = buildRecordTags({ organizationId:org, module:'Inquiries', recordType:RecordRegistry.PARENT_INQUIRY_CREATED, status:'New', category:body.category });

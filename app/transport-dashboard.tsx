@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BusFront, CheckCircle2, Clock3, Search, TriangleAlert } from 'lucide-react';
 
-const TODAY = '2026-09-07';
+const TODAY = new Date().toISOString().slice(0, 10);
 const demoBuses = Array.from({ length: 30 }, (_, index) => {
   const n = index + 1;
   const code = `M${n}`;

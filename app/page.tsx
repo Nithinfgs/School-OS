@@ -38,7 +38,7 @@ export default async function Page() {
           </p>
           {showDemoLogins && (
             <div className="dev-login-grid" aria-label="Development logins">
-              <a href="/api/dev-login?role=admin&return_to=/" target="_top">
+              <a href="/api/dev-login?role=admin&return_to=/admin" target="_top">
                 <Wrench size={16} />
                 Dev admin
               </a>
@@ -50,7 +50,7 @@ export default async function Page() {
                 <Users size={16} />
                 Dev teacher
               </a>
-              <a href="/api/dev-login?role=hos&return_to=/" target="_top">
+              <a href="/api/dev-login?role=hos&return_to=/hos" target="_top">
                 <GraduationCap size={16} />
                 Dev HOS
               </a>

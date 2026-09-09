@@ -5,6 +5,8 @@ function kindFor(record:any) {
   if (String(record.record_type).startsWith('ATTENDANCE_')) return 'attendance';
   if (String(record.record_type).includes('DAMAGE')) return 'damageBrokenLog';
   if (String(record.record_type).startsWith('BUS_')) return 'transportActivity';
+  if (record.source_module === 'Calendar') return 'calendarEvent';
+  if (record.source_module === 'Inquiries') return 'inquiry';
   if (record.source_module === 'Transport') return 'transportNotice';
   if (record.source_module === 'Library') return 'loan';
   if (record.source_module === 'Lab') return 'request';

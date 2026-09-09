@@ -136,14 +136,29 @@ export function useWorkspace(initialUser?: any) {
           return;
         }
       }
-      // If API returns non-ok or empty, use our rich mock data
+      const failure: any = await r.json().catch(() => null);
+      if (r.status === 401 && initialUser && !String(initialUser.userId || '').startsWith('dev:')) {
+        const refreshed = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'same-origin' }).catch(() => null);
+        if (refreshed?.ok) return refresh();
+      }
+      if (failure?.mode === 'supabase') {
+        if (request !== requestNumber.current) return;
+        setError(failure.error || 'School data could not be loaded.');
+        return;
+      }
+      // The rich mock workspace is deliberately retained for demo mode only.
       const mockData = getMockWorkspaceData(initialUser || state.member);
       if (request !== requestNumber.current) return;
       setState(mockData);
       setError('');
     } catch {
-      // Graceful fallback to mock data on network/API failure
+      // A real signed-in Supabase user must see a recoverable error instead of
+      // a fabricated school dataset. Dev profiles remain fully functional.
       if (request !== requestNumber.current) return;
+      if (initialUser && !String(initialUser.userId || '').startsWith('dev:')) {
+        setError('School data could not be loaded. Check your connection and try again.');
+        return;
+      }
       const mockData = getMockWorkspaceData(initialUser || state.member);
       setState(mockData);
       setError('');
@@ -153,8 +168,13 @@ export function useWorkspace(initialUser?: any) {
   }
 
   useEffect(() => {
-    // When initialUser changes, re-sync state immediately
-    setState(getMockWorkspaceData(initialUser));
+    // Never flash demo records for a real Supabase session while its workspace
+    // is loading. Demo profiles intentionally keep their complete seed data.
+    if (initialUser && !String(initialUser.userId || '').startsWith('dev:')) {
+      setState({ rows: [], contacts: [], audit: [], members: [], masterRows: [], member: { name: initialUser.displayName || initialUser.email, role: '' } });
+    } else {
+      setState(getMockWorkspaceData(initialUser));
+    }
     refresh();
     const update = () => {
       if (document.visibilityState === 'visible') refresh();

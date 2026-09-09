@@ -157,6 +157,18 @@ export async function GET() {
       { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (e) {
+    // In real backend mode, returning a convincing demo workspace would hide
+    // an outage, missing RLS policy, or failed adapter from staff. Dev users
+    // still use the isolated demonstration store below.
+    if (backendConfig.adapter === 'supabase') {
+      const authenticated = await getChatGPTUser().catch(() => null);
+      if (authenticated && !authenticated.userId.startsWith('dev:')) {
+        return Response.json(
+          { error: 'School data could not be loaded. Please try again.', mode: 'supabase' },
+          { status: 503, headers: { 'Cache-Control': 'private, no-store' } },
+        );
+      }
+    }
     try {
       const { user, member } = await context();
       return Response.json(getMockWorkspaceData(member || user || 'Admin'), {

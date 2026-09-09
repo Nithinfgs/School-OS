@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from './supabase-adapter';
 
 export type Member = { id:string; organizationId:string; role:string; roleCode:string; studentId?:string };
 export type ParentRequestInput = { studentId:string; type:'EarlyPickup'|'LateDropOff'|'LunchDropOff'|'NotUsingBus'; date:string; requestedTime?:string; expectedTime?:string; reason?:string; notes?:string; direction?:'Morning'|'Afternoon'|'Both'; itemType?:string; pickupPersonName?:string; pickupPersonRelationship?:string };
-export type AdmissionsUpdate = { id:string; status?:string; nextAction?:string; assessment?:string; interview?:string; note?:string; enrolledStudentId?:string };
+export type AdmissionsUpdate = { id:string; status?:string; nextAction?:string; assessment?:string; interview?:string; note?:string; enrolledStudentId?:string; admissionNumber?:string; classId?:string };
 export type ProcurementUpdate = { id:string; status?:string; notes?:string };
 export type TransportNoticeUpdate = { id:string; status?:string; operationalNote?:string };
 
@@ -93,11 +93,19 @@ export async function updateAdmission(member:Member, input:AdmissionsUpdate) {
   const client=createSupabaseServerClient();
   const {data:current,error:currentError}=await client.from('admission_applications').select('*').eq('organization_id',member.organizationId).eq('id',input.id).single();
   if (currentError) throw currentError;
-  const {data,error}=await client.from('admission_applications').update({status:input.status||current.status,notes:input.note ? [current.notes,input.note].filter(Boolean).join('\n') : current.notes,updated_at:now(),enrolled_student_id:input.enrolledStudentId||current.enrolled_student_id}).eq('organization_id',member.organizationId).eq('id',input.id).select().single();
+  let enrolledStudentId=input.enrolledStudentId||current.enrolled_student_id;
+  if (input.status==='Enrolled' && !enrolledStudentId) {
+    const {data:studentId,error:enrollmentError}=await client.rpc('schoolos_enroll_admission',{p_application_id:input.id,p_actor_id:member.id,p_admission_number:input.admissionNumber||null,p_class_id:input.classId||null});
+    if (enrollmentError) throw enrollmentError;
+    enrolledStudentId=studentId;
+  }
+  const {data,error}=await client.from('admission_applications').update({status:input.status||current.status,notes:input.note ? [current.notes,input.note].filter(Boolean).join('\n') : current.notes,updated_at:now(),enrolled_student_id:enrolledStudentId||null}).eq('organization_id',member.organizationId).eq('id',input.id).select().single();
   if (error) throw error;
   const event=input.status==='Enrolled'?RecordRegistry.STUDENT_ENROLLED:input.status==='Accepted'?RecordRegistry.ADMISSION_ACCEPTED:input.status==='Offered'?RecordRegistry.ADMISSION_OFFERED:input.status==='Rejected'?RecordRegistry.ADMISSION_REJECTED:RecordRegistry.ADMISSION_SUBMITTED;
-  await client.from('admission_timeline').insert({organization_id:member.organizationId,application_id:data.id,action:input.status ? `Status updated to ${input.status}` : 'Application updated',actor_id:member.id,details:{nextAction:input.nextAction||null,note:input.note||null}});
-  await writeEvent(member,event,'Admissions','admission_application',data.id,undefined,{status:data.status,nextAction:input.nextAction||null});
+  if (input.status !== 'Enrolled') {
+    await client.from('admission_timeline').insert({organization_id:member.organizationId,application_id:data.id,action:input.status ? `Status updated to ${input.status}` : 'Application updated',actor_id:member.id,details:{nextAction:input.nextAction||null,note:input.note||null}});
+    await writeEvent(member,event,'Admissions','admission_application',data.id,undefined,{status:data.status,nextAction:input.nextAction||null});
+  }
   return data;
 }
 

@@ -4,11 +4,11 @@ import { resolveSupabaseMember } from './supabase-auth';
 import { createSupabaseServerClient } from './supabase-adapter';
 
 const actionPolicy:Record<string,string[]>={
-  attendance:['Teacher','Admin','Head of School'], studentRecord:['Teacher','Admin','Head of School'], behaviorReport:['Teacher','Admin','Head of School'],
-  transportNotice:['Teacher','Transport Staff','Admin','Head of School'], grade:['Teacher','Admin','Head of School'],
+  attendance:['Teacher','Admin'], studentRecord:['Teacher','Admin'], behaviorReport:['Teacher','Admin'],
+  transportNotice:['Teacher','Transport Staff','Admin'], grade:['Teacher','Admin'],
   submit:['Student','Admin'], request:['Student','Teacher','Lab Assistant','Library Assistant','Admin'],
   calendarEvent:['Head of School','Admin'], inquiryUpdate:['Head of School','Admin','Teacher','Transport Staff','Library Assistant','Lab Assistant'],
-  busArrival:['Transport Staff','Admin','Head of School'], busDeparture:['Transport Staff','Admin','Head of School'], transportNoticeUpdate:['Transport Staff','Admin','Head of School'],
+  busArrival:['Transport Staff','Admin'], busDeparture:['Transport Staff','Admin'], transportNoticeUpdate:['Transport Staff','Admin'],
 };
 function recordTypeFor(action:string,payload:any) {
   if(action==='attendance') return payload.status==='Late'||payload.data?.status==='Late'?RecordRegistry.ATTENDANCE_LATE:RecordRegistry.ATTENDANCE_MARK;
@@ -44,6 +44,13 @@ export async function handleSupabaseWorkspaceMutation(payload:any,user:{userId?:
   }
   const platform=createDataPlatform();
   if (payload.action === 'calendarEvent') {
+    if (payload.data?.status === 'Deleted' && payload.data?.id) {
+      const existing = await platform.calendar.get(payload.data.id);
+      if (!existing) throw new Error('Calendar event was not found');
+      const saved = await platform.calendar.update(existing.id, { status: 'Deleted', updatedBy: member.id } as any);
+      await platform.audit.append({ organizationId: member.organizationId, actorId: member.id, actorRole: member.role, entityType: 'calendar_event', entityId: saved.id, action: 'delete', before: existing, after: saved, timestamp: saved.updatedAt });
+      return { ok: true, id: saved.id };
+    }
     const item = trackedRecord({ id: payload.data?.id || crypto.randomUUID(), ...(payload.data || {}), title: payload.data?.title || 'HOS event', sourceModule: 'Calendar', createdBy: member.id }, { organizationId: member.organizationId, actorId: member.id, module: 'Calendar', recordType: 'CALENDAR_EVENT', status: 'Scheduled', labels: ['Calendar event'], visibility: { adminVisible: true, hosVisible: true, teacherVisible: payload.data?.visibility === 'Shared' } });
     const saved = await platform.calendar.save(item);
     await platform.activity.emit({ id: crypto.randomUUID(), organizationId: member.organizationId, eventType: 'CALENDAR_EVENT', module: 'Calendar', actorId: member.id, actorRole: member.role, subjectType: 'calendar_event', subjectId: saved.id, entityType: 'tracked_record', entityId: saved.id, tags: saved.tags, metadata: saved.metadata, occurredAt: saved.updatedAt });

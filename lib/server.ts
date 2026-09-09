@@ -62,6 +62,11 @@ export async function context() {
 }
 
 const DEV_MEMBERS: Record<string, any> = {
+  'dev:parent': {
+    id: 'dev-parent-member', organizationId: 'schoolos-dev', userId: 'dev:parent',
+    role: 'Parent', name: 'Nithin Selvaraj', email: 'parent.dev@schoolos.local',
+    classes: '', studentId: 'student-1', department: 'Family',
+  },
   'dev:transport-staff': {
     id: 'dev-transport-member', organizationId: 'schoolos-dev', userId: 'dev:transport-staff',
     role: 'Transport Staff', name: 'Leena Joseph', email: 'transport.dev@schoolos.local', classes: '', studentId: '', department: 'Transport',

@@ -746,7 +746,8 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
       else if (userOrRole.userId === 'dev:hos') role = 'Head of School';
       else role = 'Admin';
     } else if (userOrRole.userId) {
-      if (userOrRole.userId === 'dev:transport-staff') role = 'Transport Staff';
+      if (userOrRole.userId === 'dev:hos') role = 'Head of School';
+      else if (userOrRole.userId === 'dev:transport-staff') role = 'Transport Staff';
       else if (userOrRole.userId === 'dev:parent') role = 'Parent';
       else if (userOrRole.userId === 'dev:student') role = 'Student';
       else if (userOrRole.userId === 'dev:teacher') role = 'Teacher';

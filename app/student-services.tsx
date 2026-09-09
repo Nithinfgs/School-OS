@@ -18,6 +18,12 @@ const tabsByRole: Record<string, ServiceTab[]> = { Admin:['Approvals','Announcem
 export function StudentServices({ ws, role, initialTab }: { ws:any; role:string; initialTab?:ServiceTab }) {
   const tabs = tabsByRole[role] || ['Announcements','Policies','Services'];
   const [tab,setTab] = useState<ServiceTab>(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+  // Keep the visible section in sync with sidebar navigation. The services
+  // shell stays mounted while its route changes, so relying on the initial
+  // state alone makes the first click appear to do nothing.
+  useEffect(() => {
+    if (initialTab && tabs.includes(initialTab)) setTab(initialTab);
+  }, [initialTab, tabs]);
   const [items,setItems] = useState(seed);
   const [query,setQuery] = useState('');
   const [message,setMessage] = useState('');

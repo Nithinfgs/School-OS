@@ -9,6 +9,7 @@ import {
   User,
   Users,
   Wrench,
+  UserRound,
 } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export default async function Page() {
@@ -57,9 +58,13 @@ export default async function Page() {
                 <Users size={16} />
                 Dev transport
               </a>
+              <a href="/api/dev-login?role=parent&return_to=/" target="_top">
+                <UserRound size={16} />
+                Dev parent
+              </a>
             </div>
           )}
-          {!showDemoLogins && process.env.DATA_MODE === 'supabase' && <SupabaseLogin />}
+          {process.env.DATA_MODE === 'supabase' && <SupabaseLogin />}
           {!isNetlify && (
             <a
               className="login-button login-button-secondary"

@@ -18,6 +18,10 @@ export type MockWorkspaceData = {
 // Default full mock members directory
 export const mockMembers = [
   {
+    id: 'dev-parent-member', userId: 'dev:parent', name: 'Nithin Selvaraj',
+    role: 'Parent', email: 'parent.dev@schoolos.local', department: 'Family', classes: '', studentId: 'student-1',
+  },
+  {
     id: 'dev-transport-member', userId: 'dev:transport-staff', name: 'Leena Joseph',
     role: 'Transport Staff', email: 'transport.dev@schoolos.local', department: 'Transport', classes: '', studentId: '',
   },
@@ -722,6 +726,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
   if (typeof userOrRole === 'string') {
     const r = userOrRole.toLowerCase();
     if (r.includes('hos') || r.includes('head')) role = 'Head of School';
+    else if (r.includes('parent') || r.includes('guardian')) role = 'Parent';
     else if (r.includes('transport')) role = 'Transport Staff';
     else if (r.includes('student')) role = 'Student';
     else if (r.includes('teacher')) role = 'Teacher';
@@ -732,6 +737,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
     if (userOrRole.role) {
       const r = String(userOrRole.role).toLowerCase();
       if (r.includes('hos') || r.includes('head')) role = 'Head of School';
+      else if (r.includes('parent') || r.includes('guardian')) role = 'Parent';
       else if (r.includes('transport')) role = 'Transport Staff';
       else if (r.includes('student')) role = 'Student';
       else if (r.includes('teacher')) role = 'Teacher';
@@ -741,6 +747,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
       else role = 'Admin';
     } else if (userOrRole.userId) {
       if (userOrRole.userId === 'dev:transport-staff') role = 'Transport Staff';
+      else if (userOrRole.userId === 'dev:parent') role = 'Parent';
       else if (userOrRole.userId === 'dev:student') role = 'Student';
       else if (userOrRole.userId === 'dev:teacher') role = 'Teacher';
       else if (userOrRole.userId === 'dev:lab-assistant') role = 'Lab Assistant';
@@ -753,6 +760,8 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
     userId = 'dev:hos'; name = 'Dr. Aisha Rahman'; email = 'hos.dev@schoolos.local';
   } else if (role === 'Transport Staff') {
     userId = 'dev:transport-staff'; name = 'Leena Joseph'; email = 'transport.dev@schoolos.local';
+  } else if (role === 'Parent') {
+    userId = 'dev:parent'; name = 'Nithin Selvaraj'; email = 'parent.dev@schoolos.local'; studentId = 'student-1';
   } else if (role === 'Student') {
     userId = 'dev:student';
     name = 'Nithin Selvaraj';
@@ -798,6 +807,8 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
               ? 'Library Services'
               : role === 'Transport Staff'
                 ? 'Transport'
+                : role === 'Parent'
+                  ? 'Family'
                 : 'DP-2',
     classes: memberClasses,
     studentId,

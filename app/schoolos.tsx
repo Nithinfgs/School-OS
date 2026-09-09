@@ -18,6 +18,9 @@ import { StaffLeaveDashboard } from './staff-leave-dashboard';
 import { ProcurementDashboard } from './procurement-dashboard';
 import { StudentDocuments } from './student-documents';
 import { VisitorManagement } from './visitor-management';
+import { ParentDashboard } from './parent-dashboard';
+import { StudentServices } from './student-services';
+import { HOSLabSummary, HOSLibrarySummary } from './hos-oversight';
 import { personalNotifications, studentSections } from '@/lib/student';
 import {
   migrateLegacyHash,
@@ -52,6 +55,8 @@ import {
   FileText,
   Inbox,
   BusFront,
+  IdCard,
+  TrendingUp,
 } from 'lucide-react';
 
 import {
@@ -160,13 +165,15 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
   const navigate = (p: string) => {
     preserveSidebarScroll(() => {
       setPage(p);
-      navigateWebsite(pagePath(p), true);
+      const prefix = role === 'Admin' ? '/admin' : role === 'Head of School' ? '/hos' : '';
+      navigateWebsite(prefix ? (p === 'Home' ? prefix : `${prefix}/${webSlug(p)}`) : pagePath(p), true);
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     });
   };
   useEffect(() => {
     migrateLegacyHash();
     const p = decodeURIComponent(location.pathname.slice(1));
+    const scoped = p.startsWith('admin/') ? p.slice(6) : p.startsWith('hos/') ? p.slice(4) : p;
     const studentPage = p.startsWith('student/page/')
       ? studentSections.find((name) => webSlug(name) === p.slice('student/page/'.length))
       : undefined;
@@ -197,11 +204,13 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       'Procurement',
       'Documents',
       'Visitors',
+      'Analytics',
+      'Activity',
       'Settings',
       'Help & support',
-    ].find((x) => webSlug(x) === p);
+    ].find((x) => webSlug(x) === scoped || (x === 'Home' && (scoped === 'admin' || scoped === 'hos')));
     if (match) setPage(match);
-    else if (embeddedRouteModule[p]) setPage(embeddedRouteModule[p]);
+    else if (embeddedRouteModule[scoped]) setPage(embeddedRouteModule[scoped]);
     const h = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -244,7 +253,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       )
         setPage('Home');
       else {
-        const current = location.pathname.slice(1);
+        const raw = location.pathname.slice(1);
+        const current = raw.startsWith('admin/') ? raw.slice(6) : raw.startsWith('hos/') ? raw.slice(4) : raw;
         const next = [
           'Home',
           'Labs',
@@ -265,6 +275,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Procurement',
           'Documents',
           'Visitors',
+          'Analytics',
+          'Activity',
           'Settings',
           'Help & support',
         ].find((name) => webSlug(name) === current);
@@ -291,6 +303,21 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     .filter((row: any) => row.kind === 'class')
     .slice(0, 6);
   const navGroups =
+    role === 'Admin' ? [
+      { label: 'OVERVIEW', items: [['Calendar', CalendarDays], ['Notifications', Bell]] },
+      { label: 'ADMINISTRATION', items: [['Approvals', ClipboardList], ['Admissions', ClipboardList], ['Staff Leave', CalendarDays], ['Procurement', ClipboardList], ['Documents', FileText], ['Visitors', Users]] },
+      { label: 'COMMUNICATION', items: [['Inquiries', Inbox], ['Announcements', Bell]] },
+      { label: 'SCHOOL OVERSIGHT', items: [['Labs', FlaskConical], ['Library', BookOpen], ['Transport', BusFront]] },
+      { label: 'PEOPLE', items: [['Student Search', Search], ['Teacher Inquiry', Users]] },
+      { label: 'SYSTEM', items: [['Activity', ClipboardList], ['Settings', Settings]] },
+    ] : role === 'Head of School' ? [
+      { label: 'LEADERSHIP', items: [['Calendar', CalendarDays], ['Notifications', Bell]] },
+      { label: 'COMMUNICATION', items: [['Inquiries', Inbox], ['Announcements', Bell]] },
+      { label: 'SCHOOL OVERSIGHT', items: [['Labs', FlaskConical], ['Library', BookOpen], ['Transport', BusFront], ['Analytics', TrendingUp as any]] },
+      { label: 'PEOPLE', items: [['Student Search', Search], ['Teacher Inquiry', Users]] },
+      { label: 'ADMINISTRATION', items: [['Approvals', ClipboardList]] },
+      { label: 'SYSTEM', items: [['Activity', ClipboardList], ['Settings', Settings]] },
+    ] :
     ['Lab Assistant', 'Library Assistant', 'Transport Staff'].includes(role)
       ? [
           {
@@ -316,7 +343,11 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ['Students', Users],
               ...(['Head of School', 'Admin'].includes(role) ? [['Teacher Inquiry', Users], ['Student Search', Search]] : []),
               ...(role === 'Student' ? [['Reports', FileText]] : []),
-              ...(role === 'Student' ? [['Report Cards', FileText]] : []),
+              ...(role === 'Parent' ? [['Requests', ClipboardList]] : []),
+              ...(role === 'Student' ? [['Requests', ClipboardList], ['School Services', Bell], ['Feedback', MessageSquare], ['Policies', FileText]] : []),
+              ...(role === 'Admin' ? [['Approvals', ClipboardList], ['Announcements', Bell], ['Forms', FileText], ['ID Cards', IdCard], ['Policies', FileText], ['Services', Bell], ['Feedback', MessageSquare]] : []),
+              ...(role === 'Head of School' ? [['Approvals', ClipboardList], ['Announcements', Bell], ['Policies', FileText], ['Services', Bell], ['Feedback', MessageSquare]] : []),
+              ...(role === 'Teacher' ? [['Announcements', Bell], ['Forms', FileText], ['Policies', FileText], ['Feedback', MessageSquare]] : []),
               ...(['Admin', 'Head of School', 'Teacher'].includes(role) ? [['Report Cards', FileText]] : []),
               ...(role === 'Admin' ? [['Admissions', ClipboardList]] : []),
               ...(role === 'Admin' ? [['Staff Leave', CalendarDays]] : []),
@@ -353,10 +384,15 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             ['Review overdue books', '/library'],
           ]
       : role === 'Transport Staff'
-      ? [
-          ['Open transport dashboard', '/transport'],
-          ['Review student notices', '/transport'],
-        ]
+        ? [
+            ['Open transport dashboard', '/transport'],
+            ['Review student notices', '/transport'],
+          ]
+      : role === 'Parent'
+        ? [
+            ['Open quick requests', '/home'],
+            ['View my requests', '/home'],
+          ]
       : role === 'Teacher'
       ? [
           ['Take attendance', '/teacher/action/attendance'],
@@ -396,6 +432,15 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           ];
   const runQuickAction = (path: string) => {
     setQuickOpen(false);
+    if (['Admin', 'Head of School'].includes(role) && !path.startsWith('/teacher/') && !path.startsWith('/student/')) {
+      const target = path.slice(1).split('/')[0];
+      const name = ['home','labs','library','academics','students','calendar','notifications','inquiries','transport','teacher-inquiry','student-search','report-cards','admissions','staff-leave','procurement','documents','visitors','settings','activity','analytics'].find((item) => item === target);
+      if (name) {
+        const label = name === 'home' ? 'Home' : name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
+        navigate(label);
+        return;
+      }
+    }
     navigateWebsite(path);
     if (!path.startsWith('/teacher/') && !path.startsWith('/student/')) {
       const next = path.slice(1);
@@ -412,6 +457,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
         'Transport',
         'Teacher Inquiry',
         'Student Search',
+        'Analytics',
+        'Activity',
       ].find((item) => webSlug(item) === next);
       if (name) setPage(name);
     }
@@ -693,6 +740,10 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <TransportDashboard ws={ws} mode="oversight" />
           ) : role === 'Transport Staff' && !['Settings', 'Help & support'].includes(page) ? (
             <TransportDashboard ws={ws} />
+          ) : role === 'Parent' && !['Settings', 'Help & support'].includes(page) ? (
+            <ParentDashboard ws={ws} />
+          ) : ['Approvals','Requests','Announcements','Forms','ID Cards','Library Suggestions','Lab Purchases','Policies','Services','Feedback','Emergency Contacts'].includes(page) ? (
+            <StudentServices ws={ws} role={role} initialTab={page as any} />
           ) : ['Admin', 'Head of School'].includes(role) && page === 'Teacher Inquiry' ? (
             <RecordLookup ws={ws} kind="teacher" navigate={navigate} />
           ) : ['Admin', 'Head of School'].includes(role) && page === 'Student Search' ? (
@@ -725,6 +776,10 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               member={ws.member}
               sharedRows={ws.masterRows || ws.rows || []}
             />
+          ) : role === 'Head of School' && page === 'Labs' ? (
+            <HOSLabSummary sharedRows={ws.masterRows || ws.rows || []} />
+          ) : role === 'Head of School' && page === 'Library' ? (
+            <HOSLibrarySummary sharedRows={ws.masterRows || ws.rows || []} />
           ) : role === 'Lab Assistant' &&
           !['Settings', 'Help & support'].includes(page) ? (
             <LabAssistantWorkspace
@@ -1099,7 +1154,7 @@ export function ProfileMenu({
       badge: 'HOS',
       email: 'hos.dev@schoolos.local',
       icon: GraduationCap,
-      landing: '/home',
+      landing: '/hos',
     },
     {
       role: 'admin',
@@ -1108,6 +1163,7 @@ export function ProfileMenu({
       badge: 'Admin',
       email: 'admin.dev@schoolos.local',
       icon: Wrench,
+      landing: '/admin',
     },
     {
       role: 'teacher',
@@ -1149,6 +1205,14 @@ export function ProfileMenu({
       email: 'transport.dev@schoolos.local',
       icon: BusFront,
       landing: '/transport',
+    },
+    {
+      role: 'parent',
+      name: 'Nithin Selvaraj',
+      title: 'Parent / Guardian',
+      badge: 'Parent',
+      email: 'parent.dev@schoolos.local',
+      icon: User,
     },
   ];
 

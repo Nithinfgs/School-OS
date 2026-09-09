@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from './supabase-adapter';
 
-const roleLabels: Record<string,string> = { student:'Student', teacher:'Teacher', lab_assistant:'Lab Assistant', librarian:'Library Assistant', transport_staff:'Transport Staff', staff:'Staff', admin:'Admin', head_of_school:'Head of School' };
+const roleLabels: Record<string,string> = { student:'Student', teacher:'Teacher', lab_assistant:'Lab Assistant', librarian:'Library Assistant', transport_staff:'Transport Staff', parent:'Parent', guardian:'Parent', staff:'Staff', admin:'Admin', head_of_school:'Head of School' };
 const firstRelated = (value:any) => Array.isArray(value) ? value[0] : value;
 
 /** Resolves role and organization on the server; never accepts a client role. */

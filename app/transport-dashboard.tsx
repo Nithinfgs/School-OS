@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BusFront, CheckCircle2, Clock3, Search, TriangleAlert } from 'lucide-react';
 
 const TODAY = '2026-09-07';
@@ -27,12 +27,14 @@ export function TransportDashboard({ ws, mode = 'staff' }: { ws: any; mode?: 'st
   const [time, setTime] = useState('07:42');
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
+  const [persistedNotices, setPersistedNotices] = useState<any[]>([]);
   const isOversight = mode === 'oversight';
+  useEffect(() => { let cancelled=false; fetch('/api/cross-workflows',{credentials:'same-origin'}).then(async response=>response.ok?response.json():Promise.reject(await response.json())).then((data:any)=>{if(!cancelled)setPersistedNotices(data.transportNotices||[]);}).catch(()=>undefined); return()=>{cancelled=true}; },[]);
   const late = buses.filter((b) => b.arrival.status === 'Late');
   const notArrived = buses.filter((b) => b.arrival.status === 'NotArrived');
   const notDeparted = buses.filter((b) => b.departure.status === 'Waiting');
   const visible = buses.filter((b) => `${b.busCode} ${b.route} ${b.driver}`.toLowerCase().includes(search.toLowerCase()));
-  const linkedNotices = useMemo(() => [...notices, ...(ws.rows || []).filter((r: any) => r.kind === 'transportNotice').map((r: any) => ({ id: r.id, student: r.data.studentName || 'Student', grade: r.data.class || 'Student transport', bus: r.data.busId || r.data.route || 'Route pending', date: r.data.date || TODAY, changeType: r.data.changeType || 'Other', teacher: r.data.teacher || r.data.submittedBy || 'Teacher', reason: r.data.reason || '', notes: r.data.notes || '', timeSubmitted: r.data.submittedAt?.slice(11, 16) || '', status: r.data.status || 'Submitted', operationalNote: r.data.operationalNote || '' }))], [notices, ws.rows]);
+  const linkedNotices = useMemo(() => [...notices, ...persistedNotices.map((r:any)=>({id:r.id,student:r.student_id,grade:'Student transport',bus:r.bus||r.route||'Route pending',date:r.notice_date,changeType:r.change_type,teacher:'Parent / Guardian',reason:r.reason||'',notes:r.notes||'',timeSubmitted:r.submitted_at?.slice(11,16)||'',status:r.status||'Submitted',operationalNote:r.operational_note||''})), ...(ws.rows || []).filter((r: any) => r.kind === 'transportNotice').map((r: any) => ({ id: r.id, student: r.data.studentName || 'Student', grade: r.data.class || 'Student transport', bus: r.data.busId || r.data.route || 'Route pending', date: r.data.date || TODAY, changeType: r.data.changeType || 'Other', teacher: r.data.teacher || r.data.submittedBy || 'Teacher', reason: r.data.reason || '', notes: r.data.notes || '', timeSubmitted: r.data.submittedAt?.slice(11, 16) || '', status: r.data.status || 'Submitted', operationalNote: r.data.operationalNote || '' }))], [notices, persistedNotices, ws.rows]);
   const record = (kind: 'arrival' | 'departure', status: string) => {
     if (!selected) return;
     const minutes = status.includes('Late') ? Math.max(0, kind === 'arrival' ? Math.round((new Date(`${TODAY}T${time}`).getTime() - new Date(`${TODAY}T07:42`).getTime()) / 60000) : Math.round((new Date(`${TODAY}T${time}`).getTime() - new Date(`${TODAY}T15:40`).getTime()) / 60000)) : 0;
@@ -42,7 +44,7 @@ export function TransportDashboard({ ws, mode = 'staff' }: { ws: any; mode?: 'st
     post(kind === 'arrival' ? 'busArrival' : 'busDeparture', { busId: selected.id, busCode: selected.busCode, date, actualTime: time, status, lateMinutes: minutes, lateReason: reason, notes: note });
     setSelected(null); setReason(''); setNote('');
   };
-  const updateNotice = (id: string, changes: any) => { setNotices((rows) => rows.map((row) => row.id === id ? { ...row, ...changes } : row)); post('transportNoticeUpdate', { noticeId: id, ...changes }); };
+  const updateNotice = (id: string, changes: any) => { setNotices((rows) => rows.map((row) => row.id === id ? { ...row, ...changes } : row)); setPersistedNotices((rows)=>rows.map((row:any)=>row.id===id?{...row,status:changes.status||row.status,operational_note:changes.operationalNote??row.operational_note}:row)); void fetch('/api/cross-workflows',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'transportNotice.update',data:{id,status:changes.status,operationalNote:changes.operationalNote}})}).then((response)=>{if(!response.ok)post('transportNoticeUpdate',{noticeId:id,...changes});}).catch(()=>post('transportNoticeUpdate',{noticeId:id,...changes})); };
   const activities = buses.flatMap((b) => [{ id: `${b.id}-a`, label: `${b.busCode} ${b.arrival.status === 'Late' ? `late by ${b.arrival.minutes} min` : b.arrival.status.replaceAll(/([A-Z])/g, ' $1')}`, time: b.arrival.time || 'Pending', type: 'Arrival' }, { id: `${b.id}-d`, label: `${b.busCode} ${b.departure.status.replaceAll(/([A-Z])/g, ' $1')}`, time: b.departure.time || 'Pending', type: 'Departure' }]).slice(0, 18);
   return <div className="transport-dashboard">
     <div className="transport-header"><div><div className="eyebrow">{isOversight ? 'SCHOOL TRANSPORT OVERSIGHT' : 'TRANSPORT OPERATIONS'}</div><h1>{isOversight ? 'Transport overview' : 'Daily transport control'}</h1><p>{isOversight ? 'Arrival, departure, notice and delay oversight across all routes.' : 'Record bus movements and resolve student transport notices.'}</p></div><label className="transport-date"><span>Date</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label></div>

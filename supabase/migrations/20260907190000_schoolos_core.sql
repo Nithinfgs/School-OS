@@ -2,7 +2,7 @@
 -- server/developer environment; no application credential is stored here.
 create extension if not exists pgcrypto;
 
-create type public.school_role as enum ('student','teacher','lab_assistant','librarian','transport_staff','staff','admin','head_of_school');
+create type public.school_role as enum ('student','teacher','lab_assistant','librarian','transport_staff','staff','admin','head_of_school','parent');
 create type public.damage_status as enum ('Reported','UnderReview','ActionRequired','Resolved','Closed');
 
 create table public.organizations (id uuid primary key default gen_random_uuid(), external_id text unique, name text not null, school_year text, owner_id uuid references auth.users(id), created_at timestamptz not null default now(), updated_at timestamptz not null default now());

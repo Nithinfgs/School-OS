@@ -36,7 +36,7 @@ export const RecordRegistry = {
   VISITOR_PROFILE_CREATED: 'VISITOR_PROFILE_CREATED', VISIT_EXPECTED: 'VISIT_EXPECTED', VISIT_CHECKED_IN: 'VISIT_CHECKED_IN', VISIT_CHECKED_OUT: 'VISIT_CHECKED_OUT', VISIT_CANCELLED: 'VISIT_CANCELLED',
 } as const;
 export type RecordType = typeof RecordRegistry[keyof typeof RecordRegistry];
-export type TrackingModule = 'Lab'|'Library'|'Classroom'|'Facilities'|'Sports'|'Technology'|'Transport'|'Academics'|'Calendar'|'Inquiries'|'Other';
+export type TrackingModule = 'Lab'|'Library'|'Classroom'|'Facilities'|'Sports'|'Technology'|'Transport'|'Academics'|'Calendar'|'Inquiries'|'Admissions'|'Procurement'|'Documents'|'Visitors'|'Student Services'|'Staff Leave'|'Other';
 export type DamageStatus = 'Reported'|'UnderReview'|'ActionRequired'|'Resolved'|'Closed';
 export type Visibility = { studentVisible?: boolean; parentVisible?: boolean; teacherVisible?: boolean; adminVisible?: boolean; hosVisible?: boolean; restricted?: boolean };
 export type BaseTrackedEntity = { id:string; organizationId:string; createdAt:string; updatedAt:string; createdBy:string; updatedBy?:string; sourceModule:TrackingModule; recordType:RecordType|string; status?:string; tags:string[]; labels:string[]; metadata:Record<string,unknown>; relatedEntityRefs:{type:string;id:string}[]; auditId?:string; visibility?:Visibility };
@@ -47,7 +47,7 @@ export type AuditTrail = { actorId:string; actorRole:string; entityType:string; 
 
 const slug = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 export function buildRecordTags(context: Record<string, any>) {
-  const pairs: [string, any][] = [['org',context.organizationId],['module',context.module||context.sourceModule],['type',context.recordType||context.type],['status',context.status],['student',context.studentId],['teacher',context.teacherId||context.staffId],['class',context.classId||context.class],['grade',context.grade],['department',context.department],['asset',context.assetId||context.assetName],['item',context.itemId||context.itemName],['category',context.category],['school-year',context.schoolYear]];
+  const pairs: [string, any][] = [['organization',context.organizationId],['module',context.module||context.sourceModule],['type',context.recordType||context.type],['status',context.status],['student',context.studentId],['teacher',context.teacherId||context.staffId],['class',context.classId||context.class],['grade',context.grade],['department',context.department],['asset',context.assetId||context.assetName],['item',context.itemId||context.itemName],['category',context.category],['school-year',context.schoolYear]];
   return [...new Set(pairs.filter(([,value]) => value !== undefined && value !== null && value !== '').map(([key,value]) => `${key}:${slug(value)}`))];
 }
 export function trackedRecord<T extends Record<string, any>>(entity:T, context:Record<string,any> = {}): T & BaseTrackedEntity {

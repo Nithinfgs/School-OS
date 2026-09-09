@@ -7,6 +7,7 @@ export * from './entities';
 export * from './permissions';
 export * from './schemas';
 export * from './services';
+export * from './student-services';
 
 export function createDataPlatform() {
   if (backendConfig.adapter === 'demo') return createDemoDataPlatform();

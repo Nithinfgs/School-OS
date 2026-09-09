@@ -152,6 +152,12 @@ async function getDevUser(): Promise<ChatGPTUser | null> {
       email: 'transport.dev@schoolos.local',
       fullName: 'Leena Joseph',
     },
+    parent: {
+      userId: 'dev:parent',
+      displayName: 'Nithin Selvaraj',
+      email: 'parent.dev@schoolos.local',
+      fullName: 'Nithin Selvaraj',
+    },
   };
 
   return profiles[role] || null;

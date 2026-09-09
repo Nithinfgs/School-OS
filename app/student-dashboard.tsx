@@ -1165,6 +1165,13 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             >
               Exams ({of('exam').length})
             </button>
+            <button
+              type="button"
+              className="px-3 py-1.5 text-xs font-semibold rounded-md text-muted-foreground hover:text-foreground"
+              onClick={() => go('Report Cards')}
+            >
+              Report Cards
+            </button>
           </div>
           {academicsTab === 'assignments' && (
             <>

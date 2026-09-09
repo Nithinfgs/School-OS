@@ -606,7 +606,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ))}
             </SidebarMenu>
           ))}
-          {visibleClasses.length > 0 && !['Admin', 'Lab Assistant', 'Library Assistant'].includes(role) && (
+          {visibleClasses.length > 0 && !['Admin', 'Lab Assistant', 'Library Assistant', 'Transport Staff'].includes(role) && (
             <SidebarMenu className="class-shortcuts">
               <p className="nav-label">MY CLASSES</p>
               {visibleClasses.map((classRow: any, index: number) => (

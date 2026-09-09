@@ -202,6 +202,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       'Approvals',
       'ID Cards',
       'Calendar',
+      'Daily Calendar',
       'Notifications',
       'Inquiries',
       'Transport',
@@ -282,6 +283,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Approvals',
           'ID Cards',
           'Calendar',
+          'Daily Calendar',
           'Notifications',
           'Inquiries',
           'Transport',
@@ -333,14 +335,14 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     .slice(0, 6);
   const navGroups =
     role === 'Admin' ? [
-      { label: 'OVERVIEW', items: [['Calendar', CalendarDays], ['Notifications', Bell]] },
+      { label: 'OVERVIEW', items: [['Daily Calendar', CalendarDays], ['Notifications', Bell]] },
       { label: 'ADMINISTRATION', items: [['Approvals', ClipboardList], ['Admissions', ClipboardList], ['Staff Leave', CalendarDays], ['Procurement', ClipboardList], ['Documents', FileText], ['Visitors', Users]] },
       { label: 'COMMUNICATION', items: [['Inquiries', Inbox], ['Announcements', Bell]] },
       { label: 'SCHOOL OVERSIGHT', items: [['Labs', FlaskConical], ['Library', BookOpen], ['Transport', BusFront]] },
       { label: 'PEOPLE', items: [['Student Search', Search], ['Teacher Inquiry', Users]] },
       { label: 'SYSTEM', items: [['Activity', ClipboardList], ['Settings', Settings]] },
     ] : role === 'Head of School' ? [
-      { label: 'LEADERSHIP', items: [['Calendar', CalendarDays], ['Notifications', Bell]] },
+      { label: 'LEADERSHIP', items: [['Daily Calendar', CalendarDays], ['Notifications', Bell]] },
       { label: 'COMMUNICATION', items: [['Inquiries', Inbox], ['Announcements', Bell]] },
       { label: 'SCHOOL OVERSIGHT', items: [['Labs', FlaskConical], ['Library', BookOpen], ['Transport', BusFront], ['Analytics', TrendingUp as any]] },
       { label: 'PEOPLE', items: [['Student Search', Search], ['Teacher Inquiry', Users]] },
@@ -791,9 +793,9 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <VisitorManagement ws={ws} />
           ) : ['Teacher Inquiry', 'Student Search'].includes(page) ? (
             <section className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
-          ) : role === 'Head of School' && ['Home', 'Calendar', 'Inquiries'].includes(page) ? (
+          ) : role === 'Head of School' && ['Home', 'Calendar', 'Daily Calendar', 'Inquiries'].includes(page) ? (
             <HOSDashboard ws={ws} navigate={navigate} page={page} />
-          ) : role === 'Admin' && page === 'Inquiries' ? (
+          ) : role === 'Admin' && ['Calendar', 'Daily Calendar', 'Inquiries'].includes(page) ? (
             <HOSDashboard ws={ws} navigate={navigate} page={page} mode="admin" />
           ) : role === 'Admin' && page === 'Labs' ? (
             <AdminLabView

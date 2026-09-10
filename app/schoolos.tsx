@@ -411,6 +411,21 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
                 : [...(['Admin', 'Head of School'].includes(role) ? [['Transport', BusFront]] : []), ['Labs', FlaskConical]],
           },
         ];
+  const mobileNav =
+    role === 'Admin'
+      ? [['Home', LayoutDashboard], ['Daily Calendar', CalendarDays], ['Approvals', ClipboardList], ['Notifications', Bell]]
+      : role === 'Head of School'
+        ? [['Home', LayoutDashboard], ['Daily Calendar', CalendarDays], ['Inquiries', Inbox], ['Notifications', Bell]]
+        : role === 'Parent'
+          ? [['Home', LayoutDashboard], ['Requests', ClipboardList], ['Calendar', CalendarDays], ['Notifications', Bell]]
+          : role === 'Transport Staff'
+            ? [['Home', LayoutDashboard], ['Transport', BusFront], ['Notifications', Bell], ['Settings', Settings]]
+            : role === 'Lab Assistant'
+              ? [['Home', LayoutDashboard], ['Labs', FlaskConical], ['Notifications', Bell], ['Settings', Settings]]
+              : role === 'Library Assistant'
+                ? [['Home', LayoutDashboard], ['Library', BookOpen], ['Notifications', Bell], ['Settings', Settings]]
+                : [['Home', LayoutDashboard], ['Academics', GraduationCap], ['Calendar', CalendarDays], ['Notifications', Bell]];
+
   const quickActions =
     role === 'Lab Assistant'
       ? [
@@ -1159,6 +1174,20 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             select={setSelected}
           />
         </main>
+        <nav className="mobile-nav" aria-label="Primary navigation">
+          {mobileNav.map(([name, Icon]: any) => (
+            <button
+              key={name}
+              type="button"
+              className={page === name || (name === 'Home' && page === 'Calendar' && role === 'Transport Staff') ? 'active' : ''}
+              onClick={() => navigate(name)}
+              aria-current={page === name ? 'page' : undefined}
+            >
+              <Icon size={19} />
+              <span>{name === 'Daily Calendar' ? 'Calendar' : name}</span>
+            </button>
+          ))}
+        </nav>
       </div>
     </SidebarProvider>
   );

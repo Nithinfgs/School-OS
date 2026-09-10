@@ -6780,3 +6780,58 @@ dd {
   .parent-modal-actions, .transport-modal-actions { align-items: stretch; flex-direction: column-reverse; }
   .parent-modal-actions button, .transport-modal-actions button { width: 100%; }
 }
+
+/* Mobile application shell: a one-handed primary navigation sits above the
+   device safe area while the full sidebar remains available from the menu. */
+.mobile-nav { display: none; }
+
+@media (max-width: 700px) {
+  .workspace { min-height: 100svh; }
+  .page { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .topbar { padding-right: 12px; padding-left: 12px; }
+  .topbar-toggle { width: 40px; height: 40px; border-radius: 10px; }
+  .top-actions > button[aria-label='Notifications'] { width: 40px; height: 40px; display: grid; place-items: center; }
+  .top-actions > .profile-wrap { display: none; }
+  .mobile-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 35;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    min-height: calc(64px + env(safe-area-inset-bottom));
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid #dbe5ea;
+    background: rgb(255 255 255 / 96%);
+    box-shadow: 0 -8px 24px rgb(30 54 76 / 9%);
+    backdrop-filter: blur(12px);
+  }
+  .mobile-nav button {
+    display: grid;
+    min-width: 0;
+    min-height: 48px;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #6d7c8e;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav button svg { color: currentColor; }
+  .mobile-nav button.active { background: #e4f4f8; color: #167d9e; }
+  .mobile-nav button:active { background: #d7edf4; transform: scale(.98); }
+  .page-footer { margin-bottom: 18px; }
+  [data-slot='sheet-content'][data-side='left'] { width: min(88vw, 320px); }
+}
+
+@media (max-width: 360px) {
+  .mobile-nav { padding-right: 5px; padding-left: 5px; }
+  .mobile-nav button { font-size: 9px; }
+}

@@ -9,10 +9,8 @@ values
   ('inquiry-attachments', 'inquiry-attachments', false)
 on conflict (id) do nothing;
 
--- 2. Enable RLS on storage.objects if not already enabled
-alter table storage.objects enable row level security;
+-- 2. Storage Policies for student-documents (RLS is already enabled by Supabase on storage.objects)
 
--- 3. Storage Policies for student-documents
 drop policy if exists student_documents_manager_all on storage.objects;
 create policy student_documents_manager_all on storage.objects
 for all to authenticated

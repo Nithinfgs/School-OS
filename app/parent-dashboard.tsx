@@ -10,7 +10,6 @@ type ParentRequest = { id: string; type: RequestType; studentId: string; student
 
 const seedChildren = [
   { id: 'student-1', name: 'Nithin Selvaraj', className: 'DP-2', bus: 'M4' },
-  { id: 'student-2', name: 'Anika Selvaraj', className: 'Grade 10A', bus: 'M7' },
 ];
 
 const initialRequests: ParentRequest[] = [
@@ -88,7 +87,7 @@ export function ParentDashboard({ ws }: { ws: any }) {
         request.id = saved.id || request.id;
         request.status = saved.status || request.status;
         request.response = saved.kind === 'transportNotice' ? 'Submitted to the Transport team.' : request.response;
-      } else if (response.status !== 409 && response.status !== 401) {
+      } else {
         const problem:any = await response.json().catch(() => ({}));
         throw new Error(problem.error || 'The request could not be saved.');
       }

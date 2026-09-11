@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { demoStorage } from '@/lib/platform/client-demo-storage';
 import { 
   LabItem, 
   MaterialRequest, 
@@ -103,45 +104,45 @@ export const LabProvider: React.FC<{
   sharedRows?: SharedLabRow[];
 }> = ({ children, sharedRows = [] }) => {
   const [items, setItems] = useState<LabItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ITEMS);
+    const saved = demoStorage.getItem(STORAGE_KEYS.ITEMS);
     return saved ? JSON.parse(saved) : INITIAL_LAB_ITEMS;
   });
 
   const [requests, setRequests] = useState<MaterialRequest[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.REQUESTS);
+    const saved = demoStorage.getItem(STORAGE_KEYS.REQUESTS);
     return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
   });
 
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
+    const saved = demoStorage.getItem(STORAGE_KEYS.LOGS);
     return saved ? JSON.parse(saved) : INITIAL_USAGE_LOGS;
   });
 
   const [breakageLogs, setBreakageLogs] = useState<BreakageLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BREAKAGE);
+    const saved = demoStorage.getItem(STORAGE_KEYS.BREAKAGE);
     return saved ? JSON.parse(saved) : INITIAL_BREAKAGE_LOGS;
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CART);
+    const saved = demoStorage.getItem(STORAGE_KEYS.CART);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.USER);
+    const saved = demoStorage.getItem(STORAGE_KEYS.USER);
     return saved ? JSON.parse(saved) : null;
   });
 
   const [page, setPageState] = useState<AppPage>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PAGE);
+    const saved = demoStorage.getItem(STORAGE_KEYS.PAGE);
     if (saved) return saved as AppPage;
     return 'login';
   });
 
   const [selectedLabPortal, setSelectedLabPortalState] = useState<LabType>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PORTAL);
+    const saved = demoStorage.getItem(STORAGE_KEYS.PORTAL);
     return (saved as LabType) || 'physics';
   });
 
@@ -150,39 +151,39 @@ export const LabProvider: React.FC<{
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+    demoStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
   }, [items]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
+    demoStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
   }, [requests]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(usageLogs));
+    demoStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(usageLogs));
   }, [usageLogs]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.BREAKAGE, JSON.stringify(breakageLogs));
+    demoStorage.setItem(STORAGE_KEYS.BREAKAGE, JSON.stringify(breakageLogs));
   }, [breakageLogs]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
+    demoStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
+      demoStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem(STORAGE_KEYS.USER);
+      demoStorage.removeItem(STORAGE_KEYS.USER);
     }
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PAGE, page);
+    demoStorage.setItem(STORAGE_KEYS.PAGE, page);
   }, [page]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PORTAL, selectedLabPortal);
+    demoStorage.setItem(STORAGE_KEYS.PORTAL, selectedLabPortal);
   }, [selectedLabPortal]);
 
   // Project the shared SchoolOS lab records into the existing Lab Assistant
@@ -747,11 +748,11 @@ export const LabProvider: React.FC<{
     setUsageLogs(INITIAL_USAGE_LOGS);
     setBreakageLogs(INITIAL_BREAKAGE_LOGS);
     clearCart();
-    localStorage.removeItem(STORAGE_KEYS.ITEMS);
-    localStorage.removeItem(STORAGE_KEYS.REQUESTS);
-    localStorage.removeItem(STORAGE_KEYS.LOGS);
-    localStorage.removeItem(STORAGE_KEYS.BREAKAGE);
-    localStorage.removeItem(STORAGE_KEYS.CART);
+    demoStorage.removeItem(STORAGE_KEYS.ITEMS);
+    demoStorage.removeItem(STORAGE_KEYS.REQUESTS);
+    demoStorage.removeItem(STORAGE_KEYS.LOGS);
+    demoStorage.removeItem(STORAGE_KEYS.BREAKAGE);
+    demoStorage.removeItem(STORAGE_KEYS.CART);
     addToast({
       type: 'info',
       title: 'Reset to Clean Data',

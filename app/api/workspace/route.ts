@@ -205,10 +205,6 @@ export async function POST(req: Request) {
     const b: any = await req.json();
     if (!b || typeof b.action !== 'string') throw new Error('Invalid action');
     const action = b.action;
-    // HOS/Admin workflows keep their demo state in the client session while
-    // preserving the same payload contract used by the Supabase adapter.
-    if (['calendarEvent', 'inquiryUpdate', 'busArrival', 'busDeparture', 'transportNoticeUpdate'].includes(action))
-      return Response.json({ ok: true, demo: true });
     const row = b.id
       ? await db()
           .prepare('SELECT * FROM records WHERE id = ? AND organizationId = ?')
@@ -230,7 +226,7 @@ export async function POST(req: Request) {
         .all<any>()).results;
       for (const notification of notifications) {
         const notificationData = JSON.parse(notification.data);
-        if (notificationData.read) continue;
+        if (notificationData.read || notificationData.userId !== user.userId) continue;
         await db()
           .prepare('UPDATE records SET data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?')
           .bind(JSON.stringify({ ...notificationData, read: true }), user.userId, now, notification.id, org)
@@ -275,7 +271,44 @@ export async function POST(req: Request) {
         .run();
       return id;
     };
-    if (action === 'attendance') {
+    if (action === 'calendarEvent') {
+      allow(member.role, 'calendar.manage');
+      const event = b.data;
+      if (!event || typeof event.title !== 'string' || !event.title.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(String(event.date || '')) || !/^\d{2}:\d{2}$/.test(String(event.startTime || '')) || !/^\d{2}:\d{2}$/.test(String(event.endTime || ''))) throw new Error('Valid event title, date and times are required');
+      if (event.endTime <= event.startTime) throw new Error('Event end time must be after its start time');
+      const payload = { ...event, title: event.title.trim(), updatedAt: now, createdBy: user.userId };
+      if (event.id) {
+        const eventId = org + ':' + event.id;
+        const existing = await db().prepare("SELECT id FROM records WHERE id=? AND organizationId=? AND kind='calendarEvent'").bind(eventId, org).first<any>();
+        if (existing) {
+          await db().prepare('UPDATE records SET name=?,data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?').bind(payload.title, JSON.stringify(payload), user.userId, now, eventId, org).run();
+          return Response.json({ ok: true, data: { ...payload, id: event.id } });
+        }
+        // Seed events become real records when first edited; client-provided seed IDs are never database IDs.
+        const savedId = await persist('calendarEvent', payload.title, { ...payload, id: undefined });
+        return Response.json({ ok: true, data: { ...payload, id: savedId.slice(org.length + 1) } });
+      }
+      const savedId = await persist('calendarEvent', payload.title, payload);
+      return Response.json({ ok: true, data: { ...payload, id: savedId.slice(org.length + 1) } });
+    } else if (action === 'inquiryUpdate') {
+      allow(member.role, 'inquiries.manage');
+      if (!b.data?.id) throw new Error('Inquiry id is required');
+      const inquiryId = org + ':' + b.data.id;
+      const existing = await db().prepare("SELECT * FROM records WHERE id=? AND organizationId=? AND kind='inquiry'").bind(inquiryId, org).first<any>();
+      if (!existing) throw new Error('Inquiry was not found');
+      const current = JSON.parse(existing.data);
+      const status = b.data.status || current.status;
+      if (!['New','Open','AwaitingResponse','AwaitingParentStudent','Resolved','Closed'].includes(status)) throw new Error('Invalid inquiry status');
+      const payload = { ...current, ...b.data, status, updatedAt: now, updatedBy: user.userId };
+      await db().prepare('UPDATE records SET data=?,version=version+1,updatedBy=?,updatedAt=? WHERE id=? AND organizationId=?').bind(JSON.stringify(payload), user.userId, now, inquiryId, org).run();
+      return Response.json({ ok: true, data: payload });
+    } else if (action === 'busArrival' || action === 'busDeparture' || action === 'transportNoticeUpdate') {
+      allow(member.role, 'transport.manage');
+      if (!b.data || typeof b.data !== 'object') throw new Error('Transport data is required');
+      const payload = { ...b.data, updatedAt: now, updatedBy: user.userId };
+      const savedId = await persist(action === 'transportNoticeUpdate' ? 'transportNotice' : 'transportActivity', payload.title || action, payload);
+      return Response.json({ ok: true, data: { ...payload, id: savedId.slice(org.length + 1) } });
+    } else if (action === 'attendance') {
       if (!['Admin', 'Teacher'].includes(member.role))
         throw new Error('FORBIDDEN');
       const cls = await db()

@@ -154,6 +154,8 @@ const formNames: any = {
 };
 
 export function TeacherDashboard({ ws }: any) {
+  const [displayNow, setDisplayNow] = useState<Date | null>(null);
+  useEffect(() => { setDisplayNow(new Date()); }, []);
   const [classId, setClassId] = useState(''),
     [tab, setTab] = useState('Overview'),
     [query, setQuery] = useState(''),
@@ -334,7 +336,7 @@ export function TeacherDashboard({ ws }: any) {
     );
   if (ws.member.role !== 'Teacher') return null;
   return (
-    <div className="teacher-dashboard" suppressHydrationWarning>
+    <div className="teacher-dashboard">
       <header className="page-heading">
         <div>
           {cls && (
@@ -353,28 +355,14 @@ export function TeacherDashboard({ ws }: any) {
           <div className="eyebrow">
             {cls ? 'CLASS CONTROL CENTER' : 'YOUR TEACHING DAY'}
           </div>
-          <h1 suppressHydrationWarning>
-            {cls
-              ? cls.name
-              : 'Good ' +
-                (new Date().getHours() < 12 ? 'morning' : 'afternoon') +
-                ', ' +
-                ws.member.name.split(' ')[0]}
-          </h1>
+          <h1>{cls ? cls.name : `Good ${displayNow ? (displayNow.getHours() < 12 ? 'morning' : 'afternoon') : 'day'}, ${ws.member.name.split(' ')[0]}`}</h1>
           <p>
             {cls
               ? `${cls.data.room} · ${roster.length} students`
               : 'Today’s lessons, student follow-ups and work to review.'}
           </p>
         </div>
-        <span className="date-label" suppressHydrationWarning>
-          <CalendarDays size={17} />
-          {new Date().toLocaleDateString(undefined, {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          })}
-        </span>
+        <span className="date-label"><CalendarDays size={17} />{displayNow ? displayNow.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }) : 'Today'}</span>
       </header>
       {ws.error && (
         <div className="error-banner" role="alert">

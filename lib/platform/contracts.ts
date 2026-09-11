@@ -7,16 +7,16 @@ export interface NotificationEntity extends BaseTrackedEntity { userId: string; 
 
 export interface EntityRepository<T extends BaseTrackedEntity = BaseTrackedEntity> { get(id: EntityId): Promise<T | null>; list(filters?: QueryFilters): Promise<T[]>; save(entity: T): Promise<T>; update(id: EntityId, changes: Partial<T>): Promise<T>; }
 export interface StudentRepository extends EntityRepository { reports(studentId: string, filters?: QueryFilters): Promise<BaseTrackedEntity[]> }
-export interface TeacherRepository extends EntityRepository {}
-export interface AttendanceRepository extends EntityRepository {}
-export interface AssignmentRepository extends EntityRepository {}
+export type TeacherRepository = EntityRepository;
+export type AttendanceRepository = EntityRepository;
+export type AssignmentRepository = EntityRepository;
 export interface LibraryRepository extends EntityRepository { issue(record: BorrowedAssetTracking): Promise<BorrowedAssetTracking>; returnAsset(id: EntityId, conditionIn?: string): Promise<BorrowedAssetTracking> }
 export interface LabRepository extends EntityRepository { usage(filters?: QueryFilters): Promise<BaseTrackedEntity[]> }
-export interface DamageRepository extends EntityRepository<DamageBrokenLog> {}
-export interface InquiryRepository extends EntityRepository {}
-export interface CalendarRepository extends EntityRepository {}
+export type DamageRepository = EntityRepository<DamageBrokenLog>;
+export type InquiryRepository = EntityRepository;
+export type CalendarRepository = EntityRepository;
 export interface TransportRepository extends EntityRepository { arrivals(filters?: QueryFilters): Promise<BaseTrackedEntity[]>; departures(filters?: QueryFilters): Promise<BaseTrackedEntity[]>; notices(filters?: QueryFilters): Promise<BaseTrackedEntity[]>; }
-export interface NotificationRepository extends EntityRepository<NotificationEntity> {}
+export type NotificationRepository = EntityRepository<NotificationEntity>;
 export interface ReportCycleRepository extends EntityRepository { reports(cycleId: string, filters?: QueryFilters): Promise<BaseTrackedEntity[]>; }
 export interface ActivityRepository { emit(event: ActivityEvent): Promise<void>; list(filters?: QueryFilters): Promise<ActivityEvent[]> }
 export interface AuditRepository { append(entry: AuditTrail): Promise<void>; list(filters?: QueryFilters): Promise<AuditTrail[]> }

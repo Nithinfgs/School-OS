@@ -323,6 +323,13 @@ function legacyScopeRows(rows: any[], member: any) {
   rows = rows
     .filter(
       (r) =>
+        // Private calendar events are intentionally excluded from general
+        // workspace data, but the event owner must still see their own diary.
+        // Do this before the master-data filter so a private event cannot be
+        // accidentally exposed to other leadership users.
+        (r.kind === 'calendarEvent' &&
+          String(r.data?.visibility).toLowerCase() === 'private' &&
+          (r.data?.createdBy === member.userId || r.data?.createdBy === member.id)) ||
         isMasterVisible(r) ||
         (r.kind === 'file' && r.data.ownerId === member.userId),
     )

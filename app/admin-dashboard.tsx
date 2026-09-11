@@ -129,7 +129,7 @@ function eventRow(event: any, source: SchoolRow): SchoolRow {
     data: {
       ...source.data,
       ...d,
-      ...(d.lastTransaction || {}),
+      ...d.lastTransaction,
       actorName: event.actorName,
     },
     updatedBy: event.actor,
@@ -728,7 +728,7 @@ export function AdminMasterDashboard({ ws, navigate, select }: any) {
           if (!v) {
             setSelectedId('');
             setSelectedEvent(null);
-            navigateWebsite('/home', true);
+            navigateWebsite('/admin', true);
           }
         }}
       >

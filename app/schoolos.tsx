@@ -57,7 +57,10 @@ import {
   BusFront,
   IdCard,
   TrendingUp,
+  ShieldCheck,
 } from 'lucide-react';
+import { LegalModal, type LegalTab } from './components/legal-modal';
+import { LegalFooter } from './components/legal-footer';
 
 import {
   SidebarProvider,
@@ -127,6 +130,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarProfileOpen, setSidebarProfileOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalInitialTab, setLegalInitialTab] = useState<LegalTab>('privacy');
   const profileRef = useRef<HTMLDivElement>(null);
   const sidebarProfileRef = useRef<HTMLDivElement>(null);
 
@@ -665,8 +670,19 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           {[
             ['Settings', Settings],
             ['Help & support', LifeBuoy],
+            ['Privacy & Licensing', ShieldCheck],
           ].map(([name, Icon]: any) => (
-            <SidebarMenuButton key={name} onClick={() => navigate(name)}>
+            <SidebarMenuButton
+              key={name}
+              onClick={() => {
+                if (name === 'Privacy & Licensing') {
+                  setLegalInitialTab('privacy');
+                  setLegalModalOpen(true);
+                } else {
+                  navigate(name);
+                }
+              }}
+            >
               <Icon />
               <span>{name}</span>
             </SidebarMenuButton>
@@ -1157,6 +1173,12 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             }
             navigate={navigate}
             select={setSelected}
+          />
+          {ws.member.role !== 'Student' && <LegalFooter className="px-4 sm:px-8 mt-12" />}
+          <LegalModal
+            open={legalModalOpen}
+            onOpenChange={setLegalModalOpen}
+            initialTab={legalInitialTab}
           />
         </main>
       </div>

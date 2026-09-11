@@ -202,7 +202,7 @@ export function ChatModal({ ws, form, role = 'student', close }: ChatModalProps)
   const prompts = isStudent ? QUICK_PROMPTS.student : QUICK_PROMPTS.teacher;
 
   return (
-    <DialogContent className="wa-modal-dialog p-0 w-[840px] max-w-[840px] overflow-hidden rounded-2xl border border-[#2d7f9f]/25 bg-white shadow-2xl">
+    <DialogContent className="wa-modal-dialog p-0 w-[95vw] max-w-[840px] sm:w-[840px] overflow-hidden rounded-2xl border border-[#2d7f9f]/25 bg-white shadow-2xl">
       <DialogHeader className="sr-only">
         <DialogTitle>Chat with {teacherName}</DialogTitle>
         <DialogDescription>Direct conversational messenger interface</DialogDescription>

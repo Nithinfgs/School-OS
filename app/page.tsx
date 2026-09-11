@@ -1,6 +1,7 @@
 import SchoolOS from './schoolos';
 import { getChatGPTUser, chatGPTSignInPath } from './chatgpt-auth';
 import { headers } from 'next/headers';
+import { demoLoginEnabled } from '@/lib/platform/runtime';
 import SupabaseLogin from './supabase-login';
 import {
   GraduationCap,
@@ -17,7 +18,7 @@ export default async function Page() {
   const hostname = (requestHeaders.get('host') || '').split(':')[0];
   const isLocal = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(hostname);
   const isNetlify = Boolean(process.env.SITE_ID || process.env.URL);
-  const showDemoLogins = isLocal || isNetlify;
+  const showDemoLogins = demoLoginEnabled();
   const user = await getChatGPTUser();
   if (!user || user.email === 'seedy@sites.test')
     return (
@@ -65,7 +66,7 @@ export default async function Page() {
             </div>
           )}
           {process.env.DATA_MODE === 'supabase' && <SupabaseLogin />}
-          {!isNetlify && (
+          {(!isNetlify || !showDemoLogins) && (
             <a
               className="login-button login-button-secondary"
               href={chatGPTSignInPath('/')}
@@ -78,11 +79,26 @@ export default async function Page() {
             <ShieldCheck size={16} />{' '}
             {isLocal
               ? 'Localhost test access.'
-              : isNetlify
-                ? 'Hosted demonstration access.'
-                : 'Secure school sign-in.'}
+              : 'Secure school sign-in.'}
           </div>
-          <footer>Learning, resources, and people. Together.</footer>
+          <div className="mt-4 pt-4 border-t border-slate-200/80 text-[11px] text-slate-500 space-y-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <a href="/privacy" className="hover:text-emerald-700 font-semibold underline underline-offset-2 transition-colors">
+                Privacy Policy
+              </a>
+              <span>·</span>
+              <a href="/licensing" className="hover:text-blue-700 font-semibold underline underline-offset-2 transition-colors">
+                Licensing & IP
+              </a>
+              <span>·</span>
+              <a href="/terms" className="hover:text-amber-700 font-semibold underline underline-offset-2 transition-colors">
+                Terms of Service
+              </a>
+            </div>
+            <div className="text-[10px] text-slate-400 text-center">
+              A Product of Dev Studios and its Founding Members · © 2026 Dev Studios · Zero Liability
+            </div>
+          </div>
         </div>
       </main>
     );

@@ -878,7 +878,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
 
   const members = role === 'Admin' ? mockMembers : [];
   const masterRows = role === 'Admin' ? dashboardRows(rows, mockMembers) : [];
-  let audit = role === 'Admin' ? store.audits : role === 'Teacher' ? store.audits.filter((a: any) => a.actor === 'dev:teacher' || a.action.includes('inventory')) : [];
+  const audit = role === 'Admin' ? store.audits : role === 'Teacher' ? store.audits.filter((a: any) => a.actor === 'dev:teacher' || a.action.includes('inventory')) : [];
 
   const contacts = role === 'Student'
     ? mockMembers
@@ -911,7 +911,7 @@ export function handleMockMutation(payload: any, activeMember: any) {
     const entity = trackedRecord({
       id: row.id,
       ...row.data,
-      metadata: { ...(row.data || {}), studentId: context.studentId || row.data?.studentId },
+      metadata: { ...row.data, studentId: context.studentId || row.data?.studentId },
     }, {
       organizationId: 'schoolos-dev', actorId: activeMember?.userId || 'system',
       module: context.module, recordType: context.recordType, status: context.status,

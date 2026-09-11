@@ -11,7 +11,7 @@ const blocked = /counsell?ing|medical|private.?message|restricted.?note|internal
 function textOf(row: any) { return `${row?.name || ''} ${JSON.stringify(row?.data || {})}`; }
 function dateOf(row: any) { return row?.updatedAt || row?.createdAt || row?.data?.dateTime || row?.data?.date || row?.data?.createdAt || ''; }
 function modulesOf(row: any) { return `${row?.kind || ''} ${row?.data?.module || ''} ${row?.data?.type || ''} ${row?.data?.recordType || ''}`.toLowerCase(); }
-function stripPrivate(data: any) { const result = { ...(data || {}) }; Object.keys(result).forEach((key) => { if (blocked.test(key)) delete result[key]; }); return result; }
+function stripPrivate(data: any) { const result = { ...data }; Object.keys(result).forEach((key) => { if (blocked.test(key)) delete result[key]; }); return result; }
 function related(row: any, person: any, kind: LookupKind) {
   if (row?.id === person?.id) return true;
   const data = row?.data || {};
@@ -31,6 +31,7 @@ function category(row: any, kind: LookupKind) {
 
 export function RecordLookup({ ws, kind, navigate }: { ws:any; kind:LookupKind; navigate:(page:string)=>void }) {
   const [query, setQuery] = useState(''); const [selected, setSelected] = useState<any>(null); const [tab, setTab] = useState('Overview'); const [module, setModule] = useState('All modules'); const [from, setFrom] = useState(''); const [to, setTo] = useState('');
+  const [inspectedRecord, setInspectedRecord] = useState<any>(null);
   const rows = ws.masterRows || ws.rows || [];
   const people = useMemo(() => {
     const candidates = kind === 'teacher' ? rows.filter((row:any) => row.kind === 'staff' && /teacher/i.test(`${row.data?.role || ''} ${row.data?.title || ''}`)) : rows.filter((row:any) => row.kind === 'student');
@@ -48,11 +49,60 @@ export function RecordLookup({ ws, kind, navigate }: { ws:any; kind:LookupKind; 
   const shown = tab === 'Overview' ? history : history.filter((row:any) => category(row, kind) === tab);
   const title = kind === 'teacher' ? 'Teacher Inquiry' : 'Student Search';
   const label = kind === 'teacher' ? 'teacher' : 'student';
+  const sourceModule: Record<string, string> = {
+    inventory: 'Labs',
+    request: 'Labs',
+    book: 'Library',
+    loan: 'Library',
+    student: 'Students',
+    record: 'Students',
+    class: 'Academics',
+    assignment: 'Academics',
+    submission: 'Academics',
+    classLog: 'Academics',
+    transportNotice: 'Transport',
+    attendance: 'Academics',
+  };
+
   return <section className="record-lookup">
     <div className="page-heading"><div><div className="eyebrow">AUTHORIZED RECORD LOOKUP</div><h1>{title}</h1><p>Search the organization’s shared SchoolOS records and open a permitted, chronological profile.</p></div><span className="record-scope"><ShieldCheck size={16}/> Organization scoped</span></div>
     <div className="record-lookup-grid">
       <aside className="record-directory panel"><div className="record-directory-head"><h2>{kind === 'teacher' ? 'Teacher directory' : 'Student directory'}</h2><span>{people.length} shown</span></div><label className="record-search"><Search size={17}/><input autoFocus value={query} onChange={(e)=>setQuery(e.target.value)} placeholder={`Search by name, ID, email, ${kind === 'teacher' ? 'department or class' : 'class, grade, house or route'}`} /></label><div className="record-person-list">{people.map((person:any) => <button key={person.id} className={selected?.id === person.id ? 'active' : ''} onClick={()=>{setSelected(person);setTab('Overview')}}><span className="record-avatar">{(person.name || '?').split(' ').map((part:string)=>part[0]).join('').slice(0,2)}</span><span><b>{person.name}</b><small>{kind === 'teacher' ? `${person.data?.employeeId || person.data?.email || person.data?.department || 'Teacher'} · ${person.data?.subject || person.data?.classes || ''}` : `${person.data?.studentId || person.data?.admissionNumber || person.data?.email || 'Student'} · ${person.data?.class || person.data?.grade || ''}`}</small></span><ArrowUpRight size={15}/></button>)}{!people.length && <div className="record-empty">No matching {label}s in this organization.</div>}</div></aside>
-      <div className="record-detail panel">{!selected ? <div className="record-empty-detail"><Users size={28}/><h2>Select a {label}</h2><p>Use the directory to view an authorized, unified SchoolOS record.</p></div> : <><div className="record-person-heading"><span className="record-avatar large">{selected.name?.split(' ').map((part:string)=>part[0]).join('').slice(0,2)}</span><div><h2>{selected.name}</h2><p>{kind === 'teacher' ? `${selected.data?.role || 'Teacher'} · ${selected.data?.department || selected.data?.subject || 'Westbridge International'}` : `${selected.data?.class || selected.data?.grade || 'Student'} · ${selected.data?.house || 'Westbridge International'}`}</p></div><button className="secondary-button" onClick={()=>navigate(kind === 'teacher' ? 'Academics' : 'Students')}>Open source directory</button></div><div className="record-filters"><select value={module} onChange={(e)=>setModule(e.target.value)}><option>All modules</option><option>Academics</option><option>Library</option><option>Lab</option><option>Transport</option><option>Attendance</option></select><label>From <input type="date" value={from} onChange={(e)=>setFrom(e.target.value)}/></label><label>To <input type="date" value={to} onChange={(e)=>setTo(e.target.value)}/></label></div><div className="record-tabs">{tabs.map((item)=><button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}</div>{tab==='Overview' && <div className="record-overview"><div><span>Profile</span><b>{kind === 'teacher' ? selected.data?.email || 'School employee' : selected.data?.email || 'Enrolled student'}</b></div><div><span>Linked records</span><b>{history.length}</b></div><div><span>Current status</span><b>{selected.data?.status || 'Active'}</b></div></div>}<div className="record-history">{shown.slice(0,60).map((row:any)=><article key={row.id}><span className="record-kind">{category(row,kind)}</span><div><h3>{row.name || row.data?.title || row.data?.subject || row.kind}</h3><p>{Object.entries(stripPrivate(row.data)).filter(([key,value])=>typeof value==='string' || typeof value==='number').slice(0,4).map(([key,value])=>`${key.replace(/([A-Z])/g,' $1')}: ${value}`).join(' · ') || 'Shared SchoolOS record'}</p><small><CalendarDays size={13}/>{dateOf(row) ? new Date(dateOf(row)).toLocaleString() : 'Date not recorded'} · {row.kind}</small></div><button className="record-drill" onClick={()=>window.alert(`Source record: ${row.name || row.id}`)}>View source</button></article>)}{!shown.length && <div className="record-empty">No permitted records match these filters.</div>}</div></>}</div>
+      <div className="record-detail panel">{!selected ? <div className="record-empty-detail"><Users size={28}/><h2>Select a {label}</h2><p>Use the directory to view an authorized, unified SchoolOS record.</p></div> : <><div className="record-person-heading"><span className="record-avatar large">{selected.name?.split(' ').map((part:string)=>part[0]).join('').slice(0,2)}</span><div><h2>{selected.name}</h2><p>{kind === 'teacher' ? `${selected.data?.role || 'Teacher'} · ${selected.data?.department || selected.data?.subject || 'Westbridge International'}` : `${selected.data?.class || selected.data?.grade || 'Student'} · ${selected.data?.house || 'Westbridge International'}`}</p></div><button className="secondary-button" onClick={()=>navigate(kind === 'teacher' ? 'Academics' : 'Students')}>Open source directory</button></div><div className="record-filters"><select value={module} onChange={(e)=>setModule(e.target.value)}><option>All modules</option><option>Academics</option><option>Library</option><option>Lab</option><option>Transport</option><option>Attendance</option></select><label>From <input type="date" value={from} onChange={(e)=>setFrom(e.target.value)}/></label><label>To <input type="date" value={to} onChange={(e)=>setTo(e.target.value)}/></label></div><div className="record-tabs">{tabs.map((item)=><button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}</div>{tab==='Overview' && <div className="record-overview"><div><span>Profile</span><b>{kind === 'teacher' ? selected.data?.email || 'School employee' : selected.data?.email || 'Enrolled student'}</b></div><div><span>Linked records</span><b>{history.length}</b></div><div><span>Current status</span><b>{selected.data?.status || 'Active'}</b></div></div>}<div className="record-history">{shown.slice(0,60).map((row:any)=><article key={row.id}><span className="record-kind">{category(row,kind)}</span><div><h3>{row.name || row.data?.title || row.data?.subject || row.kind}</h3><p>{Object.entries(stripPrivate(row.data)).filter(([key,value])=>typeof value==='string' || typeof value==='number').slice(0,4).map(([key,value])=>`${key.replace(/([A-Z])/g,' $1')}: ${value}`).join(' · ') || 'Shared SchoolOS record'}</p><small><CalendarDays size={13}/>{dateOf(row) ? new Date(dateOf(row)).toLocaleString() : 'Date not recorded'} · {row.kind}</small></div><button className="record-drill" onClick={()=>setInspectedRecord(row)}>View detail</button></article>)}{!shown.length && <div className="record-empty">No permitted records match these filters.</div>}</div></>}</div>
     </div>
+    {inspectedRecord && (
+      <div className="transport-modal-backdrop">
+        <div className="transport-modal">
+          <div>
+            <h2>{inspectedRecord.name || inspectedRecord.data?.title || inspectedRecord.kind}</h2>
+            <p>{category(inspectedRecord, kind)} · {inspectedRecord.kind}</p>
+          </div>
+          <dl style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+            {Object.entries(stripPrivate(inspectedRecord.data || {})).map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                <dt style={{ fontWeight: 600, color: '#64748b' }}>{k.replace(/([A-Z])/g, ' $1')}</dt>
+                <dd style={{ margin: 0, textAlign: 'right', color: '#1e293b' }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="transport-modal-actions">
+            <button type="button" onClick={() => setInspectedRecord(null)}>Close</button>
+            {sourceModule[inspectedRecord.kind] && (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  const target = sourceModule[inspectedRecord.kind];
+                  setInspectedRecord(null);
+                  navigate(target);
+                }}
+              >
+                Open in {sourceModule[inspectedRecord.kind]}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
   </section>;
 }

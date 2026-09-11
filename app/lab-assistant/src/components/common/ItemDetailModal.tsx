@@ -302,7 +302,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                 <button
                   onClick={() => {
                     onClose();
-                    onReportBroken && onReportBroken(item);
+                    onReportBroken?.(item);
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-[#FAF1F0] border border-[#A65D57]/30 text-[#A65D57] hover:bg-[#A65D57] hover:text-white rounded-xl transition-all cursor-pointer"
                   title="Report damaged / broken unit"
@@ -314,7 +314,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                 <button
                   onClick={() => {
                     onClose();
-                    onEditItem && onEditItem(item);
+                    onEditItem?.(item);
                   }}
                   className="px-3.5 py-2 text-xs font-semibold bg-white border border-[#DBE4EA] text-[#1F3547] hover:bg-[#F7F9FB] rounded-xl transition-colors cursor-pointer"
                 >
@@ -324,7 +324,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                 <button
                   onClick={() => {
                     onClose();
-                    onLogUsage && onLogUsage(item);
+                    onLogUsage?.(item);
                   }}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-[#253B53] text-white hover:bg-[#1F3547] rounded-xl shadow-xs transition-all cursor-pointer"
                 >

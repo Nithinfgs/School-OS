@@ -4,12 +4,19 @@ import {
   ArrowUpRight,
   ArrowLeft,
   BookOpen,
+  Briefcase,
   CalendarDays,
   CalendarCheck,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
   Clock,
   CheckCircle2,
   Bell,
   FlaskConical,
+  FolderKanban,
+  GraduationCap,
   LogOut,
   Users,
   Wrench,
@@ -18,6 +25,7 @@ import {
   Cpu,
   Microscope,
   Sparkles,
+  SlidersHorizontal,
   Layers,
   Atom,
   HeartPulse,
@@ -26,6 +34,8 @@ import {
   Megaphone,
   Building2,
   LayoutGrid,
+  CheckCheck,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +68,7 @@ import {
 import { navigateWebsite, webSlug } from '@/lib/web-navigation';
 import { AppleCalendarView } from '@/app/components/apple-calendar-view';
 import { LabAssistantWorkspace } from './lab-assistant/LabAssistantWorkspace';
+import { LegalFooter } from './components/legal-footer';
 
 const labels: any = {
   assignment: 'Assignment',
@@ -524,9 +535,17 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     [facilitiesTab, setFacilitiesTab] = useState<'Labs' | 'Library'>('Labs'),
     [casTab, setCasTab] = useState<'all' | 'cas' | 'projects'>('all'),
     [notificationsTab, setNotificationsTab] = useState<'all' | 'announcements' | 'alerts'>('all'),
+    [markingAllRead, setMarkingAllRead] = useState(false),
     [timetableTab, setTimetableTab] = useState<'schedule' | 'grid'>('schedule'),
     [directoryQuery, setDirectoryQuery] = useState(''),
-    [directoryDepartment, setDirectoryDepartment] = useState('All');
+    [directoryDepartment, setDirectoryDepartment] = useState('All'),
+    [homeTasksTab, setHomeTasksTab] = useState<'upcoming' | 'past' | 'overdue'>('upcoming'),
+    [homeDate, setHomeDate] = useState(localDate());
+  const stepHomeDate = (direction: -1 | 1) => {
+    const d = new Date(homeDate + 'T12:00:00');
+    d.setDate(d.getDate() + direction);
+    setHomeDate(d.toLocaleDateString('en-CA'));
+  };
   const assignmentOrigin = useRef<any>(null);
   const closingAssignment = useRef(false);
   const rows = ws.rows,
@@ -592,6 +611,34 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       .toLowerCase();
     return matchesDepartment && haystack.includes(directoryQuery.trim().toLowerCase());
   });
+  const homeContacts = [
+    {
+      name: 'Dr Rajalakshmi P A',
+      role: 'Homeroom Advisor',
+      email: 'rajalakshmi.pa@manchesters.in',
+      phone: '9894983779',
+    },
+    {
+      name: 'Ms. Sheeba S',
+      role: 'DP Coordinator / Advisor',
+      email: 'sheeba@manchesters.in',
+      phone: '9894983779',
+    },
+    ...(classes
+      .map((c: any) => ({
+        name: c.data?.teacher,
+        role: `${classLabel(c.name)} Teacher`,
+        email: `${String(c.data?.teacher || '')
+          .toLowerCase()
+          .replace(/[^a-z]/g, '.')}@manchesters.in`,
+        phone: c.data?.phone || '9894983779',
+      }))
+      .filter(
+        (c: any) =>
+          c.name && !['Dr Rajalakshmi P A', 'Ms. Sheeba S'].includes(c.name),
+      )
+      .slice(0, 2)),
+  ];
   const route = (part: string, id?: string) => {
     navigateWebsite(
       '/student/' + part + (id ? '/' + encodeURIComponent(id) : ''),
@@ -648,47 +695,31 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
   const closeAssignment = () => {
     if (closingAssignment.current) return;
     closingAssignment.current = true;
-    const origin = assignmentOrigin.current;
+    
+    // Find the class of the current assignment
+    const currentClassName = selected?.data?.class;
+    const currentClass = currentClassName
+      ? classes.find((c: any) => sameClass(c.name, currentClassName))
+      : null;
+
     setSelected(null);
-    if (!origin) {
-      history.back();
-      requestAnimationFrame(() => {
-        closingAssignment.current = false;
-      });
-      return;
+    assignmentOrigin.current = null;
+
+    if (currentClass) {
+      setClassId(currentClass.id);
+      setSubject(currentClass.name);
+      setSection('Academics');
+      setAcademicsTab('assignments');
+      navigateWebsite('/student/class/' + encodeURIComponent(currentClass.id), true);
+    } else {
+      setClassId('');
+      setSubject('');
+      setSection('Academics');
+      setAcademicsTab('assignments');
+      navigateWebsite('/student/page/academics', true);
     }
 
-    setSection(origin.section);
-    setClassId(origin.classId);
-    setClassTab(origin.classTab);
-    setDay(origin.day);
-    setCalendarMode(origin.calendarMode);
-    setQuery(origin.query);
-    setFilter(origin.filter);
-    setSubject(origin.subject);
-    setCategory(origin.category);
-    setAcademicsTab(origin.academicsTab);
-    setFacilitiesTab(origin.facilitiesTab);
-    setCasTab(origin.casTab);
-    setNotificationsTab(origin.notificationsTab);
-    setRecordsTab(origin.recordsTab);
-    setTimetableTab(origin.timetableTab);
-    // The assignment route was pushed on top of the originating view. Going
-    // back restores that exact browser entry and lets the existing route
-    // listener restore the matching page/view state.
-    history.back();
-
     requestAnimationFrame(() => {
-      window.scrollTo({ top: origin.scrollTop, left: 0, behavior: 'instant' });
-      const sidebar = document.querySelector<HTMLElement>(
-        "[data-slot='sidebar-content']",
-      );
-      if (sidebar && origin.sidebarScrollTop !== null) {
-        sidebar.scrollTop = origin.sidebarScrollTop;
-      }
-    });
-    requestAnimationFrame(() => {
-      assignmentOrigin.current = null;
       closingAssignment.current = false;
     });
   };
@@ -753,13 +784,22 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       }
       if (type === 'class') {
         setClassId(key);
-        setSection('Classes');
+        setSection('Academics');
         setSelected(null);
-        setClassTab('Overview');
       }
       if (type === 'record') {
         const row = rows.find((r: any) => r.id === key);
-        if (row) setSelected(row);
+        if (row) {
+          setSelected(row);
+          if (row.kind === 'assignment' || row.data?.class) {
+            const matchedClass = classes.find((c: any) => sameClass(c.name, row.data?.class));
+            if (matchedClass) {
+              setClassId(matchedClass.id);
+              setSubject(matchedClass.name);
+            }
+            setSection('Academics');
+          }
+        }
       }
     };
     read();
@@ -829,6 +869,27 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       });
     } catch (e: any) {
       setError(e.message);
+    }
+  };
+  const markAllNotificationsRead = async () => {
+    const unreadList = notifications.filter((n) => !n.read);
+    if (!unreadList.length || markingAllRead) return;
+    setMarkingAllRead(true);
+    try {
+      await Promise.all(
+        unreadList.map((n) =>
+          ws.act({
+            student: true,
+            action: 'read',
+            sourceId: n.source.id,
+            read: true,
+          }),
+        ),
+      );
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setMarkingAllRead(false);
     }
   };
   const timetable = (date: string, compact = false) => {
@@ -925,74 +986,425 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     );
   };
   let content: any;
-  if (section === 'Home')
+  if (section === 'Home') {
+    const allAssignments = of('assignment');
+    const homeUpcomingTasks = allAssignments
+      .filter(
+        (a: any) =>
+          !['Submitted', 'Graded'].includes(
+            submissionState(a, own, rows).status,
+          ) && (!a.data.dueAt || a.data.dueAt >= today),
+      )
+      .sort((a: any, b: any) =>
+        (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
+      );
+
+    const homePastTasks = allAssignments
+      .filter(
+        (a: any) =>
+          ['Submitted', 'Graded'].includes(
+            submissionState(a, own, rows).status,
+          ) ||
+          (a.data.dueAt &&
+            a.data.dueAt < today &&
+            submissionState(a, own, rows).status !== 'Pending'),
+      )
+      .sort((a: any, b: any) =>
+        (b.data.dueAt || '').localeCompare(a.data.dueAt || ''),
+      );
+
+    const homeOverdueTasks = allAssignments
+      .filter(
+        (a: any) =>
+          a.data.dueAt &&
+          a.data.dueAt < today &&
+          !['Submitted', 'Graded'].includes(
+            submissionState(a, own, rows).status,
+          ),
+      )
+      .sort((a: any, b: any) =>
+        (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
+      );
+
+    const homeCurrentTasks =
+      homeTasksTab === 'upcoming'
+        ? homeUpcomingTasks
+        : homeTasksTab === 'past'
+        ? homePastTasks
+        : homeOverdueTasks;
+
+    const homeDaySchedule = scheduleFor(rows, homeDate);
+
+    const homeProjectDeadlines = [
+      ...of('project'),
+      ...of('cas').filter((r: any) => r.data?.status !== 'Approved'),
+      ...of('exam').filter(
+        (r: any) => (r.data.dueAt || r.data.date || '') >= today,
+      ),
+    ]
+      .map((r: any) => ({
+        id: r.id,
+        title: r.name,
+        category:
+          r.data?.category ||
+          (r.kind === 'cas'
+            ? 'CAS'
+            : r.kind === 'exam'
+            ? 'Exam'
+            : 'Project'),
+        date: r.data?.dueAt || r.data?.deadline || r.data?.date || '',
+        description: r.data?.description || r.data?.topic || '',
+        raw: r,
+      }))
+      .filter((item) => item.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 4);
+
     content = (
-      <>
-        <div className="student-focus student-home-next" suppressHydrationWarning>
-          <section suppressHydrationWarning>
-            <span className="eyebrow">NEXT CLASS</span>
-            <h2 suppressHydrationWarning>{next ? classLabel(next.data.class) : 'Your school day is clear'}</h2>
-            <p suppressHydrationWarning>
-              {next
-                ? `${next.nextDate === today ? 'Today' : next.nextDate} · ${next.data.startTime} · ${next.data.room} · ${next.data.substitution || next.data.teacher}`
-                : 'Check your calendar for upcoming activities.'}
-            </p>
-            {next && (
-              <Button
-                onClick={() => {
-                  const c = classes.find(
-                    (c: any) => c.name === next.data.class,
-                  );
-                  if (c) open(c);
-                }}
+      <div className="student-home-container" suppressHydrationWarning>
+        {/* Top 3 Quick Action Chips */}
+        <div className="student-quick-strip">
+          <div
+            className="student-quick-chip"
+            onClick={() => go('Portfolio')}
+          >
+            <span className="chip-icon text-amber-600">
+              <Briefcase size={18} />
+            </span>
+            <span>Portfolio</span>
+            <span
+              className="chip-plus"
+              title="Add portfolio item"
+              onClick={(e) => {
+                e.stopPropagation();
+                quick('portfolio');
+              }}
+            >
+              +
+            </span>
+          </div>
+          <div
+            className="student-quick-chip"
+            onClick={() => go('CAS')}
+          >
+            <span className="chip-icon text-blue-600">
+              <GraduationCap size={18} />
+            </span>
+            <span>CAS</span>
+            <span
+              className="chip-plus"
+              title="Add CAS experience"
+              onClick={(e) => {
+                e.stopPropagation();
+                quick('portfolio');
+              }}
+            >
+              +
+            </span>
+          </div>
+          <div
+            className="student-quick-chip"
+            onClick={() => {
+              go('CAS');
+              setCasTab('projects');
+            }}
+          >
+            <span className="chip-icon text-emerald-600">
+              <FolderKanban size={18} />
+            </span>
+            <span>Projects</span>
+            <span
+              className="chip-plus"
+              title="Add project proposal"
+              onClick={(e) => {
+                e.stopPropagation();
+                quick('request');
+              }}
+            >
+              +
+            </span>
+          </div>
+        </div>
+
+        {/* 3-Column Middle Bento Grid */}
+        <div className="student-bento-grid">
+          {/* Card 1: Daily Calendar */}
+          <section className="student-bento-card">
+            <div className="student-bento-header">
+              <h2>Daily Calendar</h2>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => go('Today')}
               >
-                Open class <ArrowUpRight size={16} />
-              </Button>
+                View All
+              </button>
+            </div>
+            <div className="student-date-nav">
+              <button
+                type="button"
+                className="arrow-btn"
+                aria-label="Previous day"
+                onClick={() => stepHomeDate(-1)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <label className="date-display">
+                <span>
+                  {new Date(homeDate + 'T12:00:00').toLocaleDateString(undefined, {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+                <CalendarIcon size={16} className="text-slate-400" />
+                <input
+                  type="date"
+                  value={homeDate}
+                  onChange={(e) => e.target.value && setHomeDate(e.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="arrow-btn"
+                aria-label="Next day"
+                onClick={() => stepHomeDate(1)}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            {homeDaySchedule.length ? (
+              <div className="space-y-2 mt-1">
+                {homeDaySchedule.slice(0, 3).map((r: any) => {
+                  const c = classes.find((c: any) => c.name === r.data.class);
+                  return (
+                    <div
+                      key={r.id}
+                      className="p-3 rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100/90 transition-colors cursor-pointer"
+                      onClick={() => c && open(c)}
+                    >
+                      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1">
+                        <span>{r.data.startTime} – {r.data.endTime}</span>
+                        <span className="bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[11px] font-bold text-slate-700">
+                          {r.data.period}
+                        </span>
+                      </div>
+                      <div className="font-bold text-sm text-slate-900 truncate">
+                        {classLabel(r.data.class)}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5 truncate">
+                        {r.data.room} · {r.data.substitution || r.data.teacher}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="student-empty-card">
+                <div className="empty-illustration text-slate-300">
+                  <CalendarDays size={36} />
+                </div>
+                <h4>No Events</h4>
+                <p>There are no events yet.</p>
+              </div>
             )}
           </section>
-        </div>
-        <div className="teacher-grid">
-          <section className="teacher-panel">
-            <div className="teacher-panel-heading">
-              <h2>Today’s classes</h2>
-              <Button variant="ghost" onClick={() => go('Today')}>
-                Full day
-              </Button>
+
+          {/* Card 2: Project Deadlines */}
+          <section className="student-bento-card">
+            <div className="student-bento-header">
+              <h2>Project Deadlines</h2>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => {
+                  go('CAS');
+                  setCasTab('projects');
+                }}
+              >
+                View All
+              </button>
             </div>
-            {timetable(today, true)}
+            {homeProjectDeadlines.length ? (
+              <div className="space-y-2.5">
+                {homeProjectDeadlines.map((p: any) => (
+                  <div
+                    key={p.id}
+                    className="p-3 rounded-lg border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100/90 transition-colors cursor-pointer"
+                    onClick={() => open(p.raw || p)}
+                  >
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
+                        {p.category}
+                      </span>
+                      <span className="text-slate-600 font-medium">{p.date || 'Pending'}</span>
+                    </div>
+                    <div className="font-bold text-sm text-slate-900 truncate">
+                      {p.title}
+                    </div>
+                    {p.description && (
+                      <div className="text-xs text-slate-500 mt-0.5 truncate">
+                        {p.description}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="student-empty-card">
+                <div className="empty-illustration text-slate-300">
+                  <ClipboardList size={36} />
+                </div>
+                <h4>No Upcoming Deadlines</h4>
+                <p>You don't have any upcoming deadlines yet.</p>
+              </div>
+            )}
           </section>
-          {pane('To Do', upcoming.slice(0, 5), 'You’re up to date with submitted work.')}
+
+          {/* Card 3: Key Contacts */}
+          <section className="student-bento-card">
+            <div className="student-bento-header">
+              <h2>Key Contacts</h2>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => quick('message')}
+              >
+                Message
+              </button>
+            </div>
+            <div>
+              {homeContacts.map((contact: any, i: number) => {
+                const initials = contact.name
+                  .split(' ')
+                  .map((n: string) => n[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase() || 'TR';
+                return (
+                  <div key={i} className="student-contact-row">
+                    <div className="student-avatar-monogram">
+                      {initials}
+                    </div>
+                    <div className="student-contact-info">
+                      <span className="contact-name">{contact.name}</span>
+                      <span className="contact-role">{contact.role}</span>
+                      <span className="contact-meta">
+                        Email: <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                      </span>
+                      {contact.phone && (
+                        <span className="contact-meta">
+                          Mobile Phone: <a href={`tel:${contact.phone}`}>{contact.phone}</a>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </div>
-        <div className="teacher-grid">
-          {pane(
-            'Updates',
-            [
-              ...of('submission').filter((r: any) => r.data.returned),
-              ...of('request').filter((r: any) => ['Approved', 'Ready', 'Completed'].includes(r.data.status)),
-              ...of('loan').filter((r: any) => !['Returned', 'Closed'].includes(r.data.status)),
-              ...of('announcement'),
-              ...of('timetable').filter((r: any) => r.data.roomChange),
-            ]
-              .sort((a: any, b: any) => (b.updatedAt || b.data.date || '').localeCompare(a.updatedAt || a.data.date || ''))
-              .slice(0, 6),
-            'No new updates.',
+
+        {/* Bottom Full-Width Tasks & Deadlines Section */}
+        <section className="student-tasks-card">
+          <div className="student-tasks-header">
+            <h2>Tasks & Deadlines</h2>
+            <div className="student-segmented-tabs">
+              <button
+                type="button"
+                className={homeTasksTab === 'upcoming' ? 'active' : ''}
+                onClick={() => setHomeTasksTab('upcoming')}
+              >
+                Upcoming
+                <span className="badge-count">{homeUpcomingTasks.length}</span>
+              </button>
+              <button
+                type="button"
+                className={homeTasksTab === 'past' ? 'active' : ''}
+                onClick={() => setHomeTasksTab('past')}
+              >
+                Past
+                <span className="badge-count">{homePastTasks.length}</span>
+              </button>
+              <button
+                type="button"
+                className={homeTasksTab === 'overdue' ? 'active' : ''}
+                onClick={() => setHomeTasksTab('overdue')}
+              >
+                Overdue
+                {homeOverdueTasks.length > 0 && (
+                  <span className="badge-count overdue">{homeOverdueTasks.length}</span>
+                )}
+              </button>
+            </div>
+          </div>
+          {homeCurrentTasks.length ? (
+            <div className="space-y-2.5">
+              {homeCurrentTasks.map((a: any) => {
+                const state = submissionState(a, own, rows);
+                const isPastDue = a.data.dueAt && a.data.dueAt < today;
+                return (
+                  <div
+                    key={a.id}
+                    className="student-task-item hover:shadow-xs transition-shadow cursor-pointer"
+                    onClick={() => open(a)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap">
+                        {classLabel(a.data.class)}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900 text-sm truncate">
+                          {a.name}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {a.data.dueAt ? `Due ${a.data.dueAt}` : 'No due date'} · {a.data.type || 'Coursework'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5 flex-shrink-0">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          state.status === 'Submitted' || state.status === 'Graded'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : isPastDue
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {state.status || (isPastDue ? 'Overdue' : 'Pending')}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs font-semibold gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          open(a);
+                        }}
+                      >
+                        {state.status === 'Submitted' ? 'View' : 'Open'}{' '}
+                        <ArrowUpRight size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-slate-500 text-sm">
+              {homeTasksTab === 'overdue'
+                ? 'No overdue tasks! You are all caught up.'
+                : homeTasksTab === 'upcoming'
+                ? 'No upcoming tasks scheduled.'
+                : 'No past tasks recorded.'}
+            </div>
           )}
-        </div>
-        <div className="teacher-grid">
-          {pane(
-            'Upcoming',
-            [
-              ...of('exam').filter((r: any) => (r.data.dueAt || r.data.date || '') >= today),
-              ...of('event'),
-              ...rows.filter((r: any) => ['project', 'cas'].includes(r.kind) && r.data.status !== 'Approved'),
-            ]
-              .sort((a: any, b: any) => (a.data.dueAt || a.data.date || a.data.deadline || '').localeCompare(b.data.dueAt || b.data.date || b.data.deadline || ''))
-              .slice(0, 8),
-            'No upcoming exams, events, or CAS milestones.',
-          )}
-        </div>
-      </>
+        </section>
+      </div>
     );
+  }
   else if (section === 'Today')
     content = (
       <>
@@ -1031,262 +1443,433 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         {timetableTab === 'schedule' ? timetable(day) : <DP2TimetableMatrix />}
       </>
     );
-  else if (section === 'Classes' && cls) {
-    const related = rows.filter((r: any) => sameClass(r.data.class, cls.name)),
-      names = [
-        'Overview',
-        'Lessons',
-        'Assignments',
-        'Resources',
-        'Grades',
-        'Attendance',
-      ];
-    content = (
-      <>
-        <Button variant="ghost" onClick={() => go('Classes')}>
-          <ArrowLeft size={16} /> All classes
-        </Button>
-        <div className="student-class-heading">
-          <h2>{classLabel(cls.name)}</h2>
-          <p>
-            {cls.data.teacher} · {cls.data.room}
-          </p>
-        </div>
-        <nav className="student-tabs">
-          {names.map((t) => (
-            <button
-              key={t}
-              aria-current={classTab === t ? 'page' : undefined}
-              onClick={() => setClassTab(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </nav>
-        {classTab === 'Lessons' ? (
-          <ClassHistory ws={ws} classId={cls.id} />
-        ) : (
-          <List
-            rows={related.filter((r: any) =>
-              (
-                ({
-                  Overview: [
-                    'assignment',
-                    'classLog',
-                    'announcement',
-                    'resource',
-                  ],
-                  Assignments: ['assignment'],
-                  Resources: ['resource', 'file'],
-                  Grades: ['submission', 'exam'],
-                  Attendance: ['attendance'],
-                }) as any
-              )[classTab]?.includes(r.kind),
-            )}
-            open={open}
-          />
-        )}
-      </>
-    );
-  } else if (section === 'Classes')
-    content = (
-      <div className="student-catalog">
-        {classes.map((c: any) => (
-          <button
-            className="teacher-panel student-class-card"
-            onClick={() => open(c)}
-            key={c.id}
-          >
-            <BookOpen />
-            <h2>{classLabel(c.name)}</h2>
-            <p>{c.data.teacher}</p>
-            <small>
-              {c.data.room} ·{' '}
-              {
-                of('assignment').filter((a: any) => sameClass(a.data.class, c.name))
-                  .length
-              }{' '}
-              assignments
-            </small>
-            <ArrowUpRight />
-          </button>
-        ))}
-      </div>
-    );
-  else if (['Assignments', 'Academics', 'Grades', 'Resources'].includes(section)) {
-    content = (
-      <>
-        <div
-          className="teacher-toolbar"
-          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
-        >
-          <div
-            className="sub-tabs-pill"
-            style={{
-              display: 'flex',
-              gap: '6px',
-              padding: '4px',
-              background: 'var(--muted, #f1f5f9)',
-              borderRadius: '8px',
-            }}
-          >
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'assignments' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAcademicsTab('assignments')}
-            >
-              Assignments & Tasks ({of('assignment').length})
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'grades' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAcademicsTab('grades')}
-            >
-              Grades
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'resources' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAcademicsTab('resources')}
-            >
-              Resources ({of('resource').length})
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'feedback' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAcademicsTab('feedback')}
-            >
-              Returned Work & Feedback
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${academicsTab === 'exams' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAcademicsTab('exams')}
-            >
-              Exams ({of('exam').length})
-            </button>
-            <button
-              type="button"
-              className="px-3 py-1.5 text-xs font-semibold rounded-md text-muted-foreground hover:text-foreground"
-              onClick={() => go('Report Cards')}
-            >
-              Report Cards
-            </button>
-          </div>
-          {academicsTab === 'assignments' && (
-            <>
-              <TeachingSelect
-                label="Subject"
-                value={subject}
-                onChange={setSubject}
-                options={[
-                  { id: '', name: 'All subjects' },
-                  ...classes.map((c: any) => ({ id: c.name, name: classLabel(c.name) })),
-                ]}
-              />
-              <TeachingSelect
-                label="Status"
-                value={filter}
-                onChange={setFilter}
-                options={[
-                  { id: '', name: 'All statuses' },
-                  'NotStarted',
-                  'InProgress',
-                  'Submitted',
-                  'Late',
-                  'Graded',
-                ]}
-              />
-            </>
-          )}
-          {academicsTab === 'resources' && (
-            <TeachingSelect
-              label="Subject"
-              value={subject}
-              onChange={setSubject}
-              options={[
-                { id: '', name: 'All subjects' },
-                ...classes.map((c: any) => ({ id: c.name, name: classLabel(c.name) })),
-              ]}
-            />
-          )}
-        </div>
-        {academicsTab === 'exams' ? (
-          <List
-            rows={matched(of('exam')).sort((a: any, b: any) =>
-              (a.data.dueAt || a.data.date || '').localeCompare(b.data.dueAt || b.data.date || ''),
-            )}
-            open={open}
-            empty="No exams are scheduled for your classes."
-            meta={(r: any) => `${r.data.class || 'School-wide'} · ${r.data.date || r.data.dueAt || 'Date to be announced'}`}
-          />
-        ) : academicsTab === 'assignments' ? (
-          <List
-            rows={matched(of('assignment')).sort((a: any, b: any) =>
-              (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
-            )}
-            open={open}
-            meta={(r: any) =>
-              `${r.data.class} · ${submissionState(r, own, rows).status} · Due ${r.data.dueAt}`
-            }
-          />
-        ) : academicsTab === 'grades' ? (
-          <div className="academics-grades-grid">
-            {classes.map((c: any) => {
-              const grades = of('submission').filter(
-                  (r: any) =>
-                    sameClass(r.data.class, c.name) && r.data.returned === true,
-                ),
-                exams = of('exam').filter(
-                  (r: any) =>
-                    sameClass(r.data.class, c.name) && r.data.results?.length,
-                );
-              return (
-                <section className="teacher-panel" key={c.id}>
-                  <h2>{classLabel(c.name)}</h2>
-                  <List
-                    rows={[...grades, ...exams].sort((a: any, b: any) =>
-                      (b.updatedAt || '').localeCompare(a.updatedAt || ''),
-                    )}
-                    open={open}
-                    empty="No published results yet."
-                    meta={(r: any) =>
-                      r.kind === 'exam'
-                        ? `${r.data.results[0].mark}% · ${r.data.results[0].feedback || ''}`
-                        : `${r.data.grade ?? '—'} marks · ${r.data.feedback || 'Open returned work'}`
+  else if (['Classes', 'Academics', 'Assignments', 'Grades', 'Resources'].includes(section)) {
+    if (cls) {
+      const classAssignments = of('assignment').filter((a: any) =>
+        sameClass(a.data.class, cls.name),
+      );
+      const classResources = of('resource').filter((r: any) =>
+        sameClass(r.data.class, cls.name),
+      );
+      const classGrades = of('submission').filter(
+        (r: any) =>
+          sameClass(r.data.class, cls.name) && r.data.returned === true,
+      );
+      const classExams = of('exam').filter((e: any) =>
+        sameClass(e.data.class, cls.name),
+      );
+
+      const filteredAssignments = classAssignments
+        .filter(
+          (a: any) =>
+            !filter || submissionState(a, own, rows).status === filter,
+        )
+        .sort((a: any, b: any) =>
+          (a.data.dueAt || '').localeCompare(b.data.dueAt || ''),
+        );
+
+      const getStatusBadge = (status: string) => {
+        switch (status?.toLowerCase()) {
+          case 'graded':
+            return {
+              label: 'Graded',
+              className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            };
+          case 'submitted':
+            return {
+              label: 'Submitted',
+              className: 'bg-blue-50 text-blue-700 border-blue-200',
+            };
+          case 'inprogress':
+            return {
+              label: 'In Progress',
+              className: 'bg-amber-50 text-amber-700 border-amber-200',
+            };
+          case 'late':
+            return {
+              label: 'Late',
+              className: 'bg-rose-50 text-rose-700 border-rose-200',
+            };
+          default:
+            return {
+              label: status || 'To Do',
+              className: 'bg-slate-100 text-slate-600 border-slate-200',
+            };
+        }
+      };
+
+      const formatPrettyDate = (dateStr: string) => {
+        if (!dateStr) return 'Date TBA';
+        const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      };
+
+      content = (
+        <div className="space-y-6">
+          {/* Header Bento Card (ManageBac Inspired) */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 font-bold text-lg shadow-2xs">
+                  <BookOpen size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                      {classLabel(cls.name)}
+                    </h1>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200/60">
+                      {cls.name.includes('HL') ? 'Higher Level (HL)' : cls.name.includes('SL') ? 'Standard Level (SL)' : 'Course'}
+                    </span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
+                      {cls.data.room || 'Room TBA'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                    <span>Teacher: <b className="text-slate-700">{cls.data.teacher}</b></span>
+                    <span>•</span>
+                    <span>{classAssignments.length} active tasks</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Toolbar on Top Right */}
+              <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-1.5 border-slate-200 text-xs font-semibold hover:bg-slate-50 text-slate-700 shadow-xs"
+                  onClick={() => {
+                    setClassId('');
+                    setSubject('');
+                  }}
+                >
+                  <ArrowLeft size={14} /> All Subjects
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-1.5 border-slate-200 text-xs font-semibold hover:bg-slate-50 text-slate-700 shadow-xs"
+                  onClick={() => go('Calendar')}
+                >
+                  <CalendarIcon size={14} /> Full Calendar
+                </Button>
+                <TeachingSelect
+                  label="Switch Subject"
+                  value={cls.name}
+                  onChange={(name: any) => {
+                    const targetCls = classes.find((c: any) => c.name === name);
+                    if (targetCls) {
+                      setClassId(targetCls.id);
+                      setSubject(targetCls.name);
                     }
+                  }}
+                  options={classes.map((c: any) => ({
+                    id: c.name,
+                    name: classLabel(c.name),
+                  }))}
+                />
+              </div>
+            </div>
+
+            {/* Sub-Tabs Pill Navigation Bar */}
+            <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${academicsTab === 'assignments' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`}
+                onClick={() => setAcademicsTab('assignments')}
+              >
+                Tasks & Assignments ({classAssignments.length})
+              </button>
+              <button
+                type="button"
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${academicsTab === 'grades' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`}
+                onClick={() => setAcademicsTab('grades')}
+              >
+                Grades & Feedback
+              </button>
+              <button
+                type="button"
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${academicsTab === 'resources' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`}
+                onClick={() => setAcademicsTab('resources')}
+              >
+                Files & Resources ({classResources.length})
+              </button>
+              <button
+                type="button"
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${academicsTab === 'exams' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`}
+                onClick={() => setAcademicsTab('exams')}
+              >
+                Exams ({classExams.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content Section in Defined Bento Container */}
+          {academicsTab === 'assignments' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Tasks & Deadlines
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Coursework, lab reports, investigations, and summative assessments.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <TeachingSelect
+                    label="Status Filter"
+                    value={filter}
+                    onChange={setFilter}
+                    options={[
+                      { id: '', name: 'All Statuses' },
+                      'NotStarted',
+                      'InProgress',
+                      'Submitted',
+                      'Late',
+                      'Graded',
+                    ]}
                   />
-                </section>
+                </div>
+              </div>
+
+              {/* Defined Boxed Cards List */}
+              {filteredAssignments.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredAssignments.map((a: any) => {
+                    const state = submissionState(a, own, rows).status;
+                    const badge = getStatusBadge(state);
+                    const teacherInitial = (cls.data.teacher || 'T')
+                      .split(' ')
+                      .map((n: string) => n[0])
+                      .slice(0, 2)
+                      .join('');
+
+                    return (
+                      <div
+                        key={a.id}
+                        onClick={() => open(a)}
+                        className="bg-slate-50/70 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                      >
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 group-hover:border-primary/40 group-hover:text-primary transition-all shrink-0 shadow-2xs">
+                            <FileText size={18} />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">
+                              {a.name}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
+                              <span>{cls.data.teacher}</span>
+                              <span>•</span>
+                              <span>Due {formatPrettyDate(a.data.dueAt)}</span>
+                              {a.data.type && (
+                                <>
+                                  <span>•</span>
+                                  <span className="capitalize">{a.data.type}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                          <div className="w-7 h-7 rounded-full bg-slate-200/80 border border-slate-300/80 text-[11px] font-bold text-slate-600 flex items-center justify-center">
+                            {teacherInitial}
+                          </div>
+                          <ArrowUpRight
+                            size={16}
+                            className="text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <ClipboardList size={28} className="mx-auto text-slate-400 mb-2" />
+                  <p className="text-sm font-semibold text-slate-700">No tasks found</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {filter ? `No ${filter} tasks for this subject.` : 'No active assignments assigned yet.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Grades View in Defined Bento Container */}
+          {academicsTab === 'grades' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
+                Published Results & Marks
+              </h2>
+              {classGrades.length > 0 || classExams.length > 0 ? (
+                <div className="space-y-3">
+                  {[...classGrades, ...classExams].map((item: any) => (
+                    <div
+                      key={item.id}
+                      onClick={() => open(item)}
+                      className="bg-slate-50/70 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-4 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-emerald-600 shrink-0">
+                          <CheckCircle2 size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {item.data.feedback || 'Teacher evaluated'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-extrabold text-slate-900 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {item.kind === 'exam' ? `${item.data.results?.[0]?.mark || '—'}%` : `${item.data.grade ?? '—'} pts`}
+                        </span>
+                        <ArrowUpRight size={16} className="text-slate-400 group-hover:text-primary" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 py-6 text-center">No published grades or exam marks yet.</p>
+              )}
+            </div>
+          )}
+
+          {/* Resources View in Defined Bento Container */}
+          {academicsTab === 'resources' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
+                Course Materials & Files
+              </h2>
+              {classResources.length > 0 ? (
+                <div className="space-y-3">
+                  {classResources.map((res: any) => (
+                    <div
+                      key={res.id}
+                      onClick={() => open(res)}
+                      className="bg-slate-50/70 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-4 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-600 shrink-0">
+                          <BookOpen size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">
+                            {res.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {res.data.category || 'Course File'} • {formatPrettyDate(res.data.date)}
+                          </p>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={16} className="text-slate-400 group-hover:text-primary" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 py-6 text-center">No resources or files uploaded for this course yet.</p>
+              )}
+            </div>
+          )}
+
+          {/* Exams View in Defined Bento Container */}
+          {academicsTab === 'exams' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
+                Scheduled Exams & Assessments
+              </h2>
+              {classExams.length > 0 ? (
+                <div className="space-y-3">
+                  {classExams.map((exam: any) => (
+                    <div
+                      key={exam.id}
+                      onClick={() => open(exam)}
+                      className="bg-slate-50/70 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-4 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-purple-600 shrink-0">
+                          <CalendarCheck size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">
+                            {exam.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Exam Date: {formatPrettyDate(exam.data.date || exam.data.dueAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={16} className="text-slate-400 group-hover:text-primary" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 py-6 text-center">No scheduled exams for this subject.</p>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      content = (
+        <div className="space-y-6">
+          {/* Subject Cards Grid (Image 1) */}
+          <div className="student-catalog grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {classes.map((c: any) => {
+              const count = of('assignment').filter((a: any) =>
+                sameClass(a.data.class, c.name),
+              ).length;
+              return (
+                <button
+                  key={c.id}
+                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md hover:border-primary/40 transition-all text-left group flex flex-col justify-between h-[200px] cursor-pointer"
+                  onClick={() => {
+                    setClassId(c.id);
+                    setSubject(c.name);
+                  }}
+                >
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 mb-4 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                      <BookOpen size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
+                      {classLabel(c.name)}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">{c.data.teacher}</p>
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      {c.data.room} · {count} {count === 1 ? 'assignment' : 'assignments'}
+                    </span>
+                    <ArrowUpRight
+                      size={18}
+                      className="text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
+                    />
+                  </div>
+                </button>
               );
             })}
           </div>
-        ) : academicsTab === 'resources' ? (
-          <div className="academics-resources-view">
-            <List
-              rows={matched(of('resource'))}
-              open={open}
-              empty="No academic resources found for this subject."
-              meta={(r: any) =>
-                `${r.data.class || 'Academic'} · ${r.data.category || 'Resource'} · ${r.data.date || 'Current term'}`
-              }
-            />
-          </div>
-        ) : (
-          <div className="teacher-grid">
-            {pane(
-              'Recent returned work & grades',
-              of('submission').filter((r: any) => r.data.returned),
-            )}
-            {pane(
-              'Academic Resources & Course Materials',
-              of('resource').slice(0, 8),
-            )}
-          </div>
-        )}
-      </>
-    );
-  }
-  else if (section === 'Calendar') {
+        </div>
+      );
+    }
+  } else if (section === 'Calendar') {
     content = (
       <AppleCalendarView
         ws={ws}
@@ -1493,63 +2076,158 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         : casTab === 'projects'
           ? projectRows
           : [...casRows, ...projectRows];
+    const filteredRows = matched(combinedRows);
+
+    const creativityCount = casRows.filter((r: any) =>
+      String(r.data?.strand || '').toLowerCase().includes('creat'),
+    ).length;
+    const activityCount = casRows.filter((r: any) =>
+      String(r.data?.strand || '').toLowerCase().includes('act'),
+    ).length;
+    const serviceCount = casRows.filter((r: any) =>
+      String(r.data?.strand || '').toLowerCase().includes('serv'),
+    ).length;
+
     content = (
-      <>
-        <div
-          className="teacher-toolbar"
-          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
-        >
+      <div className="space-y-6">
+        {/* Hero Banner Bento Card */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <GraduationCap size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                  IB Core Portfolio
+                </span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 mt-1">
+                CAS & Supervised Projects
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Log Creativity, Activity, and Service experiences, track learning outcomes, and manage supervisor reviews.
+              </p>
+            </div>
+          </div>
+          <Button
+            className="bg-[#2D7F9F] hover:bg-[#236F91] text-white shrink-0 font-semibold text-xs gap-1.5 shadow-xs"
+            onClick={() => quick('portfolio')}
+          >
+            <Plus size={15} /> Add CAS Experience
+          </Button>
+        </div>
+
+        {/* 4-Stat Bento Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">Creativity</span>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-900 mt-2">{creativityCount}</p>
+            <span className="text-[11px] text-slate-400">Experiences logged</span>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">Activity</span>
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-900 mt-2">{activityCount}</p>
+            <span className="text-[11px] text-slate-400">Experiences logged</span>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">Service</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-900 mt-2">{serviceCount}</p>
+            <span className="text-[11px] text-slate-400">Experiences logged</span>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">Projects</span>
+              <span className="w-2 h-2 rounded-full bg-purple-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-900 mt-2">{projectRows.length}</p>
+            <span className="text-[11px] text-slate-400">Supervised projects</span>
+          </div>
+        </div>
+
+        {/* Sub-Tabs Selector */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div
-            className="sub-tabs-pill"
-            style={{
-              display: 'flex',
-              gap: '6px',
-              padding: '4px',
-              background: 'var(--muted, #f1f5f9)',
-              borderRadius: '8px',
-            }}
+            className="sub-tabs-pill inline-flex gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200/60"
           >
             <button
               type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'all' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'all' ? 'bg-white shadow-xs text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setCasTab('all')}
             >
               All Portfolio ({casRows.length + projectRows.length})
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'cas' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'cas' ? 'bg-white shadow-xs text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setCasTab('cas')}
             >
               CAS Experiences ({casRows.length})
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'projects' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${casTab === 'projects' ? 'bg-white shadow-xs text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setCasTab('projects')}
             >
               Supervised Projects ({projectRows.length})
             </button>
           </div>
-          <Button onClick={() => quick('portfolio')}>Add CAS Experience</Button>
         </div>
-        <List
-          rows={matched(combinedRows)}
-          open={open}
-          empty={
-            casTab === 'cas'
-              ? 'Start your first CAS experience.'
-              : casTab === 'projects'
-                ? 'Your supervisor has not assigned a project yet.'
-                : 'No CAS or project records found.'
-          }
-          meta={(r: any) =>
-            r.kind === 'cas'
-              ? `CAS · ${r.data.strand || 'Creativity/Activity/Service'} · ${r.data.status || 'Active'}`
-              : `Project · ${r.data.supervisor || 'Supervisor'} · ${r.data.status || 'In Progress'}`
-          }
-        />
-      </>
+
+        {/* Portfolio Content or Elevated Empty State */}
+        {filteredRows.length > 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+            <List
+              rows={filteredRows}
+              open={open}
+              meta={(r: any) =>
+                r.kind === 'cas'
+                  ? `CAS · ${r.data.strand || 'Creativity/Activity/Service'} · ${r.data.status || 'Active'}`
+                  : `Project · ${r.data.supervisor || 'Supervisor'} · ${r.data.status || 'In Progress'}`
+              }
+            />
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl p-10 shadow-xs flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-3">
+              <FolderKanban size={22} />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800">
+              {casTab === 'cas'
+                ? 'No CAS experiences logged yet'
+                : casTab === 'projects'
+                  ? 'No supervised projects assigned'
+                  : 'No CAS or project records found'}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+              {casTab === 'cas'
+                ? 'Begin your CAS portfolio by adding your first reflection across Creativity, Activity, or Service.'
+                : casTab === 'projects'
+                  ? 'Your CAS coordinator or supervisor will assign major projects here.'
+                  : 'Get started by creating your first portfolio entry or logging an experience.'}
+            </p>
+            {casTab !== 'projects' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs font-semibold gap-1.5 border-slate-300 hover:bg-slate-50"
+                onClick={() => quick('portfolio')}
+              >
+                <Plus size={14} /> Add CAS Experience
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
     );
   } else if (section === 'Messages')
     content = (
@@ -1567,47 +2245,65 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       <>
         <div
           className="teacher-toolbar"
-          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
+          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <div
-            className="sub-tabs-pill"
-            style={{
-              display: 'flex',
-              gap: '6px',
-              padding: '4px',
-              background: 'var(--muted, #f1f5f9)',
-              borderRadius: '8px',
-            }}
-          >
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'all' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setNotificationsTab('all')}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+            <div
+              className="sub-tabs-pill"
+              style={{
+                display: 'flex',
+                gap: '6px',
+                padding: '4px',
+                background: 'var(--muted, #f1f5f9)',
+                borderRadius: '8px',
+              }}
             >
-              All Updates ({announcements.length + notifications.length})
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'announcements' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setNotificationsTab('announcements')}
-            >
-              School Announcements ({announcements.length})
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'alerts' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setNotificationsTab('alerts')}
-            >
-              Personal Alerts ({unread} unread)
-            </button>
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'all' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setNotificationsTab('all')}
+              >
+                All Updates ({announcements.length + notifications.length})
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'announcements' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setNotificationsTab('announcements')}
+              >
+                School Announcements ({announcements.length})
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${notificationsTab === 'alerts' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setNotificationsTab('alerts')}
+              >
+                Personal Alerts ({unread} unread)
+              </button>
+            </div>
+            {notificationsTab !== 'announcements' && (
+              <TeachingSelect
+                label="Read status"
+                value={filter}
+                onChange={setFilter}
+                options={[{ id: '', name: 'All alerts' }, 'Unread', 'Read']}
+              />
+            )}
           </div>
-          {notificationsTab !== 'announcements' && (
-            <TeachingSelect
-              label="Read status"
-              value={filter}
-              onChange={setFilter}
-              options={[{ id: '', name: 'All alerts' }, 'Unread', 'Read']}
-            />
+          {unread > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={markingAllRead}
+              className="text-xs font-semibold h-8 gap-1.5 rounded-lg border-border bg-card hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all shadow-xs"
+              onClick={markAllNotificationsRead}
+            >
+              {markingAllRead ? (
+                <Loader2 size={13} className="animate-spin text-primary" />
+              ) : (
+                <CheckCheck size={14} className="text-primary" />
+              )}
+              <span>{markingAllRead ? 'Marking read...' : 'Mark all as read'}</span>
+            </Button>
           )}
         </div>
 
@@ -1643,20 +2339,52 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
 
         {(notificationsTab === 'all' || notificationsTab === 'alerts') && (
           <div className="personal-alerts-section">
-            <h2
+            <div
               style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                marginBottom: '12px',
-                color: 'var(--foreground)',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px',
+                flexWrap: 'wrap',
                 gap: '8px',
               }}
             >
-              <Bell size={16} />
-              <span>Personal Alerts & Notifications</span>
-            </h2>
+              <h2
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  margin: 0,
+                  color: 'var(--foreground)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Bell size={16} />
+                <span>Personal Alerts & Notifications</span>
+                {unread > 0 && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {unread} unread
+                  </span>
+                )}
+              </h2>
+              {unread > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={markingAllRead}
+                  className="text-xs font-medium h-7 gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={markAllNotificationsRead}
+                >
+                  {markingAllRead ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <CheckCheck size={13} />
+                  )}
+                  <span>Mark all as read</span>
+                </Button>
+              )}
+            </div>
             {notifications
               .filter(
                 (n) =>
@@ -1858,43 +2586,40 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
   else if (section === 'Counselling') {
     const enabled = of('servicePolicy')[0]?.data.counsellingEnabled !== false;
     content = (
-      <>
-        <div
-          className="teacher-toolbar"
-          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
-        >
+      <div className="space-y-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p
-              style={{
-                margin: 0,
-                fontSize: '13px',
-                color: 'var(--muted-foreground)',
-              }}
-            >
+            <h2 className="text-base font-bold text-slate-900">Student Pastoral & Counselling Support</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
               Confidential pastoral care, mental wellbeing support, and academic guidance.
             </p>
           </div>
           {enabled ? (
-            <Button onClick={() => quick('counsellingRequest')}>
-              Request Counselling Appointment
+            <Button
+              className="bg-[#2D7F9F] hover:bg-[#236F91] text-white shrink-0 font-semibold text-xs"
+              onClick={() => quick('counsellingRequest')}
+            >
+              <Plus size={15} className="mr-1.5" /> Request Appointment
             </Button>
           ) : (
-            <p className="teacher-empty">
+            <span className="text-xs text-slate-500 italic">
               Online booking unavailable. Please visit the counselling suite.
-            </p>
+            </span>
           )}
         </div>
         <div className="teacher-grid">
           {pane(
             'Your confidential appointment requests',
             of('counsellingRequest'),
+            'No appointment requests submitted yet.',
           )}
           {pane(
             'Available counsellor appointment slots',
             of('appointmentSlot'),
+            'No open counsellor slots scheduled for this week.',
           )}
         </div>
-      </>
+      </div>
     );
   } else if (section === 'Reports') {
     const reportKinds = new Set(['record', 'damageBrokenLog', 'transportNotice', 'attendance', 'labDamage', 'libraryDamage', 'activityEvent']);
@@ -1947,117 +2672,143 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       of('servicePolicy')[0]?.data.preordersEnabled !== false;
 
     content = (
-      <>
-        <div
-          className="teacher-toolbar"
-          style={{ flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}
-        >
-          <div
-            className="sub-tabs-pill"
-            style={{
-              display: 'flex',
-              gap: '6px',
-              padding: '4px',
-              background: 'var(--muted, #f1f5f9)',
-              borderRadius: '8px',
-            }}
-          >
+      <div className="space-y-5">
+        <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
             <button
               type="button"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Attendance' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${recordsTab === 'Attendance' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900'}`}
               onClick={() => setRecordsTab('Attendance')}
             >
-              <CalendarCheck size={14} />
+              <CalendarCheck size={14} className={recordsTab === 'Attendance' ? 'text-emerald-600' : 'text-slate-500'} />
               <span>Attendance</span>
             </button>
             <button
               type="button"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Medical' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${recordsTab === 'Medical' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900'}`}
               onClick={() => setRecordsTab('Medical')}
             >
-              <HeartPulse size={14} />
+              <HeartPulse size={14} className={recordsTab === 'Medical' ? 'text-rose-600' : 'text-slate-500'} />
               <span>Medical</span>
             </button>
             <button
               type="button"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Cafeteria' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${recordsTab === 'Cafeteria' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900'}`}
               onClick={() => setRecordsTab('Cafeteria')}
             >
-              <UtensilsCrossed size={14} />
+              <UtensilsCrossed size={14} className={recordsTab === 'Cafeteria' ? 'text-amber-600' : 'text-slate-500'} />
               <span>Cafeteria</span>
             </button>
             <button
               type="button"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${recordsTab === 'Documents' ? 'bg-white shadow-sm text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${recordsTab === 'Documents' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900'}`}
               onClick={() => setRecordsTab('Documents')}
             >
-              <FileText size={14} />
+              <FileText size={14} className={recordsTab === 'Documents' ? 'text-blue-600' : 'text-slate-500'} />
               <span>Documents</span>
             </button>
           </div>
 
-          {recordsTab === 'Attendance' &&
-            of('servicePolicy')[0]?.data.absenceRequests && (
-              <Button onClick={() => quick('absenceRequest')}>
-                Request Absence / Excuse
+          <div className="flex items-center gap-2">
+            {recordsTab === 'Attendance' && of('servicePolicy')[0]?.data.absenceRequests && (
+              <Button onClick={() => quick('absenceRequest')} className="h-9 px-3.5 text-xs font-semibold gap-1.5 shadow-xs">
+                <Plus size={14} /> Request Absence / Excuse
               </Button>
             )}
-          {recordsTab === 'Medical' && medicalEnabled && (
-            <Button onClick={() => quick('medicalRequest')}>
-              Request Nurse Visit
-            </Button>
-          )}
-          {recordsTab === 'Cafeteria' && preordersEnabled && (
-            <Button onClick={() => quick('mealOrder')}>Preorder Meal</Button>
-          )}
+            {recordsTab === 'Medical' && medicalEnabled && (
+              <Button onClick={() => quick('medicalRequest')} className="h-9 px-3.5 text-xs font-semibold gap-1.5 shadow-xs">
+                <Plus size={14} /> Request Nurse Visit
+              </Button>
+            )}
+            {recordsTab === 'Cafeteria' && preordersEnabled && (
+              <Button onClick={() => quick('mealOrder')} className="h-9 px-3.5 text-xs font-semibold gap-1.5 shadow-xs">
+                <Plus size={14} /> Preorder Meal
+              </Button>
+            )}
+          </div>
         </div>
 
         {recordsTab === 'Attendance' && (
-          <div className="records-attendance-tab">
-            <div className="student-counts">
-              {['Present', 'Absent', 'Late', 'Excused'].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setFilter(filter === s ? '' : s)}
-                >
-                  <strong>
-                    {attendance.filter((r: any) => r.data.status === s).length}
-                  </strong>
-                  <span>{s}</span>
-                </button>
-              ))}
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Present', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', active: 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50/80', icon: CheckCircle2 },
+                { label: 'Absent', color: 'text-rose-700 bg-rose-50 border-rose-200', active: 'ring-2 ring-rose-500 border-rose-400 bg-rose-50/80', icon: CalendarCheck },
+                { label: 'Late', color: 'text-amber-700 bg-amber-50 border-amber-200', active: 'ring-2 ring-amber-500 border-amber-400 bg-amber-50/80', icon: Clock },
+                { label: 'Excused', color: 'text-blue-700 bg-blue-50 border-blue-200', active: 'ring-2 ring-blue-500 border-blue-400 bg-blue-50/80', icon: ClipboardList },
+              ].map((s) => {
+                const count = attendance.filter((r: any) => r.data.status === s.label).length;
+                const isSelected = filter === s.label;
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => setFilter(filter === s.label ? '' : s.label)}
+                    className={`p-4 rounded-xl border text-left transition-all bg-white shadow-xs hover:border-slate-300 flex flex-col justify-between ${isSelected ? s.active : 'border-slate-200'}`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-slate-600">{s.label}</span>
+                      <div className={`p-1.5 rounded-lg border ${s.color}`}>
+                        <Icon size={14} />
+                      </div>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <strong className="text-2xl font-bold tabular-nums text-slate-900">{count}</strong>
+                      <span className="text-[11px] text-slate-400">sessions</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <List
-              rows={matched(attendance).sort((a: any, b: any) =>
-                b.data.date.localeCompare(a.data.date),
+
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Attendance History</h3>
+                  <p className="text-xs text-slate-500">
+                    {filter ? `Showing ${filter} records` : 'All logged class and homeroom attendance'}
+                  </p>
+                </div>
+                {filter && (
+                  <Button variant="ghost" size="sm" onClick={() => setFilter('')} className="h-7 text-xs text-slate-600 hover:text-slate-900">
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
+              <List
+                rows={matched(attendance).sort((a: any, b: any) =>
+                  b.data.date.localeCompare(a.data.date),
+                )}
+                open={open}
+                meta={(r: any) =>
+                  `${r.data.date} · ${r.data.class} · ${r.data.period || 'Daily'} · ${r.data.status}${r.data.arrivalTime ? ' · ' + r.data.arrivalTime : ''}`
+                }
+              />
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              {pane(
+                'Your submitted absence & excuse requests',
+                of('absenceRequest'),
               )}
-              open={open}
-              meta={(r: any) =>
-                `${r.data.date} · ${r.data.class} · ${r.data.period || 'Daily'} · ${r.data.status}${r.data.arrivalTime ? ' · ' + r.data.arrivalTime : ''}`
-              }
-            />
-            {pane(
-              'Your submitted absence & excuse requests',
-              of('absenceRequest'),
-            )}
+            </div>
           </div>
         )}
 
         {recordsTab === 'Medical' && (
-          <div className="records-medical-tab">
-            <p
-              style={{
-                fontSize: '13px',
-                color: 'var(--muted-foreground)',
-                marginBottom: '14px',
-              }}
-            >
-              Student medical profile, nurse station visits, and health records.
-            </p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-rose-600">
+                <HeartPulse size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Medical & Health Records</h3>
+                <p className="text-xs text-slate-500">
+                  Student health profile, nurse station visits, and medical incident history.
+                </p>
+              </div>
+            </div>
             <List
               rows={medicalRequests}
               open={open}
@@ -2070,49 +2821,62 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
         )}
 
         {recordsTab === 'Cafeteria' && (
-          <div className="records-cafeteria-tab">
-            <p
-              style={{
-                fontSize: '13px',
-                color: 'var(--muted-foreground)',
-                marginBottom: '14px',
-              }}
-            >
-              Daily dining hall menus, dietary tags, and pre-ordered lunches.
-            </p>
-            <List
-              rows={matched(meals)}
-              open={open}
-              empty="No cafeteria meal items listed for today."
-            />
-            {pane('Your meal preorders', mealOrders)}
+          <div className="space-y-5">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <div className="p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-600">
+                  <UtensilsCrossed size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Dining Hall & Cafeteria</h3>
+                  <p className="text-xs text-slate-500">
+                    Daily dining hall menus, nutrition details, and dietary information.
+                  </p>
+                </div>
+              </div>
+              <List
+                rows={matched(meals)}
+                open={open}
+                empty="No cafeteria meal items listed for today."
+              />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              {pane('Your meal preorders', mealOrders)}
+            </div>
           </div>
         )}
 
         {recordsTab === 'Documents' && (
-          <div className="records-documents-tab">
-            <div className="documents-heading">
-              <div>
-                <span className="eyebrow">MY DOCUMENTS</span>
-                <h2>School Documents</h2>
-                <p>View and download documents the school has released to you.</p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
+            <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-600">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">School Documents</h3>
+                  <p className="text-xs text-slate-500">View and download documents and reports released to you.</p>
+                </div>
               </div>
-              <FileText size={24} aria-hidden="true" />
             </div>
-            <div className="documents-category-tabs" role="tablist" aria-label="Document categories">
-              {(['All', 'Academic', 'Official', 'Forms'] as const).map((category) => (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={documentsCategory === category}
-                  className={documentsCategory === category ? 'active' : ''}
-                  key={category}
-                  onClick={() => setDocumentsCategory(category)}
-                >
-                  {category}
-                </button>
-              ))}
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="documents-category-tabs" role="tablist" aria-label="Document categories">
+                {(['All', 'Academic', 'Official', 'Forms'] as const).map((category) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={documentsCategory === category}
+                    className={documentsCategory === category ? 'active' : ''}
+                    key={category}
+                    onClick={() => setDocumentsCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
             </div>
+
             {(() => {
               const visibleDocuments = documents.filter((row: any) => {
                 const matchesCategory = documentsCategory === 'All' || documentCategory(row) === documentsCategory;
@@ -2141,7 +2905,7 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
             })()}
           </div>
         )}
-      </>
+      </div>
     );
   }
   else if (['Messages', 'Chat', 'Communication'].includes(section)) {
@@ -2161,15 +2925,24 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     <div className="student-dashboard" suppressHydrationWarning>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">MY SCHOOL DAY</div>
+          <div className="eyebrow" suppressHydrationWarning>
+            {section === 'Home'
+              ? new Date().toLocaleDateString(undefined, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              : 'MY SCHOOL DAY'}
+          </div>
           <h1 suppressHydrationWarning>
             {section === 'Home'
-              ? `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${ws.member.name.split(' ')[0]}`
+              ? `Welcome, ${ws.member.name.split(' ')[0]}!`
               : section}
           </h1>
           <p suppressHydrationWarning>
             {section === 'Home'
-              ? 'Your classes, work and latest updates.'
+              ? 'Your classes, project milestones, and upcoming tasks.'
               : new Date().toLocaleDateString(undefined, {
                   weekday: 'long',
                   day: 'numeric',
@@ -2177,10 +2950,21 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
                 })}
           </p>
         </div>
-        <Button variant="outline" onClick={() => go('Notifications')}>
-          <Bell size={16} />
-          {unread} unread
-        </Button>
+        <div className="flex items-center gap-2">
+          {section === 'Home' && (
+            <Button
+              variant="outline"
+              className="bg-white border-slate-200 shadow-xs text-xs font-semibold gap-1.5"
+              onClick={() => go('Today')}
+            >
+              <SlidersHorizontal size={14} /> Customise Dashboard
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => go('Notifications')}>
+            <Bell size={16} />
+            {unread} unread
+          </Button>
+        </div>
       </div>
       <nav className="student-tabs" aria-label="Student sections">
         {studentSections.map((s) => (
@@ -2212,25 +2996,16 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           {ws.message}
         </p>
       )}
-      {!['Home', 'Today', 'Calendar'].includes(section) && (
-        <>
+      {!['Home', 'Today', 'Calendar', 'Facilities', 'Labs', 'Library', 'CAS', 'Projects', 'Counselling', 'Directory', 'Messages', 'Chat', 'Communication', 'Records', 'Record', 'Attendance', 'Medical', 'Cafeteria', 'Documents'].includes(section) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <Input
-            className="student-search"
+            className="student-search max-w-md bg-white border-slate-200 shadow-xs text-xs"
             aria-label={'Search ' + section}
             placeholder={'Search ' + section.toLowerCase() + '…'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          {section === 'Facilities' && (
-            <button
-              type="button"
-              className="facility-inline-library"
-              onClick={() => navigateWebsite('/library')}
-            >
-              <BookOpen size={16} /> Library
-            </button>
-          )}
-        </>
+        </div>
       )}{' '}
       <div
         key={section + (classId || '')}
@@ -2238,16 +3013,12 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
       >
         {ws.loading ? <p role="status">Loading your school day…</p> : content}
       </div>
+      <LegalFooter className="mt-10" />
       <Sheet
         open={!!selected}
         onOpenChange={(v) => {
           if (!v) {
-            if (selected?.kind === 'assignment' || assignmentOrigin.current)
-              closeAssignment();
-            else {
-              setSelected(null);
-              navigateWebsite('/student/page/' + webSlug(section), true);
-            }
+            closeAssignment();
           }
         }}
       >

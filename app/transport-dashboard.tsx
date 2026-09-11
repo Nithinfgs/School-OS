@@ -34,7 +34,51 @@ export function TransportDashboard({ ws, mode = 'staff' }: { ws: any; mode?: 'st
   const notArrived = buses.filter((b) => b.arrival.status === 'NotArrived');
   const notDeparted = buses.filter((b) => b.departure.status === 'Waiting');
   const visible = buses.filter((b) => `${b.busCode} ${b.route} ${b.driver}`.toLowerCase().includes(search.toLowerCase()));
-  const linkedNotices = useMemo(() => [...notices, ...persistedNotices.map((r:any)=>({id:r.id,student:r.student_id,grade:'Student transport',bus:r.bus||r.route||'Route pending',date:r.notice_date,changeType:r.change_type,teacher:'Parent / Guardian',reason:r.reason||'',notes:r.notes||'',timeSubmitted:r.submitted_at?.slice(11,16)||'',status:r.status||'Submitted',operationalNote:r.operational_note||''})), ...(ws.rows || []).filter((r: any) => r.kind === 'transportNotice').map((r: any) => ({ id: r.id, student: r.data.studentName || 'Student', grade: r.data.class || 'Student transport', bus: r.data.busId || r.data.route || 'Route pending', date: r.data.date || TODAY, changeType: r.data.changeType || 'Other', teacher: r.data.teacher || r.data.submittedBy || 'Teacher', reason: r.data.reason || '', notes: r.data.notes || '', timeSubmitted: r.data.submittedAt?.slice(11, 16) || '', status: r.data.status || 'Submitted', operationalNote: r.data.operationalNote || '' }))], [notices, persistedNotices, ws.rows]);
+  const [editingNoteNotice, setEditingNoteNotice] = useState<any>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+
+  const linkedNotices = useMemo(() => {
+    const rawNotices = [
+      ...notices,
+      ...persistedNotices.map((r: any) => ({
+        id: r.id,
+        student: r.student_id,
+        grade: 'Student transport',
+        bus: r.bus || r.route || 'Route pending',
+        date: r.notice_date,
+        changeType: r.change_type,
+        teacher: 'Parent / Guardian',
+        reason: r.reason || '',
+        notes: r.notes || '',
+        timeSubmitted: r.submitted_at?.slice(11, 16) || '',
+        status: r.status || 'Submitted',
+        operationalNote: r.operational_note || '',
+      })),
+      ...(ws.rows || [])
+        .filter((r: any) => r.kind === 'transportNotice')
+        .map((r: any) => ({
+          id: r.id,
+          student: r.data.studentName || 'Student',
+          grade: r.data.class || 'Student transport',
+          bus: r.data.busId || r.data.route || 'Route pending',
+          date: r.data.date || TODAY,
+          changeType: r.data.changeType || 'Other',
+          teacher: r.data.teacher || r.data.submittedBy || 'Teacher',
+          reason: r.data.reason || '',
+          notes: r.data.notes || '',
+          timeSubmitted: r.data.submittedAt?.slice(11, 16) || '',
+          status: r.data.status || 'Submitted',
+          operationalNote: r.data.operationalNote || '',
+        })),
+    ];
+    const seen = new Set<string>();
+    return rawNotices.filter((n) => {
+      if (seen.has(n.id)) return false;
+      seen.add(n.id);
+      return true;
+    });
+  }, [notices, persistedNotices, ws.rows]);
+
   const record = (kind: 'arrival' | 'departure', status: string) => {
     if (!selected) return;
     const minutes = status.includes('Late') ? Math.max(0, kind === 'arrival' ? Math.round((new Date(`${TODAY}T${time}`).getTime() - new Date(`${TODAY}T07:42`).getTime()) / 60000) : Math.round((new Date(`${TODAY}T${time}`).getTime() - new Date(`${TODAY}T15:40`).getTime()) / 60000)) : 0;
@@ -44,15 +88,27 @@ export function TransportDashboard({ ws, mode = 'staff' }: { ws: any; mode?: 'st
     post(kind === 'arrival' ? 'busArrival' : 'busDeparture', { busId: selected.id, busCode: selected.busCode, date, actualTime: time, status, lateMinutes: minutes, lateReason: reason, notes: note });
     setSelected(null); setReason(''); setNote('');
   };
-  const updateNotice = (id: string, changes: any) => { setNotices((rows) => rows.map((row) => row.id === id ? { ...row, ...changes } : row)); setPersistedNotices((rows)=>rows.map((row:any)=>row.id===id?{...row,status:changes.status||row.status,operational_note:changes.operationalNote??row.operational_note}:row)); void fetch('/api/cross-workflows',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'transportNotice.update',data:{id,status:changes.status,operationalNote:changes.operationalNote}})}).then((response)=>{if(!response.ok)post('transportNoticeUpdate',{noticeId:id,...changes});}).catch(()=>post('transportNoticeUpdate',{noticeId:id,...changes})); };
+  const updateNotice = (id: string, changes: any) => {
+    setNotices((rows) => rows.map((row) => row.id === id ? { ...row, ...changes } : row));
+    setPersistedNotices((rows) => rows.map((row: any) => row.id === id ? { ...row, status: changes.status || row.status, operational_note: changes.operationalNote ?? row.operational_note } : row));
+    void fetch('/api/cross-workflows', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'transportNotice.update', data: { id, status: changes.status, operationalNote: changes.operationalNote } }),
+    }).then((response) => {
+      if (!response.ok) post('transportNoticeUpdate', { noticeId: id, ...changes });
+    }).catch(() => post('transportNoticeUpdate', { noticeId: id, ...changes }));
+  };
   const activities = buses.flatMap((b) => [{ id: `${b.id}-a`, label: `${b.busCode} ${b.arrival.status === 'Late' ? `late by ${b.arrival.minutes} min` : b.arrival.status.replaceAll(/([A-Z])/g, ' $1')}`, time: b.arrival.time || 'Pending', type: 'Arrival' }, { id: `${b.id}-d`, label: `${b.busCode} ${b.departure.status.replaceAll(/([A-Z])/g, ' $1')}`, time: b.departure.time || 'Pending', type: 'Departure' }]).slice(0, 18);
   return <div className="transport-dashboard">
     <div className="transport-header"><div><div className="eyebrow">{isOversight ? 'SCHOOL TRANSPORT OVERSIGHT' : 'TRANSPORT OPERATIONS'}</div><h1>{isOversight ? 'Transport overview' : 'Daily transport control'}</h1><p>{isOversight ? 'Arrival, departure, notice and delay oversight across all routes.' : 'Record bus movements and resolve student transport notices.'}</p></div><label className="transport-date"><span>Date</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label></div>
     <div className="transport-kpis"><button onClick={() => setView('Morning arrivals')}><span>Late buses</span><b>{late.length}</b><small>{late.map((b) => b.busCode).join(', ') || 'All on time'}</small></button><button onClick={() => setView('Morning arrivals')}><span>Not arrived</span><b>{notArrived.length}</b><small>{notArrived.map((b) => b.busCode).join(', ') || 'None outstanding'}</small></button><button onClick={() => setView('Afternoon departures')}><span>Not departed</span><b>{notDeparted.length}</b><small>{notDeparted.map((b) => b.busCode).join(', ') || 'All departed'}</small></button><button onClick={() => setView('Student notices')}><span>Notices today</span><b>{linkedNotices.filter((n) => n.date === date).length}</b><small>{linkedNotices.filter((n) => n.status === 'Submitted').length} need acknowledgement</small></button></div>
     <div className="transport-tabs">{(['Morning arrivals', 'Afternoon departures', 'Student notices', 'Activity'] as const).map((item) => <button key={item} className={view === item ? 'active' : ''} onClick={() => setView(item)}>{item}</button>)}</div>
     {(view === 'Morning arrivals' || view === 'Afternoon departures') && <section className="transport-panel"><div className="transport-toolbar"><label><Search size={15} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search bus, route or driver" /></label><span>{visible.length} buses</span></div><div className="transport-bus-grid">{visible.map((bus) => { const value = view === 'Morning arrivals' ? bus.arrival : bus.departure; const status = value.status; return <article className={`bus-card ${status.toLowerCase()}`} key={bus.id}><div className="bus-card-top"><div className="bus-code"><BusFront size={18} /> {bus.busCode}</div><span>{status.replaceAll(/([A-Z])/g, ' $1')}</span></div><b>{bus.route}</b><small>{bus.driver} · {bus.capacity} seats</small><div className="bus-time">{value.time ? `${view === 'Morning arrivals' ? 'Arrived' : 'Departed'} ${value.time}` : status === 'Waiting' || status === 'NotArrived' ? 'Outstanding' : status}</div>{value.minutes > 0 && <p className="bus-reason"><TriangleAlert size={14} /> {value.minutes} min · {value.reason || 'Reason required'}</p>}{!isOversight && <div className="bus-actions"><button onClick={() => { setSelected(bus); setTime(view === 'Morning arrivals' ? '07:42' : '15:40'); }}>Update</button>{view === 'Morning arrivals' && <button onClick={() => { setSelected(bus); setTime('07:42'); setReason(''); }}>Arrived</button>}{view === 'Afternoon departures' && <button onClick={() => { setSelected(bus); setTime('15:40'); setReason(''); }}>Departed</button>}</div>}</article>})}</div></section>}
-    {view === 'Student notices' && <section className="transport-panel transport-notices"><div className="transport-toolbar"><h2>Student transport notices</h2><span>{linkedNotices.length} notices</span></div>{linkedNotices.map((notice) => <div className="transport-notice" key={notice.id}><div><b>{notice.student}</b><small>{notice.grade} · {notice.bus} · {notice.date}</small></div><div><b>{notice.changeType}</b><small>{notice.teacher} · {notice.timeSubmitted}</small></div><div><small>{notice.reason || 'No reason provided'}</small>{notice.operationalNote && <small className="operational-note">Ops: {notice.operationalNote}</small>}</div><span className={`notice-status ${notice.status.toLowerCase()}`}>{notice.status}</span>{!isOversight && <div className="notice-actions">{notice.status === 'Submitted' && <button onClick={() => updateNotice(notice.id, { status: 'Acknowledged' })}>Acknowledge</button>}{notice.status !== 'Resolved' && <button onClick={() => updateNotice(notice.id, { status: 'Resolved' })}>Resolve</button>}<button onClick={() => { const operationalNote = window.prompt('Operational note', notice.operationalNote || ''); if (operationalNote !== null) updateNotice(notice.id, { operationalNote }); }}>Add note</button></div>}</div>)}</section>}
+    {view === 'Student notices' && <section className="transport-panel transport-notices"><div className="transport-toolbar"><h2>Student transport notices</h2><span>{linkedNotices.length} notices</span></div>{linkedNotices.map((notice) => <div className="transport-notice" key={notice.id}><div><b>{notice.student}</b><small>{notice.grade} · {notice.bus} · {notice.date}</small></div><div><b>{notice.changeType}</b><small>{notice.teacher} · {notice.timeSubmitted}</small></div><div><small>{notice.reason || 'No reason provided'}</small>{notice.operationalNote && <small className="operational-note">Ops: {notice.operationalNote}</small>}</div><span className={`notice-status ${notice.status.toLowerCase()}`}>{notice.status}</span>{!isOversight && <div className="notice-actions">{notice.status === 'Submitted' && <button onClick={() => updateNotice(notice.id, { status: 'Acknowledged' })}>Acknowledge</button>}{notice.status !== 'Resolved' && <button onClick={() => updateNotice(notice.id, { status: 'Resolved' })}>Resolve</button>}<button onClick={() => { setEditingNoteNotice(notice); setNoteDraft(notice.operationalNote || ''); }}>Add note</button></div>}</div>)}</section>}
     {view === 'Activity' && <section className="transport-panel"><div className="transport-toolbar"><h2>Recent transport activity</h2><span>Today</span></div>{activities.map((activity) => <div className="transport-activity" key={activity.id}><CheckCircle2 size={16} /><div><b>{activity.label}</b><small>{activity.type} · {activity.time}</small></div></div>)}</section>}
     {!isOversight && selected && <div className="transport-modal-backdrop"><form className="transport-modal" onSubmit={(e) => { e.preventDefault(); record(view === 'Morning arrivals' ? 'arrival' : 'departure', view === 'Morning arrivals' ? (reason ? 'Late' : 'ArrivedOnTime') : (reason ? 'LateDeparture' : 'DepartedOnTime')); }}><div><h2>{selected.busCode} · {view === 'Morning arrivals' ? 'Morning arrival' : 'Afternoon departure'}</h2><p>{selected.route} · scheduled {view === 'Morning arrivals' ? '07:42' : '15:40'}</p></div><label>Actual time<input type="time" value={time} onChange={(e) => setTime(e.target.value)} required /></label><label>Late / delay reason<textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Required when recording a late movement" /></label><label>Operational notes<textarea value={note} onChange={(e) => setNote(e.target.value)} /></label><div className="transport-modal-actions"><button type="button" onClick={() => setSelected(null)}>Cancel</button><button type="submit">Save movement</button></div></form></div>}
+    {editingNoteNotice && <div className="transport-modal-backdrop"><form className="transport-modal" onSubmit={(e) => { e.preventDefault(); updateNotice(editingNoteNotice.id, { operationalNote: noteDraft }); setEditingNoteNotice(null); }}><div><h2>Operational Note · {editingNoteNotice.student}</h2><p>{editingNoteNotice.bus} · {editingNoteNotice.changeType}</p></div><label>Internal transport note<textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} placeholder="Add operational notes for drivers or dispatchers..." autoFocus rows={3} /></label><div className="transport-modal-actions"><button type="button" onClick={() => setEditingNoteNotice(null)}>Cancel</button><button type="submit">Save note</button></div></form></div>}
   </div>;
 }

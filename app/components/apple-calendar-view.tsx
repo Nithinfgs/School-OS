@@ -34,9 +34,11 @@ interface AppleCalendarViewProps {
   onOpenClass?: (cls: any) => void;
 }
 
+const systemToday = new Date().toISOString().slice(0, 10);
+
 export function AppleCalendarView({
   ws,
-  initialDate = '2026-09-07',
+  initialDate = systemToday,
   onOpenClass,
 }: AppleCalendarViewProps) {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate);
@@ -121,8 +123,7 @@ export function AppleCalendarView({
   };
 
   const handleToday = () => {
-    const today = '2026-09-07';
-    setSelectedDate(today);
+    setSelectedDate(systemToday);
   };
 
   // Compute Days for Month Grid
@@ -153,7 +154,7 @@ export function AppleCalendarView({
         dayNumber: prevDayNum,
         isCurrentMonth: false,
         events: filteredEvents.filter((e) => dateStr >= e.startDate && dateStr <= e.endDate),
-        isToday: dateStr === '2026-09-07',
+        isToday: dateStr === systemToday,
         isSelected: dateStr === selectedDate,
         dayOfWeek: prevDate.getDay(),
       });
@@ -167,7 +168,7 @@ export function AppleCalendarView({
         dayNumber: day,
         isCurrentMonth: true,
         events: filteredEvents.filter((e) => dateStr >= e.startDate && dateStr <= e.endDate),
-        isToday: dateStr === '2026-09-07',
+        isToday: dateStr === systemToday,
         isSelected: dateStr === selectedDate,
         dayOfWeek: (startDayOfWeek + day - 1) % 7,
       });
@@ -183,40 +184,34 @@ export function AppleCalendarView({
         dayNumber: day,
         isCurrentMonth: false,
         events: filteredEvents.filter((e) => dateStr >= e.startDate && dateStr <= e.endDate),
-        isToday: dateStr === '2026-09-07',
+        isToday: dateStr === systemToday,
         isSelected: dateStr === selectedDate,
         dayOfWeek: nextDate.getDay(),
       });
     }
 
     return days;
-  }, [currYear, currMonth, filteredEvents, selectedDate]);
+  }, [currYear, currMonth, selectedDate, filteredEvents]);
 
-  // Compute Days for Week View
+  // Compute Days for Week Grid (Monday to Sunday)
   const weekDays = useMemo(() => {
-    const d = new Date(selectedDate + 'T12:00:00');
-    const dayOfWeek = d.getDay();
-    const startOfWeek = new Date(d);
-    startOfWeek.setDate(d.getDate() - dayOfWeek);
+    const selected = new Date(currDateObj);
+    const dayOfWeek = selected.getDay(); // 0 is Sun
+    const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
-    const days: Array<{
-      dateStr: string;
-      dayNumber: number;
-      dayName: string;
-      events: IBDPCalendarEvent[];
-      isToday: boolean;
-      isSelected: boolean;
-      lessons: any[];
-    }> = [];
+    const monday = new Date(selected);
+    monday.setDate(selected.getDate() + distanceToMonday);
 
+    const days = [];
     for (let i = 0; i < 7; i++) {
-      const current = new Date(startOfWeek);
-      current.setDate(startOfWeek.getDate() + i);
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + i);
       const dateStr = current.toISOString().slice(0, 10);
-      const weekdayNum = current.getDay();
 
+      // Classes on this day (matches timetable format)
+      const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
       const lessons = timetableRows
-        .filter((r: any) => (r.data?.weekdays || [1, 2, 3, 4, 5]).includes(weekdayNum))
+        .filter((r: any) => r.data?.dayOfWeek === dayName || r.data?.date === dateStr)
         .sort((a: any, b: any) => String(a.data?.startTime).localeCompare(String(b.data?.startTime)));
 
       days.push({
@@ -224,14 +219,14 @@ export function AppleCalendarView({
         dayNumber: current.getDate(),
         dayName: current.toLocaleDateString('en-US', { weekday: 'short' }),
         events: filteredEvents.filter((e) => dateStr >= e.startDate && dateStr <= e.endDate),
-        isToday: dateStr === '2026-09-07',
+        isToday: dateStr === systemToday,
         isSelected: dateStr === selectedDate,
         lessons,
       });
     }
 
     return days;
-  }, [selectedDate, filteredEvents, timetableRows]);
+  }, [currDateObj, filteredEvents, timetableRows, selectedDate]);
 
   // Days for Year View Mini Months
   const academicYearMonths = useMemo(() => {
@@ -253,7 +248,7 @@ export function AppleCalendarView({
           dateStr,
           hasEvents: dayEvts.length > 0,
           events: dayEvts,
-          isToday: dateStr === '2026-09-07',
+          isToday: dateStr === systemToday,
           isSelected: dateStr === selectedDate,
         });
       }
@@ -264,7 +259,7 @@ export function AppleCalendarView({
         eventCount: monthEvents.length,
       };
     });
-  }, [selectedDate]);
+  }, [selectedDate, filteredEvents]);
 
   return (
     <div className="apple-calendar-container">
@@ -345,14 +340,14 @@ export function AppleCalendarView({
               className="apple-category-select"
             >
               <option value="all">All Categories</option>
-              <option value="assessment">🔴 Assessments & Exams</option>
-              <option value="deadline">🟣 IA, TOK & EE Deadlines</option>
-              <option value="holiday">🟢 Holidays & Breaks</option>
-              <option value="celebration">🔵 Celebrations & Events</option>
-              <option value="ptm">🟡 PTM / 3-Way Conference</option>
-              <option value="mufti">🌸 Mufti Day</option>
-              <option value="annual">🟠 Annual / Sports</option>
-              <option value="reopening">🔷 School Reopening</option>
+              <option value="assessment">Assessments & Exams</option>
+              <option value="deadline">IA, TOK & EE Deadlines</option>
+              <option value="holiday">Holidays & Breaks</option>
+              <option value="celebration">Celebrations & Events</option>
+              <option value="ptm">PTM / 3-Way Conference</option>
+              <option value="mufti">Mufti Day</option>
+              <option value="annual">Annual / Sports</option>
+              <option value="reopening">School Reopening</option>
             </select>
           </div>
 
@@ -391,38 +386,40 @@ export function AppleCalendarView({
         </div>
       </div>
 
-      {/* Category Pills Quick Strip */}
-      <div className="apple-category-strip">
-        <button
-          type="button"
-          onClick={() => setSelectedCategory('all')}
-          className={`apple-cat-chip ${selectedCategory === 'all' ? 'active-all' : ''}`}
-        >
-          All ({IBDP_ACADEMIC_CALENDAR_EVENTS.length})
-        </button>
-        {Object.entries(CATEGORY_COLORS).map(([key, config]) => {
-          const count = IBDP_ACADEMIC_CALENDAR_EVENTS.filter((e) => e.category === key).length;
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setSelectedCategory(selectedCategory === key ? 'all' : key)}
-              className={`apple-cat-chip ${selectedCategory === key ? 'active' : ''}`}
-              style={{
-                borderColor: selectedCategory === key ? config.color : 'transparent',
-                backgroundColor: selectedCategory === key ? config.bgLight : undefined,
-                color: selectedCategory === key ? config.textColor : undefined,
-              }}
-            >
-              <span
-                className="apple-cat-dot"
-                style={{ backgroundColor: config.color }}
-              />
-              {config.label}
-              <span className="apple-cat-count">{count}</span>
-            </button>
-          );
-        })}
+      {/* Category Pills Quick Strip Container */}
+      <div className="apple-category-strip-container">
+        <div className="apple-category-strip">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory('all')}
+            className={`apple-cat-chip ${selectedCategory === 'all' ? 'active-all' : ''}`}
+          >
+            All ({IBDP_ACADEMIC_CALENDAR_EVENTS.length})
+          </button>
+          {Object.entries(CATEGORY_COLORS).map(([key, config]) => {
+            const count = IBDP_ACADEMIC_CALENDAR_EVENTS.filter((e) => e.category === key).length;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSelectedCategory(selectedCategory === key ? 'all' : key)}
+                className={`apple-cat-chip ${selectedCategory === key ? 'active' : ''}`}
+                style={{
+                  borderColor: selectedCategory === key ? config.color : undefined,
+                  backgroundColor: selectedCategory === key ? config.bgLight : undefined,
+                  color: selectedCategory === key ? config.textColor : undefined,
+                }}
+              >
+                <span
+                  className="apple-cat-dot"
+                  style={{ backgroundColor: config.color }}
+                />
+                <span>{config.label}</span>
+                <span className="apple-cat-count tabular-nums">{count}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ==================== MONTH VIEW ==================== */}

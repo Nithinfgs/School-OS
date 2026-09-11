@@ -1,20 +1,12 @@
 import { DEV_AUTH_COOKIE } from '@/app/chatgpt-auth';
+import { demoLoginEnabled } from '@/lib/platform/runtime';
 
 const roles = new Set(['student', 'teacher', 'admin', 'hos', 'parent', 'transport-staff', 'lab-assistant', 'library-assistant']);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const netlifyDemo = Boolean(process.env.SITE_ID || process.env.URL);
-  const hostname = url.hostname.replace(/^\[|\]$/g, '');
-  const isLocal =
-    process.env.NODE_ENV !== 'production' ||
-    netlifyDemo ||
-    ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname) ||
-    hostname.endsWith('.localhost') ||
-    hostname.endsWith('.local');
-
-  if (!isLocal)
-    return new Response('Not found', { status: 404 });
+  if (!demoLoginEnabled())
+    return Response.json({ error: 'Development login is disabled.' }, { status: 403 });
   const role = url.searchParams.get('role') || '';
   const returnTo = safeReturnTo(url.searchParams.get('return_to') || '/');
   const secure = url.protocol === 'https:' ? '; Secure' : '';

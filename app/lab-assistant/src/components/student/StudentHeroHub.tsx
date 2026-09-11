@@ -86,15 +86,15 @@ export const StudentHeroHub: React.FC = () => {
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans">
       
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
+      {/* Top Header Bento Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E9F3F6] text-[#2D7F9F] border border-[#2D7F9F]/30 text-xs font-bold shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-[#2D7F9F]" />
             <span>Welcome, {currentUser?.name || 'Student'} • Science Requisition Portal</span>
           </div>
           
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1F3547] leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1F3547] leading-tight">
             Science Laboratory Portals
           </h1>
           
@@ -104,13 +104,13 @@ export const StudentHeroHub: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap shrink-0">
           <button
             onClick={() => setIsRequestModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#2D7F9F] hover:bg-[#236F91] active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#2D7F9F]/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Custom Requisition</span>
+            <span>Custom Requisition</span>
           </button>
 
           <button

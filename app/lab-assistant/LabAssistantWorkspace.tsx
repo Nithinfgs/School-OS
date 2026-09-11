@@ -22,7 +22,12 @@ function LabAssistantContent({ member }: { member: WorkspaceMember }) {
   const { page, currentUser, loginAsStudent, loginAsStaff } = useLab();
 
   useEffect(() => {
-    const staff = member.role === 'Admin' || member.role === 'Lab Assistant';
+    const staff =
+      member.role === 'Admin' ||
+      member.role === 'Lab Assistant' ||
+      member.role === 'Teacher' ||
+      member.role === 'Department Head' ||
+      member.role === 'Head of School';
     const expectedRole = staff ? 'staff' : 'student';
     const identityMatches =
       currentUser?.role === expectedRole &&
@@ -30,8 +35,8 @@ function LabAssistantContent({ member }: { member: WorkspaceMember }) {
     if (identityMatches) return;
     if (staff) {
       loginAsStaff(
-        member.name || 'Lab Assistant',
-        member.email || 'lab.assistant@schoolos.local',
+        member.name || (member.role === 'Teacher' ? 'Science Teacher' : 'Lab Assistant'),
+        member.email || (member.role === 'Teacher' ? 'teacher@schoolos.local' : 'lab.assistant@schoolos.local'),
       );
     } else {
       loginAsStudent(

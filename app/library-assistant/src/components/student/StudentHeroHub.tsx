@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLibrary } from '../../context/LibraryContext';
 import { 
   GraduationCap, 
   Sparkles, 
   Clock, 
-  BookmarkCheck, 
   ArrowRight, 
-  BookPlus, 
-  ShoppingBag
+  ShoppingBag,
+  BookOpen,
+  Plus
 } from 'lucide-react';
-import { motion, Variants } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MyLoansAndWaitlistView } from './MyLoansAndWaitlistView';
 
 interface StudentHeroHubProps {
   onRequestPurchaseOpen: () => void;
@@ -22,11 +23,12 @@ export const StudentHeroHub: React.FC<StudentHeroHubProps> = ({ onRequestPurchas
     books, 
     loans, 
     readingLogs, 
-    waitlist, 
     setSearchQuery,
     setIsCartOpen,
     cart
   } = useLibrary();
+
+  const [showMyLoans, setShowMyLoans] = useState(false);
 
   const studentLoans = loans.filter(
     (l) => l.studentEmail === (currentUser?.email || 'rohan.verma@school.edu') && (l.status === 'active' || l.status === 'overdue' || l.status === 'renewed')
@@ -47,278 +49,177 @@ export const StudentHeroHub: React.FC<StudentHeroHubProps> = ({ onRequestPurchas
     navigateTo('book-store', collection);
   };
 
-  // Stagger animation container
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.09,
-        delayChildren: 0.05,
-      },
+  const portals = [
+    {
+      id: 'academic',
+      name: 'Academic Library',
+      subtitle: 'CURRICULUM & DP EXAMS',
+      description: 'Coursebooks, lab practical handbooks, and exam guides for Chemistry, Physics, Biology, Math AA, CS, and TOK.',
+      icon: <GraduationCap className="w-8 h-8 text-[#2D7F9F]" />,
+      count: `${academicCount} In Stock`,
+      tags: ['Chemistry HL', 'Physics HL', 'Math AA', 'Biology HL', 'TOK Guides'],
+      action: () => navigateTo('book-store', 'academic'),
+      ctaText: 'Enter Store Catalog',
+      bgGradient: 'from-white via-[#F4F9FB] to-white',
+      borderHover: 'hover:border-[#2D7F9F] hover:shadow-[#2D7F9F]/10',
+      badgeStyle: 'bg-[#EEF6F8] text-[#2D7F9F] border-[#2D7F9F]/30',
+      buttonStyle: 'bg-[#2D7F9F] hover:bg-[#236F91] text-white shadow-[#2D7F9F]/20',
     },
-  };
-
-  // Falling into place card animation
-  const cardVariants: Variants = {
-    hidden: { opacity: 0, y: 30, scale: 0.97 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        damping: 18,
-        stiffness: 120,
-      },
+    {
+      id: 'fiction',
+      name: 'Fiction & Classics',
+      subtitle: 'LITERATURE & SAGAS',
+      description: 'Complete fantasy sagas (Percy Jackson, Heroes of Olympus), science fiction epics like Dune, 1984, and world classics.',
+      icon: <BookOpen className="w-8 h-8 text-[#2D7F9F]" />,
+      count: `${fictionCount} In Stock`,
+      tags: ['Percy Jackson', 'Dune', '1984', 'Classics', 'Sci-Fi'],
+      action: () => navigateTo('book-store', 'fiction'),
+      ctaText: 'Enter Store Catalog',
+      bgGradient: 'from-white via-[#F4F9FB] to-white',
+      borderHover: 'hover:border-[#2D7F9F] hover:shadow-[#2D7F9F]/10',
+      badgeStyle: 'bg-[#EEF6F8] text-[#2D7F9F] border-[#2D7F9F]/30',
+      buttonStyle: 'bg-[#2D7F9F] hover:bg-[#236F91] text-white shadow-[#2D7F9F]/20',
     },
-  };
+    {
+      id: 'tracker',
+      name: 'Reading Tracker & Loans',
+      subtitle: 'READING GOALS & LOANS',
+      description: 'Log reading minutes, record page milestones, track overdue countdowns, and manage your active borrowed books.',
+      icon: <Clock className="w-8 h-8 text-[#2D7F9F]" />,
+      count: `${studentLoans.length} Active Loans`,
+      tags: [`${totalHours} hrs read`, `${studentLoans.length} active loans`, 'My Waitlist'],
+      action: () => navigateTo('reading-tracker'),
+      ctaText: 'Open Reading Tracker',
+      bgGradient: 'from-white via-[#F4F9FB] to-white',
+      borderHover: 'hover:border-[#2D7F9F] hover:shadow-[#2D7F9F]/10',
+      badgeStyle: 'bg-[#EEF6F8] text-[#2D7F9F] border-[#2D7F9F]/30',
+      buttonStyle: 'bg-[#2D7F9F] hover:bg-[#236F91] text-white shadow-[#2D7F9F]/20',
+    },
+  ];
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans">
       
-      {/* Top Header greeting & quick action row */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]"
-      >
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#2D7F9F] animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
-              Central Library Hub
-            </span>
+      {/* Top Header Bento Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E9F3F6] text-[#2D7F9F] border border-[#2D7F9F]/30 text-xs font-bold shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#2D7F9F]" />
+            <span>Welcome, {currentUser?.name || 'Student'} • Central Library Portal</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1F3547] tracking-tight mt-1">
-            Welcome, <span className="text-[#2D7F9F]">{currentUser?.name}</span>
+          
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1F3547] leading-tight">
+            Central Library Portals
           </h1>
-          <p className="text-xs text-[#64748B] mt-0.5">
-            Select a portal to explore academic texts, fiction sagas, or track your reading goals
+          
+          <p className="text-xs sm:text-sm text-[#61728A] max-w-xl leading-relaxed">
+            Select a library portal below to browse textbooks and literature in stock, explore reading sagas, or manage your borrowed loans.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 flex-wrap shrink-0">
+          <button
+            onClick={onRequestPurchaseOpen}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#2D7F9F] hover:bg-[#236F91] active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#2D7F9F]/20 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Request Book</span>
+          </button>
+
+          <button
+            onClick={() => setShowMyLoans(!showMyLoans)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-[#F7F9FB] text-[#1F3547] border border-[#DBE4EA] text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+          >
+            <Clock className="w-4 h-4 text-[#2D7F9F]" />
+            <span>My Loans ({studentLoans.length})</span>
+          </button>
+
           <button
             onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-[#F8FAFC] text-[#1F3547] text-xs font-bold rounded-xl border border-[#CBD5E1] transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-[#F7F9FB] text-[#1F3547] border border-[#DBE4EA] text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4 text-[#2D7F9F]" />
             <span>Bag ({cart.length})</span>
           </button>
-
-          <button
-            onClick={onRequestPurchaseOpen}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#2D7F9F] hover:bg-[#236F91] text-white text-xs font-bold rounded-xl shadow-md shadow-[#2D7F9F]/20 transition-all cursor-pointer"
-          >
-            <BookPlus className="w-4 h-4" />
-            <span>Request Book</span>
-          </button>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Main 4 Animated Portal Cards Grid */}
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        
-        {/* Portal Card 1: Academic Library */}
-        <motion.div
-          variants={cardVariants}
-          whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.2 } }}
-          onClick={() => navigateTo('book-store', 'academic')}
-          className="group relative bg-white rounded-3xl p-7 border border-[#E2E8F0] hover:border-[#2B7796]/40 shadow-sm hover:shadow-2xl hover:shadow-[#2B7796]/10 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
-        >
-          {/* Subtle warm animated ambient hue */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#E9F3F6] to-transparent rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity" />
+      {/* Show My Loans view if toggled */}
+      <AnimatePresence>
+        {showMyLoans && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white p-6 rounded-3xl border border-[#DBE4EA] shadow-xs"
+          >
+            <MyLoansAndWaitlistView />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <div className="space-y-4 relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-[#E9F3F6] text-[#2B7796] flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                <GraduationCap className="w-6 h-6" />
+      {/* Hero 3-Portal Interactive Drop-In Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+        {portals.map((portal, idx) => (
+          <motion.div
+            key={portal.id}
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * idx, duration: 0.4 }}
+            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            onClick={portal.action}
+            className={`group bg-gradient-to-b ${portal.bgGradient} rounded-3xl p-7 border border-[#DBE4EA] ${portal.borderHover} shadow-[0_4px_24px_rgba(31,41,51,0.03)] hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative overflow-hidden`}
+          >
+            {/* Top section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="p-3.5 rounded-2xl bg-white shadow-xs border border-[#DBE4EA] group-hover:scale-105 transition-transform">
+                  {portal.icon}
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${portal.badgeStyle}`}>
+                  {portal.count}
+                </span>
               </div>
-              <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-[#E9F3F6] text-[#2B7796] border border-[#C6E2EA]">
-                {academicCount} Textbooks
+
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#61728A] block">
+                  {portal.subtitle}
+                </span>
+                <h3 className="text-2xl font-black text-[#1F3547] tracking-tight mt-1 group-hover:text-[#2D7F9F] transition-colors">
+                  {portal.name}
+                </h3>
+                <p className="text-xs text-[#61728A] mt-2 leading-relaxed line-clamp-2">
+                  {portal.description}
+                </p>
+              </div>
+
+              {/* Sample Tag Chips */}
+              <div className="flex flex-wrap gap-1.5 pt-2" onClick={(e) => e.stopPropagation()}>
+                {portal.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => handleQuickSearch(tag.split(' ')[0], portal.id === 'fiction' ? 'fiction' : 'academic')}
+                    className="px-3 py-1 rounded-lg bg-white border border-[#DBE4EA] text-[11px] font-semibold text-[#4A5D6E] hover:border-[#2D7F9F] hover:text-[#2D7F9F] transition-all shadow-xs cursor-pointer"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom link & button */}
+            <div className="mt-6 pt-4 border-t border-[#EDF2F6] flex items-center justify-between">
+              <span className="font-bold text-xs text-[#1F3547] group-hover:text-[#2D7F9F] transition-colors">
+                {portal.ctaText}
               </span>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-black text-[#1F3547] tracking-tight group-hover:text-[#2B7796] transition-colors">
-                Academic & DP Subject Texts
-              </h3>
-              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
-                Coursebooks, lab practical handbooks, and exam guides for Chemistry, Physics, Biology, Math AA HL, Computer Science, and Theory of Knowledge.
-              </p>
-            </div>
-
-            {/* Quick Topic Chips */}
-            <div className="flex flex-wrap gap-1.5 pt-2" onClick={(e) => e.stopPropagation()}>
-              {['Chemistry', 'Physics', 'Biology', 'Mathematics', 'Computer Science', 'IB DP'].map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => handleQuickSearch(sub, 'academic')}
-                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#F8FAFC] hover:bg-[#E9F3F6] text-[#475569] hover:text-[#2B7796] border border-[#E2E8F0] transition-colors cursor-pointer"
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-[#F1F5F9] flex items-center justify-between text-xs font-bold text-[#2B7796] relative z-10">
-            <span>Browse Academic Books</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-          </div>
-        </motion.div>
-
-        {/* Portal Card 2: Fiction & Non-Fiction */}
-        <motion.div
-          variants={cardVariants}
-          whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.2 } }}
-          onClick={() => navigateTo('book-store', 'fiction')}
-          className="group relative bg-white rounded-3xl p-7 border border-[#E2E8F0] hover:border-[#1E7492]/40 shadow-sm hover:shadow-2xl hover:shadow-[#1E7492]/10 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
-        >
-          {/* Subtle warm animated ambient hue */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#EAF5F7] to-transparent rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity" />
-
-          <div className="space-y-4 relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-[#EAF5F7] text-[#1E7492] flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-[#EAF5F7] text-[#1E7492] border border-[#C8E7ED]">
-                {fictionCount} Titles
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-black text-[#1F3547] tracking-tight group-hover:text-[#1E7492] transition-colors">
-                Fiction & Non-Fiction
-              </h3>
-              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
-                Complete fantasy sagas (Percy Jackson Books 1-5, Heroes of Olympus), science fiction epics like Dune, 1984, timeless classics, and non-fiction memoirs.
-              </p>
-            </div>
-
-            {/* Quick Series Chips */}
-            <div className="flex flex-wrap gap-1.5 pt-2" onClick={(e) => e.stopPropagation()}>
-              {['Percy Jackson (Parts 1-5)', 'Dune', '1984', 'Classics', 'Sci-Fi', 'Non-Fiction'].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => handleQuickSearch(tag.split(' ')[0], 'fiction')}
-                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#F8FAFC] hover:bg-[#EAF5F7] text-[#475569] hover:text-[#1E7492] border border-[#E2E8F0] transition-colors cursor-pointer"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-[#F1F5F9] flex items-center justify-between text-xs font-bold text-[#1E7492] relative z-10">
-            <span>Explore Fiction & Non-Fiction</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-          </div>
-        </motion.div>
-
-        {/* Portal Card 3: Reading Tracker & Journey */}
-        <motion.div
-          variants={cardVariants}
-          whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.2 } }}
-          onClick={() => navigateTo('reading-tracker')}
-          className="group relative bg-white rounded-3xl p-7 border border-[#E2E8F0] hover:border-[#B45309]/40 shadow-sm hover:shadow-2xl hover:shadow-[#B45309]/10 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
-        >
-          {/* Subtle warm animated ambient hue */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#FEF3C7] to-transparent rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity" />
-
-          <div className="space-y-4 relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-[#FEF3C7] text-[#B45309] flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                <Clock className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">
-                {totalHours} Hours Read
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-black text-[#1F3547] tracking-tight group-hover:text-[#B45309] transition-colors">
-                My Reading Tracker & Deadlines
-              </h3>
-              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
-                Log reading minutes, record page milestones, track overdue countdowns, write reflections, and celebrate completed books!
-              </p>
-            </div>
-
-            <div className="bg-[#F8FAFC] p-3 rounded-2xl border border-[#E2E8F0] text-xs text-[#64748B] space-y-1">
-              <div className="flex justify-between">
-                <span>Total Study Logs:</span>
-                <strong className="text-[#1F3547]">{myLogs.length} entries</strong>
-              </div>
-              <div className="flex justify-between">
-                <span>Books In Progress:</span>
-                <strong className="text-[#B45309]">{studentLoans.length} active</strong>
+              <div className={`w-9 h-9 rounded-full ${portal.buttonStyle} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
+                <ArrowRight className="w-4 h-4" />
               </div>
             </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-[#F1F5F9] flex items-center justify-between text-xs font-bold text-[#B45309] relative z-10">
-            <span>Open Reading Tracker</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-          </div>
-        </motion.div>
-
-        {/* Portal Card 4: My Loans & Waitlists */}
-        <motion.div
-          variants={cardVariants}
-          whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.2 } }}
-          onClick={() => navigateTo('my-loans')}
-          className="group relative bg-white rounded-3xl p-7 border border-[#E2E8F0] hover:border-[#2D7F9F]/40 shadow-sm hover:shadow-2xl hover:shadow-[#2D7F9F]/10 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
-        >
-          {/* Subtle warm animated ambient hue */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#EBF5EE] to-transparent rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity" />
-
-          <div className="space-y-4 relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-[#EBF5EE] text-[#2D7F9F] flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                <BookmarkCheck className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-[#EBF5EE] text-[#2D7F9F] border border-[#2D7F9F]/20">
-                {studentLoans.length} Active Loans
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-black text-[#1F3547] tracking-tight group-hover:text-[#2D7F9F] transition-colors">
-                My Loans, Waitlists & Requests
-              </h3>
-              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
-                View your active borrowed titles, check your waitlist reservation queue position (#1, #2), and track book purchase proposals submitted to the librarian.
-              </p>
-            </div>
-
-            <div className="bg-[#F8FAFC] p-3 rounded-2xl border border-[#E2E8F0] text-xs text-[#64748B] space-y-1">
-              <div className="flex justify-between">
-                <span>Active Reservations:</span>
-                <strong className="text-[#1F3547]">{waitlist.filter((w) => w.studentEmail === currentUser?.email && w.status === 'waiting').length} waitlists</strong>
-              </div>
-              <div className="flex justify-between">
-                <span>Acquisition Requests:</span>
-                <strong className="text-[#2D7F9F]">Active Review</strong>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-[#F1F5F9] flex items-center justify-between text-xs font-bold text-[#2D7F9F] relative z-10">
-            <span>View Loans & Records</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-          </div>
-        </motion.div>
-
-      </motion.div>
+          </motion.div>
+        ))}
+      </div>
 
     </div>
   );

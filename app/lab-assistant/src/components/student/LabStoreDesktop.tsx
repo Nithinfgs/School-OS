@@ -40,7 +40,7 @@ export const LabStoreDesktop: React.FC = () => {
   const labItems = items.filter((i) => i.labType === selectedLabPortal);
   const categories = Array.from(new Set(labItems.map((i) => i.category)));
 
-  let filtered = labItems.filter((item) => {
+  const filtered = labItems.filter((item) => {
     if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
 
     if (stockFilter === 'in_stock' && item.quantity === 0) return false;

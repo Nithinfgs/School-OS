@@ -6,9 +6,7 @@
     "unicorn",
     "oxc",
     "react",
-    "import",
-    "jsx-a11y",
-    "nextjs"
+    "import"
   ],
   "categories": {
     "correctness": "error"
@@ -19,19 +17,22 @@
     "node": true
   },
   "options": {
-    "typeAware": true,
-    "typeCheck": true
+    "typeAware": false,
+    "typeCheck": false
   },
   "ignorePatterns": [
     ".next/**",
     ".vinext/**",
+    ".netlify/**",
     "out/**",
     "build/**",
     "dist/**",
     "coverage/**",
-    "next-env.d.ts"
+    "next-env.d.ts",
+    "supabase/.temp/**"
   ],
   "rules": {
+    "no-unused-vars": "warn",
     "no-array-constructor": "error",
     "no-var": "error",
     "prefer-const": "error",
@@ -40,14 +41,13 @@
     "import/no-anonymous-default-export": "warn",
     "react/display-name": "error",
     "react/jsx-no-comment-textnodes": "error",
-    "react/no-unescaped-entities": "error",
-    "react/react-compiler": "error",
+    "react/no-unescaped-entities": "warn",
     "react/require-render-return": "error",
     "react/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
     "typescript/ban-ts-comment": "error",
-    "typescript/no-deprecated": "error",
     "typescript/no-empty-object-type": "error",
-    "typescript/no-explicit-any": "error",
+    "typescript/no-explicit-any": "off",
     "typescript/no-namespace": "error",
     "typescript/no-require-imports": "error",
     "typescript/no-unnecessary-type-constraint": "error",

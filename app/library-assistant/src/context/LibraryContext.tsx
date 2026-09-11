@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { demoStorage } from '@/lib/platform/client-demo-storage';
 import { 
   BookItem, 
   BookLoan, 
@@ -144,37 +145,37 @@ export const LibraryProvider: React.FC<{
   embedded?: boolean;
 }> = ({ children, sharedRows = [], embedded = false }) => {
   const [books, setBooks] = useState<BookItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BOOKS);
+    const saved = demoStorage.getItem(STORAGE_KEYS.BOOKS);
     return saved ? JSON.parse(saved) : INITIAL_BOOKS;
   });
 
   const [loans, setLoans] = useState<BookLoan[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LOANS);
+    const saved = demoStorage.getItem(STORAGE_KEYS.LOANS);
     return saved ? JSON.parse(saved) : INITIAL_LOANS;
   });
 
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.WAITLIST);
+    const saved = demoStorage.getItem(STORAGE_KEYS.WAITLIST);
     return saved ? JSON.parse(saved) : INITIAL_WAITLIST;
   });
 
   const [readingLogs, setReadingLogs] = useState<ReadingSessionLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.READING_LOGS);
+    const saved = demoStorage.getItem(STORAGE_KEYS.READING_LOGS);
     return saved ? JSON.parse(saved) : INITIAL_READING_LOGS;
   });
 
   const [purchaseRequests, setPurchaseRequests] = useState<BookPurchaseRequest[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PURCHASE_REQ);
+    const saved = demoStorage.getItem(STORAGE_KEYS.PURCHASE_REQ);
     return saved ? JSON.parse(saved) : INITIAL_PURCHASE_REQUESTS;
   });
 
   const [damageLogs, setDamageLogs] = useState<BookDamageLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.DAMAGE);
+    const saved = demoStorage.getItem(STORAGE_KEYS.DAMAGE);
     return saved ? JSON.parse(saved) : INITIAL_DAMAGE_LOGS;
   });
 
   const [cart, setCart] = useState<CartBookItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CART);
+    const saved = demoStorage.getItem(STORAGE_KEYS.CART);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -185,7 +186,7 @@ export const LibraryProvider: React.FC<{
   const [page, setPageState] = useState<AppPage>('login');
 
   const [selectedCollection, setSelectedCollectionState] = useState<CollectionType>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.COLLECTION);
+    const saved = demoStorage.getItem(STORAGE_KEYS.COLLECTION);
     return (saved as CollectionType) || 'fiction';
   });
 
@@ -193,49 +194,49 @@ export const LibraryProvider: React.FC<{
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Synchronize to localStorage
+  // Persist prototype data only in an explicit localhost demo session.
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
+    demoStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
   }, [books]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify(loans));
+    demoStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify(loans));
   }, [loans]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify(waitlist));
+    demoStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify(waitlist));
   }, [waitlist]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.READING_LOGS, JSON.stringify(readingLogs));
+    demoStorage.setItem(STORAGE_KEYS.READING_LOGS, JSON.stringify(readingLogs));
   }, [readingLogs]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PURCHASE_REQ, JSON.stringify(purchaseRequests));
+    demoStorage.setItem(STORAGE_KEYS.PURCHASE_REQ, JSON.stringify(purchaseRequests));
   }, [purchaseRequests]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DAMAGE, JSON.stringify(damageLogs));
+    demoStorage.setItem(STORAGE_KEYS.DAMAGE, JSON.stringify(damageLogs));
   }, [damageLogs]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
+    demoStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
+      demoStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem(STORAGE_KEYS.USER);
+      demoStorage.removeItem(STORAGE_KEYS.USER);
     }
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PAGE, page);
+    demoStorage.setItem(STORAGE_KEYS.PAGE, page);
   }, [page]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.COLLECTION, selectedCollection);
+    demoStorage.setItem(STORAGE_KEYS.COLLECTION, selectedCollection);
   }, [selectedCollection]);
 
   // Keep the embedded assistant's catalog and circulation view connected to
@@ -1061,13 +1062,13 @@ export const LibraryProvider: React.FC<{
     setPurchaseRequests(INITIAL_PURCHASE_REQUESTS);
     setDamageLogs(INITIAL_DAMAGE_LOGS);
     clearCart();
-    localStorage.removeItem(STORAGE_KEYS.BOOKS);
-    localStorage.removeItem(STORAGE_KEYS.LOANS);
-    localStorage.removeItem(STORAGE_KEYS.WAITLIST);
-    localStorage.removeItem(STORAGE_KEYS.READING_LOGS);
-    localStorage.removeItem(STORAGE_KEYS.PURCHASE_REQ);
-    localStorage.removeItem(STORAGE_KEYS.DAMAGE);
-    localStorage.removeItem(STORAGE_KEYS.CART);
+    demoStorage.removeItem(STORAGE_KEYS.BOOKS);
+    demoStorage.removeItem(STORAGE_KEYS.LOANS);
+    demoStorage.removeItem(STORAGE_KEYS.WAITLIST);
+    demoStorage.removeItem(STORAGE_KEYS.READING_LOGS);
+    demoStorage.removeItem(STORAGE_KEYS.PURCHASE_REQ);
+    demoStorage.removeItem(STORAGE_KEYS.DAMAGE);
+    demoStorage.removeItem(STORAGE_KEYS.CART);
     addToast({
       type: 'info',
       title: 'Reset to Clean Data',

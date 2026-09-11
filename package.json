@@ -19,6 +19,7 @@
     "@base-ui/react": "1.7.0",
     "@netlify/blobs": "^11.0.3",
     "@shadcn/react": "0.3.0",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.115.0",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",

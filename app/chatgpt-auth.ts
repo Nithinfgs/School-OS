@@ -1,6 +1,7 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { resolveSupabaseBearer } from '@/lib/platform/supabase-auth';
+import { demoLoginEnabled } from '@/lib/platform/runtime';
 
 export type ChatGPTUser = {
   userId: string;
@@ -63,21 +64,7 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
 }
 
 async function getDevUser(): Promise<ChatGPTUser | null> {
-  // Development profiles are intentionally available on the hosted demo so
-  // presenters can open each role without provisioning accounts.
-  const requestHeaders = await headers();
-  const hostHeader = requestHeaders.get('host') || requestHeaders.get('x-forwarded-host') || '';
-  const hostname = hostHeader.split(':')[0];
-  const cleanHost = hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  const isLocal =
-    process.env.NODE_ENV !== 'production' ||
-    Boolean(process.env.SITE_ID || process.env.URL) ||
-    !cleanHost ||
-    ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(cleanHost) ||
-    cleanHost.endsWith('.localhost') ||
-    cleanHost.endsWith('.local');
-
-  if (!isLocal) return null;
+  if (!demoLoginEnabled()) return null;
   const store = await cookies();
   const raw = store.get(DEV_AUTH_COOKIE)?.value;
   if (!raw) return null;

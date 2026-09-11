@@ -46,7 +46,7 @@ export const BookStoreDesktop: React.FC = () => {
     new Set(collectionBooks.map((b) => b.seriesName).filter(Boolean) as string[])
   );
 
-  let filtered = collectionBooks.filter((book) => {
+  const filtered = collectionBooks.filter((book) => {
     if (selectedCategory !== 'all' && book.category !== selectedCategory) return false;
     if (selectedSeries !== 'all' && book.seriesName !== selectedSeries) return false;
 

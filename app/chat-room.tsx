@@ -656,7 +656,7 @@ export function ChatRoomView({ ws, initialRoomId }: { ws: any; initialRoomId?: s
       const roomMsgs = prev[activeRoom.id] || [];
       const updated = roomMsgs.map((msg) => {
         if (msg.id !== msgId) return msg;
-        const currentReactions = { ...(msg.reactions || {}) };
+        const currentReactions = { ...msg.reactions };
         const users = currentReactions[emoji] || [];
         if (users.includes(userName)) {
           currentReactions[emoji] = users.filter((u) => u !== userName);

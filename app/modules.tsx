@@ -127,23 +127,21 @@ export function useWorkspace(initialUser?: any) {
     const request = ++requestNumber.current;
     try {
       const r = await fetch('/api/workspace', { cache: 'no-store' });
-      if (r.ok) {
-        const d: any = await r.json();
-        if (request !== requestNumber.current) return;
-        if (d && (d.rows?.length || d.member)) {
-          setState(d);
-          setError('');
-          return;
-        }
+      const payload: any = await r.json().catch(() => null);
+      if (request !== requestNumber.current) return;
+
+      if (r.ok && payload && (payload.rows?.length || payload.member)) {
+        setState(payload);
+        setError('');
+        return;
       }
-      const failure: any = await r.json().catch(() => null);
       if (r.status === 401 && initialUser && !String(initialUser.userId || '').startsWith('dev:')) {
         const refreshed = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'same-origin' }).catch(() => null);
         if (refreshed?.ok) return refresh();
       }
-      if (failure?.mode === 'supabase') {
+      if (payload?.mode === 'supabase') {
         if (request !== requestNumber.current) return;
-        setError(failure.error || 'School data could not be loaded.');
+        setError(payload.error || 'School data could not be loaded.');
         return;
       }
       // The rich mock workspace is deliberately retained for demo mode only.
@@ -217,13 +215,25 @@ export function useWorkspace(initialUser?: any) {
         setMessage('Saved successfully');
         return d;
       }
-    } catch {}
+    } catch (error) {
+      // Only explicit development profiles may use the isolated demo adapter.
+      // A production/API failure must never fabricate a successful mutation.
+      if (!String(initialUser?.userId || '').startsWith('dev:')) {
+        const message = error instanceof Error ? error.message : 'Could not save this change. Please try again.';
+        setError(message);
+        throw error;
+      }
+    }
 
-    // Fallback: Apply mutation to in-memory mock store
+    if (!String(initialUser?.userId || '').startsWith('dev:')) {
+      const failure = new Error('Could not save this change. Please try again.');
+      setError(failure.message);
+      throw failure;
+    }
     const result = handleMockMutation(payload, state.member);
     const updatedMock = getMockWorkspaceData(state.member);
     setState(updatedMock);
-    setMessage('Saved successfully');
+    setMessage('Saved in the isolated demo workspace');
     return result;
   }
 
@@ -378,7 +388,7 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
   useEffect(() => setPagination(1), [tab, query, filter, availability, sort]);
   const can = (k: string) => allowed[member.role]?.includes(k);
   const kinds = (k: string) => rows.filter((r: any) => r.kind === k);
-  let kind =
+  const kind =
     page === 'Labs'
       ? 'inventory'
       : page === 'Library'
@@ -1750,8 +1760,8 @@ function Detail({ row: r, rows, audit, mutate, can, role, ws }: any) {
 }
 function Workflow({ form, close, act, rows }: any) {
   const r = form?.row;
-  let type = form?.type,
-    kind = form?.kind || r?.kind;
+  const type = form?.type;
+  let kind = form?.kind || r?.kind;
   if (type === 'record') kind = 'record';
   const previousWork =
     type === 'submit'
@@ -1766,7 +1776,7 @@ function Workflow({ form, close, act, rows }: any) {
       : null;
   const [values, setValues] = useState<any>({
       name: r?.name || '',
-      ...(r?.data || {}),
+      ...r?.data,
       ...(previousWork
         ? {
             text: previousWork.data.text,

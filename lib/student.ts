@@ -3,7 +3,6 @@ import { calendarEvents, localDate, submissionState } from './teaching';
 export const studentSections = [
   'Home',
   'Today',
-  'Classes',
   'Academics',
   'Records',
   'Reports',

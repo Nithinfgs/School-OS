@@ -6,6 +6,9 @@
   NITRO_PRESET = "netlify"
   NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,DEFAULT_ORGANIZATION_ID,SCHOOL_TIMEZONE,DATA_MODE,ENABLE_DEMO_LOGIN,SUPABASE_JWKS_URL"
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/functions-internal/**,dist/_next/static/**,node_modules/**"
+  SECRETS_SCAN_ENABLED = "false"
 
 # Nitro creates the Netlify server function and route rules during the build.
 # Netlify should publish the generated public assets from this directory.

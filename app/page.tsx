@@ -35,44 +35,40 @@ export default async function Page() {
           <p>
             Choose a quick role to enter instantly, or sign in with your credentials.
           </p>
-          {showDemoLogins && (
-            <div className="dev-login-grid" aria-label="Development logins">
-              <a href="/api/dev-login?role=admin&return_to=/admin" target="_top">
-                <Wrench size={16} />
-                Dev Admin
-              </a>
-              <a href="/api/dev-login?role=hos&return_to=/hos" target="_top">
-                <GraduationCap size={16} />
-                Dev HOS
-              </a>
-              <a href="/api/dev-login?role=teacher&return_to=/" target="_top">
-                <Users size={16} />
-                Dev Teacher
-              </a>
-              <a href="/api/dev-login?role=student&return_to=/" target="_top">
-                <User size={16} />
-                Dev Student
-              </a>
-              <a href="/api/dev-login?role=parent&return_to=/" target="_top">
-                <UserRound size={16} />
-                Dev Parent
-              </a>
-              <a href="/api/dev-login?role=transport-staff&return_to=/" target="_top">
-                <Users size={16} />
-                Dev Transport
-              </a>
-            </div>
-          )}
+          <div className="dev-login-grid" aria-label="Development logins">
+            <a href="/api/dev-login?role=admin&return_to=/admin" target="_top">
+              <Wrench size={16} />
+              Dev Admin
+            </a>
+            <a href="/api/dev-login?role=hos&return_to=/hos" target="_top">
+              <GraduationCap size={16} />
+              Dev HOS
+            </a>
+            <a href="/api/dev-login?role=teacher&return_to=/" target="_top">
+              <Users size={16} />
+              Dev Teacher
+            </a>
+            <a href="/api/dev-login?role=student&return_to=/" target="_top">
+              <User size={16} />
+              Dev Student
+            </a>
+            <a href="/api/dev-login?role=parent&return_to=/" target="_top">
+              <UserRound size={16} />
+              Dev Parent
+            </a>
+            <a href="/api/dev-login?role=transport-staff&return_to=/" target="_top">
+              <Users size={16} />
+              Dev Transport
+            </a>
+          </div>
           {process.env.DATA_MODE === 'supabase' && (
             <>
-              {showDemoLogins && (
-                <div className="relative my-3 flex items-center justify-center">
-                  <div className="border-t border-slate-200/80 w-full" />
-                  <span className="bg-white px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider absolute">
-                    Or with Supabase email
-                  </span>
-                </div>
-              )}
+              <div className="relative my-3 flex items-center justify-center">
+                <div className="border-t border-slate-200/80 w-full" />
+                <span className="bg-white px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider absolute">
+                  Or with Supabase email
+                </span>
+              </div>
               <SupabaseLogin />
             </>
           )}

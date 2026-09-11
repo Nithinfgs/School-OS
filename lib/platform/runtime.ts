@@ -13,10 +13,9 @@ export function dataMode(): DataMode {
   throw new Error(`Invalid DATA_MODE '${value}'. Use demo or supabase.`);
 }
 
-/** Development profiles enabled by default unless explicitly set to false */
+/** Development profiles always enabled for instant quick logins */
 export function demoLoginEnabled(): boolean {
-  const env = runtimeEnv();
-  return env.ENABLE_DEMO_LOGIN !== 'false';
+  return true;
 }
 
 export function schoolTimeZone(): string {

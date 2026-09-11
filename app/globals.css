@@ -2861,21 +2861,66 @@ dd {
   text-align: left;
 }
 .master-module-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  gap: 10px;
-  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 14px;
 }
-.master-module-strip > button {
-  width: 100%;
-  min-width: 0;
-  min-height: 42px;
+.master-module-strip .master-module-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+.master-module-strip .master-module-pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.master-module-strip .master-module-pill[data-slot="button"][class*="bg-primary"],
+.master-module-strip .master-module-pill.active {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+.master-module-strip .master-pill-badge {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  white-space: normal;
-  line-height: 1.2;
+  min-width: 20px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s ease;
 }
-.master-module-strip button span {
-  opacity: 0.65;
+.master-module-strip .master-module-pill:hover .master-pill-badge {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+.master-module-strip .master-module-pill[data-slot="button"][class*="bg-primary"] .master-pill-badge,
+.master-module-strip .master-module-pill.active .master-pill-badge {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 .master-records .section-heading {
   gap: 16px;
@@ -3004,9 +3049,6 @@ dd {
   .master-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .master-module-strip {
-    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  }
 }
 @media (max-width: 540px) {
   .master-filter-grid {
@@ -3019,12 +3061,6 @@ dd {
   .master-filter-footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-}
-
-@media (max-width: 720px) {
-  .master-module-strip {
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   }
 }
 .teacher-dashboard {

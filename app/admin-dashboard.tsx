@@ -488,28 +488,43 @@ export function AdminMasterDashboard({ ws, navigate, select }: any) {
         ))}
       </div>
       <div className="master-module-strip" aria-label="Browse modules">
-        {moduleNames.map((name) => (
-          <Button
-            key={name}
-            variant={filters.module === name ? 'default' : 'outline'}
-            onClick={() => {
-              change('module', filters.module === name ? '' : name);
-              setRecordType('');
-              setTab('Records');
-            }}
-          >
-            {name}{' '}
-            <span>
-              {
-                rows.filter(
-                  (r) =>
-                    moduleFor(r) === name &&
-                    matchesFilters(r, rows, { ...filters, module: '' }),
-                ).length
-              }
-            </span>
-          </Button>
-        ))}
+        <button
+          type="button"
+          className={`master-module-pill ${!filters.module ? 'active' : ''}`}
+          onClick={() => {
+            change('module', '');
+            setRecordType('');
+            setTab('Records');
+          }}
+        >
+          <span>All Modules</span>
+          <span className="master-pill-badge">
+            {rows.filter((r) => matchesFilters(r, rows, { ...filters, module: '' })).length}
+          </span>
+        </button>
+        {moduleNames.map((name) => {
+          const count = rows.filter(
+            (r) =>
+              moduleFor(r) === name &&
+              matchesFilters(r, rows, { ...filters, module: '' }),
+          ).length;
+          const isSelected = filters.module === name;
+          return (
+            <button
+              key={name}
+              type="button"
+              className={`master-module-pill ${isSelected ? 'active' : ''}`}
+              onClick={() => {
+                change('module', isSelected ? '' : name);
+                setRecordType('');
+                setTab('Records');
+              }}
+            >
+              <span>{name}</span>
+              <span className="master-pill-badge">{count}</span>
+            </button>
+          );
+        })}
       </div>
       {attendanceDates.length > 0 && (
         <section className="panel master-records">

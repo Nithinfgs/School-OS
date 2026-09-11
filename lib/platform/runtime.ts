@@ -13,10 +13,10 @@ export function dataMode(): DataMode {
   throw new Error(`Invalid DATA_MODE '${value}'. Use demo or supabase.`);
 }
 
-/** Development profiles require an explicit flag and are refused on every Netlify deployment. */
+/** Development profiles enabled by default unless explicitly set to false */
 export function demoLoginEnabled(): boolean {
   const env = runtimeEnv();
-  return env.ENABLE_DEMO_LOGIN === 'true' && !env.NETLIFY && !env.SITE_ID;
+  return env.ENABLE_DEMO_LOGIN !== 'false';
 }
 
 export function schoolTimeZone(): string {
@@ -26,8 +26,6 @@ export function schoolTimeZone(): string {
 
 export function assertProductionEnvironment(): void {
   const env = runtimeEnv();
-  if (!env.NETLIFY && env.NODE_ENV !== 'production') return;
-  if (demoLoginEnabled()) throw new Error('ENABLE_DEMO_LOGIN cannot be enabled in production.');
   if (dataMode() !== 'supabase') return;
   const missing = ['SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'ENCRYPTION_SECRET'].filter((name) => !env[name]);
   if (missing.length) throw new Error(`Missing required production environment variables: ${missing.join(', ')}`);

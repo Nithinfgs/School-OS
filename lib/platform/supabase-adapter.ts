@@ -64,8 +64,58 @@ class SupabaseTransportRepository extends SupabaseEntityRepository {
     return saved;
   }
 }
-class SupabaseActivityRepository implements ActivityRepository { constructor(private client:SupabaseClient){} async emit(event:ActivityEvent){const {error}=await this.client.from('activity_events').upsert({id:event.id,organization_id:event.organizationId,event_type:event.eventType,module:event.module,actor_id:event.actorId,actor_role:event.actorRole,subject_type:event.subjectType,subject_id:event.subjectId,related_student_id:event.relatedStudentId||null,related_teacher_id:event.relatedTeacherId||null,related_class_id:event.relatedClassId||null,entity_type:event.entityType,entity_id:event.entityId,tags:event.tags,metadata:event.metadata,occurred_at:event.occurredAt});if(error)throw error;} async list(filters?:QueryFilters){let q=this.client.from('activity_events').select('*').order('occurred_at',{ascending:false});if(filters?.module)q=q.eq('module',filters.module);if(filters?.studentId)q=q.eq('related_student_id',filters.studentId);const {data,error}=await q;if(error)throw error;return (data||[]).map((row:any)=>({id:row.id,organizationId:row.organization_id,eventType:row.event_type,module:row.module,actorId:row.actor_id,actorRole:row.actor_role,subjectType:row.subject_type,subjectId:row.subject_id,relatedStudentId:row.related_student_id,relatedTeacherId:row.related_teacher_id,relatedClassId:row.related_class_id,entityType:row.entity_type,entityId:row.entity_id,tags:row.tags||[],metadata:row.metadata||{},occurredAt:row.occurred_at}));} }
-class SupabaseAuditRepository implements AuditRepository { constructor(private client:SupabaseClient){} async append(entry:AuditTrail){const {error}=await this.client.from('audit_logs').insert({organization_id:entry.organizationId,actor_id:entry.actorId,actor_role:entry.actorRole,entity_type:entry.entityType,entity_id:entry.entityId,action:entry.action,before:entry.before||null,after:entry.after||null,timestamp:entry.timestamp});if(error)throw error;} async list(){const {data,error}=await this.client.from('audit_logs').select('*').order('timestamp',{ascending:false});if(error)throw error;return (data||[]).map((r:any)=>({id:r.id,organizationId:r.organization_id,actorId:r.actor_id,actorRole:r.actor_role,entityType:r.entity_type,entityId:r.entity_id,action:r.action,before:r.before,after:r.after,timestamp:r.timestamp}));} }
+class SupabaseActivityRepository implements ActivityRepository {
+  constructor(private client:SupabaseClient){}
+  async emit(event:ActivityEvent){
+    const {error}=await this.client.from('activity_events').upsert({
+      id:event.id,organization_id:event.organizationId,event_type:event.eventType,module:event.module,
+      actor_id:event.actorId,actor_role:event.actorRole,subject_type:event.subjectType,subject_id:event.subjectId,
+      related_student_id:event.relatedStudentId||null,related_teacher_id:event.relatedTeacherId||null,
+      related_class_id:event.relatedClassId||null,entity_type:event.entityType,entity_id:event.entityId,
+      tags:event.tags,metadata:event.metadata,occurred_at:event.occurredAt
+    });
+    if(error)throw error;
+  }
+  async list(filters?:QueryFilters & { organizationId?: string }){
+    let q=this.client.from('activity_events').select('*').order('occurred_at',{ascending:false});
+    if(filters?.organizationId) q=q.eq('organization_id', filters.organizationId);
+    if(filters?.module)q=q.eq('module',filters.module);
+    if(filters?.studentId)q=q.eq('related_student_id',filters.studentId);
+    if(filters?.teacherId)q=q.eq('related_teacher_id',filters.teacherId);
+    const {data,error}=await q;
+    if(error)throw error;
+    return (data||[]).map((row:any)=>({
+      id:row.id,organizationId:row.organization_id,eventType:row.event_type,module:row.module,
+      actorId:row.actor_id,actorRole:row.actor_role,subjectType:row.subject_type,subjectId:row.subject_id,
+      relatedStudentId:row.related_student_id,relatedTeacherId:row.related_teacher_id,
+      relatedClassId:row.related_class_id,entityType:row.entity_type,entityId:row.entity_id,
+      tags:row.tags||[],metadata:row.metadata||{},occurredAt:row.occurred_at
+    }));
+  }
+}
+class SupabaseAuditRepository implements AuditRepository {
+  constructor(private client:SupabaseClient){}
+  async append(entry:AuditTrail){
+    const {error}=await this.client.from('audit_logs').insert({
+      organization_id:entry.organizationId,actor_id:entry.actorId,actor_role:entry.actorRole,
+      entity_type:entry.entityType,entity_id:entry.entityId,action:entry.action,
+      before:entry.before||null,after:entry.after||null,timestamp:entry.timestamp
+    });
+    if(error)throw error;
+  }
+  async list(filters?: { organizationId?: string; entityId?: string }){
+    let q=this.client.from('audit_logs').select('*').order('timestamp',{ascending:false});
+    if(filters?.organizationId) q=q.eq('organization_id', filters.organizationId);
+    if(filters?.entityId) q=q.eq('entity_id', filters.entityId);
+    const {data,error}=await q;
+    if(error)throw error;
+    return (data||[]).map((r:any)=>({
+      id:r.id,organizationId:r.organization_id,actorId:r.actor_id,actorRole:r.actor_role,
+      entityType:r.entity_type,entityId:r.entity_id,action:r.action,
+      before:r.before,after:r.after,timestamp:r.timestamp
+    }));
+  }
+}
 
 export function createSupabaseServerClient(){assertSupabaseServerConfig();return createClient(supabaseConfig.url,supabaseConfig.secretKey,{auth:{autoRefreshToken:false,persistSession:false}});}
 export function createSupabaseDataPlatform(client=createSupabaseServerClient()):DataPlatform { return {students:new SupabaseStudentRepository(client,'student_record'),teachers:new SupabaseEntityRepository(client,'teacher'),attendance:new SupabaseEntityRepository(client,'attendance'),assignments:new SupabaseEntityRepository(client,'assignment'),library:new SupabaseLibraryRepository(client,'library'),labs:new SupabaseLabRepository(client,'lab'),transport:new SupabaseTransportRepository(client,'transport'),damage:new SupabaseEntityRepository<DamageBrokenLog>(client,'damage'),inquiries:new SupabaseEntityRepository(client,'inquiry'),calendar:new SupabaseEntityRepository(client,'calendar'),notifications:new SupabaseEntityRepository<NotificationEntity>(client,'notification'),activity:new SupabaseActivityRepository(client),audit:new SupabaseAuditRepository(client)}; }

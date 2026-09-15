@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     const options = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: 60 * 60 * 8 };
     response.cookies.set('schoolos-supabase-access', data.session.access_token, options);
     response.cookies.set('schoolos-supabase-refresh', data.session.refresh_token, { ...options, maxAge: 60 * 60 * 24 * 30 });
+    response.cookies.set('schoolos-dev-user', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: 0 });
     return response;
   } catch {
     return NextResponse.json({ error: 'Sign-in request failed.' }, { status: 400 });

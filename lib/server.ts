@@ -222,7 +222,19 @@ export async function ensureSeed(org: string, actor: string) {
 }
 export const rolePermissions: Record<string, string[]> = {
   Admin: ['*'],
-  'Head of School': ['*', 'inquiries.viewAll', 'inquiries.reply', 'inquiries.assign', 'inquiries.manage', 'calendar.manage', 'teacherRecords.viewAll', 'studentRecords.viewAll'],
+  'Head of School': [
+    'calendar.manage',
+    'inquiries.viewAll',
+    'inquiries.reply',
+    'inquiries.assign',
+    'inquiries.manage',
+    'teacherRecords.viewAll',
+    'studentRecords.viewAll',
+    'student.view',
+    'book.view',
+    'inventory.view',
+    'transport.view',
+  ],
   'Transport Staff': ['transport.view', 'transport.manage', 'transport.recordArrival', 'transport.recordDeparture', 'transport.manageNotices'],
   Teacher: [
     'inventory.view',

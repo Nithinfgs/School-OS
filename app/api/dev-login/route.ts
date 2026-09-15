@@ -17,6 +17,14 @@ export async function GET(request: Request) {
       'Set-Cookie',
       `${DEV_AUTH_COOKIE}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`,
     );
+    headers.append(
+      'Set-Cookie',
+      `schoolos-supabase-access=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`,
+    );
+    headers.append(
+      'Set-Cookie',
+      `schoolos-supabase-refresh=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`,
+    );
     return new Response(null, { status: 302, headers });
   }
 
@@ -26,6 +34,14 @@ export async function GET(request: Request) {
   headers.append(
     'Set-Cookie',
     `${DEV_AUTH_COOKIE}=${btoa(JSON.stringify({ role }))}; Path=/; Max-Age=604800; HttpOnly; SameSite=Lax${secure}`,
+  );
+  headers.append(
+    'Set-Cookie',
+    `schoolos-supabase-access=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`,
+  );
+  headers.append(
+    'Set-Cookie',
+    `schoolos-supabase-refresh=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`,
   );
 
   return new Response(null, { status: 302, headers });

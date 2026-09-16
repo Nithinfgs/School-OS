@@ -84,6 +84,7 @@ import { classes } from '@/lib/seed';
 import { getMockWorkspaceData, handleMockMutation } from '@/lib/mock-workspace';
 import { ClassHistory, ClassLogDetail } from './class-logs';
 import { AttendanceRegister } from './attendance-register';
+import { MessageThread } from './message-thread';
 import { calendarEvents } from '@/lib/teaching';
 import { navigateWebsite } from '@/lib/web-navigation';
 import { createClient } from '@/utils/supabase/client';

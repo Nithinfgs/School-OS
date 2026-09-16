@@ -103,7 +103,7 @@ class SupabaseAuditRepository implements AuditRepository {
     });
     if(error)throw error;
   }
-  async list(filters?: { organizationId?: string; entityId?: string }){
+  async list(filters?: QueryFilters & { organizationId?: string; entityId?: string }){
     let q=this.client.from('audit_logs').select('*').order('timestamp',{ascending:false});
     if(filters?.organizationId) q=q.eq('organization_id', filters.organizationId);
     if(filters?.entityId) q=q.eq('entity_id', filters.entityId);

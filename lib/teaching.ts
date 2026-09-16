@@ -32,19 +32,76 @@ export const teacherTabs = [
 export const localDate = () => new Date().toLocaleDateString('en-CA');
 export const studentInClass = (student: any, name: string) =>
   student.data.class === name || student.data.classes?.includes(name);
+const WEEKDAY_NAMES: Record<number, string> = {
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+};
+
 export function scheduleFor(rows: any[], date: string) {
   const weekday = new Date(date + 'T12:00:00').getDay();
-  return rows
+  const dayName = WEEKDAY_NAMES[weekday];
+
+  const baseItems = rows
     .filter(
       (r) =>
         r.kind === 'timetable' &&
-        (r.data.date === date ||
-          (!r.data.date &&
-            (r.data.weekdays || [1, 2, 3, 4, 5]).includes(weekday))),
+        (r.data?.date === date ||
+          (!r.data?.date &&
+            (r.data?.weekdays || [1, 2, 3, 4, 5]).includes(weekday))),
     )
-    .sort((a, b) =>
-      String(a.data.startTime).localeCompare(String(b.data.startTime)),
+    .map((r) => ({ ...r, data: { ...r.data } }));
+
+  // Apply any timetable_override rows for this weekday
+  if (dayName) {
+    const overrides = rows.filter(
+      (r) => r.kind === 'timetable_override' && r.data?.day === dayName,
     );
+    overrides.forEach((ov) => {
+      const pKey = ov.data?.periodKey; // e.g. 'p1'
+      const pNum = pKey ? pKey.replace('p', '').toUpperCase() : '';
+      const matchingIdx = baseItems.findIndex(
+        (b) =>
+          b.data?.period === `P${pNum}` ||
+          b.data?.period === `Period ${pNum}` ||
+          (pNum && b.data?.period?.includes(pNum)),
+      );
+
+      const [start, end] = (ov.data?.slot?.time || '08:30–09:10').split('–');
+      const overriddenData = {
+        class: ov.data?.slot?.title || 'Subject',
+        code: ov.data?.slot?.code || '',
+        period: `Period ${pNum}`,
+        startTime: start?.trim() || '08:30',
+        endTime: end?.trim() || '09:10',
+        room: ov.data?.slot?.room || '',
+        teacher: ov.data?.slot?.teacher || '',
+        substitution: ov.data?.slot?.notes || '',
+        description: ov.data?.slot?.title || '',
+      };
+
+      if (matchingIdx >= 0) {
+        baseItems[matchingIdx].data = {
+          ...baseItems[matchingIdx].data,
+          ...overriddenData,
+        };
+      } else {
+        baseItems.push({
+          id: ov.id,
+          kind: 'timetable',
+          name: `${overriddenData.class} · Period ${pNum}`,
+          quantity: 1,
+          data: overriddenData,
+        });
+      }
+    });
+  }
+
+  return baseItems.sort((a, b) =>
+    String(a.data?.startTime || '').localeCompare(String(b.data?.startTime || '')),
+  );
 }
 export function submissionState(
   assignment: any,

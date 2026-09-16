@@ -54,6 +54,7 @@ import { ClassHistory, ClassLogDetail } from './class-logs';
 import { MessageThread } from './message-thread';
 import { ChatRoomView } from './chat-room';
 import { ChatModal } from './chat-modal';
+import { TimetableMatrix } from '@/app/components/timetable-matrix';
 import { navigateWebsite } from '@/lib/web-navigation';
 import {
   teacherTabs,
@@ -162,7 +163,8 @@ export function TeacherDashboard({ ws }: any) {
     [form, setForm] = useState<any>(null),
     [selectedId, setSelectedId] = useState(''),
     [day, setDay] = useState(localDate()),
-    [studentSection, setStudentSection] = useState('Overview');
+    [studentSection, setStudentSection] = useState('Overview'),
+    [calendarViewMode, setCalendarViewMode] = useState<'matrix' | 'daily'>('matrix');
   const rows = ws.rows,
     classes = rows.filter((r: any) => r.kind === 'class'),
     cls = classes.find((r: any) => r.id === classId),
@@ -929,45 +931,88 @@ export function TeacherDashboard({ ws }: any) {
               </>
             ) : tab === 'Calendar' ? (
               <>
-                <div className="section-heading">
-                  <h2>Timetable & calendar</h2>
-                  <Input
-                    aria-label="Calendar date"
-                    type="date"
-                    value={day}
-                    onChange={(e) => setDay(e.target.value)}
-                  />
+                <div className="section-heading flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <h2>Timetable & calendar</h2>
+                    <div className="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarViewMode('matrix')}
+                        className={`text-xs px-3 py-1 rounded-md font-semibold transition-all ${
+                          calendarViewMode === 'matrix'
+                            ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        Weekly Matrix Editor
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalendarViewMode('daily')}
+                        className={`text-xs px-3 py-1 rounded-md font-semibold transition-all ${
+                          calendarViewMode === 'daily'
+                            ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        Daily Schedule & Events
+                      </button>
+                    </div>
+                  </div>
+                  {calendarViewMode === 'daily' && (
+                    <Input
+                      aria-label="Calendar date"
+                      type="date"
+                      value={day}
+                      onChange={(e) => setDay(e.target.value)}
+                      className="w-auto"
+                    />
+                  )}
                 </div>
-                <div className="teacher-week">
-                  {Array.from({ length: 7 }, (_, i) => {
-                    const d = new Date(Date.parse(day) + i * 86400000)
-                      .toISOString()
-                      .slice(0, 10);
-                    const events = calendarEvents(scoped, d);
-                    return (
-                      <section key={d}>
-                        <button onClick={() => setDay(d)}>
-                          <b suppressHydrationWarning>
-                            {new Date(d + 'T12:00').toLocaleDateString(
-                              undefined,
-                              { weekday: 'short', day: 'numeric' },
-                            )}
-                          </b>
-                        </button>
-                        {events.map((r: any) => (
-                          <button
-                            key={r.eventId || r.id}
-                            onClick={() => open(r)}
-                          >
-                            {r.data.startTime || ''} {r.name}
-                          </button>
-                        ))}
-                      </section>
-                    );
-                  })}
-                </div>
-                <h3>Selected day</h3>
-                <Entries rows={calendar} open={open} />
+
+                {calendarViewMode === 'matrix' ? (
+                  <div className="mt-4">
+                    <TimetableMatrix
+                      ws={ws}
+                      canEdit={true}
+                      title="Academic Timetable Matrix (Teacher Editor)"
+                      subtitle="Click any period cell to customize subject, teacher, room, timing, or notes. Syncs directly with students."
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="teacher-week">
+                      {Array.from({ length: 7 }, (_, i) => {
+                        const d = new Date(Date.parse(day) + i * 86400000)
+                          .toISOString()
+                          .slice(0, 10);
+                        const events = calendarEvents(scoped, d);
+                        return (
+                          <section key={d}>
+                            <button onClick={() => setDay(d)}>
+                              <b suppressHydrationWarning>
+                                {new Date(d + 'T12:00').toLocaleDateString(
+                                  undefined,
+                                  { weekday: 'short', day: 'numeric' },
+                                )}
+                              </b>
+                            </button>
+                            {events.map((r: any) => (
+                              <button
+                                key={r.eventId || r.id}
+                                onClick={() => open(r)}
+                              >
+                                {r.data.startTime || ''} {r.name}
+                              </button>
+                            ))}
+                          </section>
+                        );
+                      })}
+                    </div>
+                    <h3>Selected day</h3>
+                    <Entries rows={calendar} open={open} />
+                  </>
+                )}
               </>
             ) : tab === 'Exams' ? (
               <>

@@ -37,6 +37,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClassLogDetail } from './class-logs';
 import { AttendanceRegister } from './attendance-register';
+import { TimetableMatrix } from '@/app/components/timetable-matrix';
 import { navigateWebsite } from '@/lib/web-navigation';
 import {
   emptyFilters,
@@ -619,6 +620,15 @@ export function AdminMasterDashboard({ ws, navigate, select }: any) {
                 ?.id
             }
           />
+        ) : tab === 'Timetable' || filters.module === 'Timetable' ? (
+          <div className="mt-4">
+            <TimetableMatrix
+              ws={ws}
+              canEdit={true}
+              title="Academic Timetable Master (Administrator Editor)"
+              subtitle="Edit master periods, class slots, staff allocations, and room assignments with real-time propagation across SchoolOS."
+            />
+          </div>
         ) : (
           <>
             <p className="master-count">

@@ -124,7 +124,7 @@ export function getTimetableFromWorkspace(rows: any[]): TimetableGrid {
 
   // 1. Check for complete timetable_matrix record
   const matrixRecord = rows.find((r) => r && r.kind === 'timetable_matrix' && r.data?.grid);
-  let grid: TimetableGrid = matrixRecord?.data?.grid
+  const grid: TimetableGrid = matrixRecord?.data?.grid
     ? JSON.parse(JSON.stringify(matrixRecord.data.grid))
     : JSON.parse(JSON.stringify(DEFAULT_DP2_GRID));
 

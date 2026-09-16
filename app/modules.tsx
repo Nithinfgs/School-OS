@@ -253,7 +253,7 @@ export function useWorkspace(initialUser?: any) {
         } catch {}
         return d;
       }
-    } catch (error) {
+    } catch {
       // Production / API failure handling
     }
 

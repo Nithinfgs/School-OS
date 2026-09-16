@@ -23,9 +23,9 @@ import { getChatGPTUser } from '@/app/chatgpt-auth';
 export async function GET() {
   try {
     if (backendConfig.adapter === 'supabase') {
-      const user=await getChatGPTUser();
-      if(!user) return Response.json({error:'UNAUTHORIZED'},{status:401});
-      if (!user.userId.startsWith('dev:')) return Response.json(await loadSupabaseWorkspace(user));
+      const user = await getChatGPTUser();
+      if (!user) return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+      return Response.json(await loadSupabaseWorkspace(user));
     }
     const { user, member, org } = await context();
     await ensureSeed(org, user.userId);
@@ -194,12 +194,10 @@ export async function POST(req: Request) {
     if (origin && origin !== new URL(req.url).origin)
       throw new Error('FORBIDDEN');
     if (backendConfig.adapter === 'supabase') {
-      const user=await getChatGPTUser();
-      if(!user) throw new Error('UNAUTHORIZED');
-      if (!user.userId.startsWith('dev:')) {
-        const payload=await req.json();
-        return Response.json(await handleSupabaseWorkspaceMutation(payload,user));
-      }
+      const user = await getChatGPTUser();
+      if (!user) throw new Error('UNAUTHORIZED');
+      const payload = await req.json();
+      return Response.json(await handleSupabaseWorkspaceMutation(payload, user));
     }
     const { user, member, org } = await context();
     const b: any = await req.json();

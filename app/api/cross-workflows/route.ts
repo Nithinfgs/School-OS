@@ -57,7 +57,7 @@ async function demoParentRequest(body: { action?: string; data?: any }) {
 async function member() {
   if (backendConfig.adapter !== 'supabase') throw new Error('DEMO_MODE');
   const user = await getChatGPTUser();
-  if (!user || user.userId.startsWith('dev:')) throw new Error('UNAUTHORIZED');
+  if (!user) throw new Error('UNAUTHORIZED');
   return resolveSupabaseMember({ id: user.userId, email: user.email });
 }
 

@@ -10,7 +10,7 @@ import {
 
 async function authenticatedMember() {
   const user = await getChatGPTUser();
-  if (!user || user.userId.startsWith('dev:')) throw new Error('UNAUTHORIZED');
+  if (!user) throw new Error('UNAUTHORIZED');
   return resolveSupabaseMember({ id: user.userId, email: user.email });
 }
 

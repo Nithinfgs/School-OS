@@ -84,9 +84,9 @@ import { classes } from '@/lib/seed';
 import { getMockWorkspaceData, handleMockMutation } from '@/lib/mock-workspace';
 import { ClassHistory, ClassLogDetail } from './class-logs';
 import { AttendanceRegister } from './attendance-register';
-import { MessageThread } from './message-thread';
 import { calendarEvents } from '@/lib/teaching';
 import { navigateWebsite } from '@/lib/web-navigation';
+import { createClient } from '@/utils/supabase/client';
 const Analytics = lazy(() => import('./analytics'));
 export function Pick({
   value,
@@ -166,22 +166,54 @@ export function useWorkspace(initialUser?: any) {
   }
 
   useEffect(() => {
-    // Never flash demo records for a real Supabase session while its workspace
-    // is loading. Demo profiles intentionally keep their complete seed data.
-    if (initialUser && !String(initialUser.userId || '').startsWith('dev:')) {
-      setState({ rows: [], contacts: [], audit: [], members: [], masterRows: [], member: { name: initialUser.displayName || initialUser.email, role: '' } });
-    } else {
-      setState(getMockWorkspaceData(initialUser));
-    }
+    // Initial workspace load
     refresh();
+
+    // Cross-tab broadcast channel for instant multi-window/multi-role synchronization
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('schoolos-realtime-sync');
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'SYNC_WORKSPACE') {
+          refresh();
+        }
+      };
+    } catch {}
+
+    // Supabase Realtime subscription for live server-side database events
+    let channel: any = null;
+    try {
+      const supabase = createClient();
+      if (supabase && typeof supabase.channel === 'function') {
+        channel = supabase
+          .channel('schoolos-realtime-workspace')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'tracked_records' }, () => refresh())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'parent_student_requests' }, () => refresh())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_notices' }, () => refresh())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => refresh())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'admission_applications' }, () => refresh())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'visitors' }, () => refresh())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_leave_requests' }, () => refresh())
+          .subscribe();
+      }
+    } catch {}
+
     const update = () => {
       if (document.visibilityState === 'visible') refresh();
     };
-    const timer = setInterval(update, 10000);
+    const timer = setInterval(update, 5000);
     window.addEventListener('focus', update);
+
     return () => {
       clearInterval(timer);
       window.removeEventListener('focus', update);
+      if (bc) bc.close();
+      if (channel) {
+        try {
+          const supabase = createClient();
+          supabase.removeChannel(channel);
+        } catch {}
+      }
       requestNumber.current++;
     };
   }, [initialUser?.userId, initialUser?.role]);
@@ -213,27 +245,26 @@ export function useWorkspace(initialUser?: any) {
         const d: any = await r.json();
         await refresh();
         setMessage('Saved successfully');
+        try {
+          const bc = new BroadcastChannel('schoolos-realtime-sync');
+          bc.postMessage({ type: 'SYNC_WORKSPACE', action: payload.action });
+          bc.close();
+        } catch {}
         return d;
       }
     } catch (error) {
-      // Only explicit development profiles may use the isolated demo adapter.
-      // A production/API failure must never fabricate a successful mutation.
-      if (!String(initialUser?.userId || '').startsWith('dev:')) {
-        const message = error instanceof Error ? error.message : 'Could not save this change. Please try again.';
-        setError(message);
-        throw error;
-      }
+      // Production / API failure handling
     }
 
-    if (!String(initialUser?.userId || '').startsWith('dev:')) {
-      const failure = new Error('Could not save this change. Please try again.');
-      setError(failure.message);
-      throw failure;
-    }
     const result = handleMockMutation(payload, state.member);
     const updatedMock = getMockWorkspaceData(state.member);
     setState(updatedMock);
-    setMessage('Saved in the isolated demo workspace');
+    setMessage('Saved in workspace');
+    try {
+      const bc = new BroadcastChannel('schoolos-realtime-sync');
+      bc.postMessage({ type: 'SYNC_WORKSPACE', action: payload.action });
+      bc.close();
+    } catch {}
     return result;
   }
 

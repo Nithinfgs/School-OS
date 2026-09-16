@@ -11,8 +11,8 @@ const knownPages = new Set([
 ]);
 
 function devRole(userId: string) {
-  const code = userId.replace('dev:', '');
-  return code === 'hos' ? 'Head of School' : code === 'admin' ? 'Admin' : code === 'teacher' ? 'Teacher' : code === 'student' ? 'Student' : code === 'parent' ? 'Parent' : code === 'lab-assistant' ? 'Lab Assistant' : code === 'library-assistant' ? 'Library Assistant' : code === 'transport-staff' ? 'Transport Staff' : '';
+  const code = userId.replace(/^dev[:-]/, '').replace(/-user$/, '');
+  return code === 'hos' ? 'Head of School' : code === 'admin' ? 'Admin' : code === 'teacher' ? 'Teacher' : code === 'student' ? 'Student' : code === 'parent' ? 'Parent' : code === 'lab-assistant' || code === 'lab_assistant' ? 'Lab Assistant' : code === 'library-assistant' || code === 'librarian' ? 'Library Assistant' : code === 'transport-staff' || code === 'transport_staff' ? 'Transport Staff' : 'Student';
 }
 
 function roleHome(role: string) {

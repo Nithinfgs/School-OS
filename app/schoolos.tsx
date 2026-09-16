@@ -1227,6 +1227,16 @@ export function ProfileMenu({
       landing: '/admin',
     },
     {
+      role: 'hos',
+      authRole: 'hos',
+      name: 'Dr. Aisha Rahman',
+      title: 'Head of School',
+      badge: 'HOS',
+      email: 'hos.dev@schoolos.local',
+      icon: GraduationCap,
+      landing: '/hos',
+    },
+    {
       role: 'teacher',
       name: 'Maya Iyer',
       title: 'Physics & Math Teacher',
@@ -1239,7 +1249,7 @@ export function ProfileMenu({
       name: 'Nithin Selvaraj',
       title: 'DP-2 Student (IBDP)',
       badge: 'Student',
-      email: 'student.dev@schoolos.local',
+      email: 'nithin.selvaraj@schoolos.local',
       icon: User,
     },
     {

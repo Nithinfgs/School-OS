@@ -37,10 +37,9 @@ export async function resolveSupabaseMember(input:{id?:string;email?:string}) {
       teacherId = teacherData?.id || '00000000-0000-0000-0000-000000000002';
     }
 
-    const devId = `dev-${dev.roleCode}-user`;
     return {
-      id: devId,
-      userId: devId,
+      id: devKey,
+      userId: devKey,
       organizationId,
       role: dev.role,
       roleCode: dev.roleCode,

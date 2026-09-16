@@ -734,27 +734,19 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
     else if (r.includes('library')) role = 'Library Assistant';
     else role = 'Admin';
   } else if (userOrRole && typeof userOrRole === 'object') {
-    if (userOrRole.role) {
-      const r = String(userOrRole.role).toLowerCase();
-      if (r.includes('hos') || r.includes('head')) role = 'Head of School';
-      else if (r.includes('parent') || r.includes('guardian')) role = 'Parent';
-      else if (r.includes('transport')) role = 'Transport Staff';
-      else if (r.includes('student')) role = 'Student';
-      else if (r.includes('teacher')) role = 'Teacher';
-      else if (r.includes('lab')) role = 'Lab Assistant';
-      else if (r.includes('library')) role = 'Library Assistant';
-      else if (userOrRole.userId === 'dev:hos') role = 'Head of School';
-      else role = 'Admin';
-    } else if (userOrRole.userId) {
-      if (userOrRole.userId === 'dev:hos') role = 'Head of School';
-      else if (userOrRole.userId === 'dev:transport-staff') role = 'Transport Staff';
-      else if (userOrRole.userId === 'dev:parent') role = 'Parent';
-      else if (userOrRole.userId === 'dev:student') role = 'Student';
-      else if (userOrRole.userId === 'dev:teacher') role = 'Teacher';
-      else if (userOrRole.userId === 'dev:lab-assistant') role = 'Lab Assistant';
-      else if (userOrRole.userId === 'dev:library-assistant') role = 'Library Assistant';
-      else role = 'Admin';
-    }
+    const rawRole = String(userOrRole.role || '').toLowerCase();
+    const rawId = String(userOrRole.userId || userOrRole.id || '').toLowerCase();
+    const rawEmail = String(userOrRole.email || '').toLowerCase();
+
+    if (rawRole.includes('hos') || rawRole.includes('head') || rawId.includes('hos') || rawEmail.includes('hos')) role = 'Head of School';
+    else if (rawRole.includes('parent') || rawRole.includes('guardian') || rawId.includes('parent') || rawEmail.includes('parent')) role = 'Parent';
+    else if (rawRole.includes('transport') || rawId.includes('transport') || rawEmail.includes('transport')) role = 'Transport Staff';
+    else if (rawRole.includes('student') || rawId.includes('student') || rawEmail.includes('student') || rawEmail.includes('nithin.selvaraj')) role = 'Student';
+    else if (rawRole.includes('teacher') || rawId.includes('teacher') || rawEmail.includes('teacher')) role = 'Teacher';
+    else if (rawRole.includes('lab') || rawId.includes('lab') || rawEmail.includes('lab')) role = 'Lab Assistant';
+    else if (rawRole.includes('library') || rawId.includes('library') || rawEmail.includes('library') || rawRole.includes('librarian')) role = 'Library Assistant';
+    else if (rawRole.includes('admin') || rawId.includes('admin') || rawEmail.includes('admin')) role = 'Admin';
+    else role = 'Student'; // Default to Student if unknown non-admin role
   }
 
   if (role === 'Head of School') {

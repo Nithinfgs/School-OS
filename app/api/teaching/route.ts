@@ -1,4 +1,4 @@
-import { context, db, encode, scopeRows, schoolRows } from '@/lib/server';
+import { context, db, scopeRows, schoolRows } from '@/lib/server';
 import { recordCategories } from '@/lib/teaching';
 import { isMasterVisible } from '@/lib/master-dashboard';
 import { backendConfig } from '@/lib/platform/config';

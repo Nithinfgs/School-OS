@@ -27,7 +27,7 @@ const seedReports: Report[] = [
 function Status({ value }: { value: string }) { return <span className={`status-pill status-${value.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{value}</span>; }
 function Stat({ label, value, onClick }: { label: string; value: string | number; onClick?: () => void }) { return <button className="report-stat" onClick={onClick}><strong>{value}</strong><span>{label}</span></button>; }
 
-export function ReportCards({ ws, role, navigate }: { ws: any; role: string; navigate?: (page: string) => void }) {
+export function ReportCards({ ws, role, navigate: _navigate }: { ws: any; role: string; navigate?: (page: string) => void }) {
   const isStudent = role === 'Student';
   const isTeacher = role === 'Teacher';
   const [tab, setTab] = useState(isStudent ? 'Published reports' : isTeacher ? 'My reports' : 'Report cycles');

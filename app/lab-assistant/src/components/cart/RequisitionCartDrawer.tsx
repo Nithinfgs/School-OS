@@ -115,7 +115,7 @@ export const RequisitionCartDrawer: React.FC = () => {
               </div>
               <h3 className="text-base font-bold text-[#1F3547]">Your cart is empty</h3>
               <p className="text-xs text-[#61728A] max-w-xs mt-1 mb-6">
-                Browse through Chemistry, Physics, or Biology catalogs and click <strong>"+ Add to Cart"</strong> on items you need.
+                Browse through Chemistry, Physics, or Biology catalogs and click <strong>&quot;+ Add to Cart&quot;</strong> on items you need.
               </p>
               <button
                 onClick={() => setIsCartOpen(false)}

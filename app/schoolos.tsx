@@ -567,7 +567,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       ),
     ).catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [navigate]);
   return (
     <SidebarProvider
       style={{ '--sidebar-width': '238px' } as React.CSSProperties}

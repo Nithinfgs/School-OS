@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CheckCircle2, ChevronRight, Clock3, Inbox, Plus, Search, Users, X } from 'lucide-react';
+import { CalendarDays, ChevronRight, Clock3, Inbox, Plus, Search, Users, X } from 'lucide-react';
 
 type HOSProps = { ws: any; navigate: (page: string) => void; page?: string; mode?: 'hos' | 'admin' };
 

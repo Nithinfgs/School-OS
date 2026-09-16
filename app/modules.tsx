@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef, lazy, Suspense } from 'react';
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
 import {
   FlaskConical,
   BookOpen,
@@ -11,25 +11,18 @@ import {
   ArrowRight,
   LayoutGrid,
   List,
-  Package,
-  AlertTriangle,
-  Clock,
-  Check,
-  ChevronRight,
-  Download,
-  SlidersHorizontal,
-  ArrowDownUp,
   Microscope,
   Atom,
   Beaker,
-  CalendarDays,
+  Download,
+  Package,
+  Wrench,
+  User,
+  ChevronRight,
+  LogOut,
   FileText,
   ShieldCheck,
-  Mail,
   RefreshCw,
-  LogOut,
-  User,
-  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,7 +117,7 @@ export function useWorkspace(initialUser?: any) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const request = ++requestNumber.current;
     try {
       const r = await fetch('/api/workspace', { cache: 'no-store' });
@@ -164,9 +157,10 @@ export function useWorkspace(initialUser?: any) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [initialUser, state.member]);
 
   useEffect(() => {
+    const currentReq = requestNumber;
     // Initial workspace load
     refresh();
 
@@ -215,9 +209,9 @@ export function useWorkspace(initialUser?: any) {
           supabase.removeChannel(channel);
         } catch {}
       }
-      requestNumber.current++;
+      currentReq.current++;
     };
-  }, [initialUser?.userId, initialUser?.role]);
+  }, [refresh]);
 
   useEffect(() => {
     if (message) {

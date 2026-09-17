@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShieldCheck, Scale, Lock, FileText } from 'lucide-react';
+import { ShieldCheck, Scale, Lock, FileText, Globe } from 'lucide-react';
 import { LegalModal, type LegalTab } from './legal-modal';
 
 interface LegalFooterProps {
@@ -24,7 +24,7 @@ export function LegalFooter({ className = '', variant = 'full' }: LegalFooterPro
         <div className={`flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400 dark:text-slate-500 py-3 border-t border-slate-200/70 dark:border-slate-800/70 mt-6 ${className}`}>
           <div className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-400">
             <ShieldCheck size={13} className="text-slate-500 dark:text-slate-400" />
-            <span>FERPA & COPPA Protected · SchoolOS 2026</span>
+            <span>FERPA & COPPA Protected · Owned by <a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="underline hover:text-blue-600">DevStudio Solutions</a></span>
           </div>
           <div className="flex items-center gap-2.5">
             <button
@@ -70,7 +70,7 @@ export function LegalFooter({ className = '', variant = 'full' }: LegalFooterPro
                 SchoolOS Enterprise Educational Platform
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-                A Product of Dev Studios and its Founding Members · Westbridge International Campus
+                Proprietary Technology Owned Exclusively by <a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="underline font-semibold hover:text-blue-600">DevStudio Solutions</a> (devstudionvk@gmail.com)
               </div>
             </div>
           </div>
@@ -116,11 +116,11 @@ export function LegalFooter({ className = '', variant = 'full' }: LegalFooterPro
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 dark:text-slate-500">
           <p>
-            © 2026 Dev Studios and its Founding Members. All rights reserved. Restricted to authorized institutional licensees with an active licensing agreement.
+            © 2026 DevStudio Solutions (https://www.devstudio.solutions/). All rights reserved. Full ownership remains with DevStudio Solutions.
           </p>
           <div className="flex items-center gap-2 font-medium text-slate-500 dark:text-slate-400">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
-            <span>A Product of Dev Studios · 0 Liability</span>
+            <span>DevStudio Solutions (devstudionvk@gmail.com) · 0 Liability</span>
           </div>
         </div>
       </footer>

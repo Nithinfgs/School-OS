@@ -15,6 +15,7 @@ import {
   FileCheck,
   ShieldAlert,
   Ban,
+  Globe,
 } from 'lucide-react';
 import {
   Dialog,
@@ -72,11 +73,11 @@ export function LegalModal({
                     SchoolOS Legal, Privacy & Governance Hub
                   </DialogTitle>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hidden sm:inline-block">
-                    Institutional License
+                    Proprietary Software
                   </span>
                 </div>
                 <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  A Product of Dev Studios and its Founding Members · Active Enterprise License Required
+                  Exclusive Ownership Vested in <a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="underline font-semibold hover:text-blue-600">DevStudio Solutions</a> (devstudionvk@gmail.com)
                 </DialogDescription>
               </div>
             </div>
@@ -115,7 +116,7 @@ export function LegalModal({
               }`}
             >
               <Scale size={13} />
-              <span>Enterprise License</span>
+              <span>Enterprise License & Ownership</span>
             </button>
             <button
               type="button"
@@ -175,7 +176,7 @@ export function LegalModal({
               }`}
             >
               <Mail size={13} />
-              <span>DPO & Legal Contact</span>
+              <span>DevStudio Legal Contact</span>
             </button>
           </div>
         </div>
@@ -193,7 +194,7 @@ export function LegalModal({
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <Ban size={11} /> Active License Required
+              <Ban size={11} /> DevStudio Solutions IP
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               <ShieldCheck size={11} /> 0-Liability Shield
@@ -212,13 +213,18 @@ export function LegalModal({
               <div className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 space-y-3 shadow-md border border-slate-800">
                 <div className="flex items-center gap-2 font-bold text-base text-white tracking-tight">
                   <ShieldAlert size={20} className="text-slate-300 shrink-0" />
-                  MANDATORY ENTERPRISE LICENSING AGREEMENT & STRICT EXCLUSIVITY CLAUSE
+                  MANDATORY ENTERPRISE LICENSING & PERPETUAL OWNERSHIP COVENANT
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  A PRODUCT OF DEV STUDIOS AND ITS FOUNDING MEMBERS. THIS SOFTWARE AND PLATFORM IS STRICTLY PROPRIETARY AND RESTRICTED. <strong>IT CAN ONLY BE ACCESSED, DEPLOYED, RUN, HOSTED, OR OPERATED UNDER A DIRECT, FULLY EXECUTED COMMERCIAL ENTERPRISE LICENSING AGREEMENT</strong> WITH DEV STUDIOS AND ITS FOUNDING MEMBERS.
+                  THIS SOFTWARE, SOURCE CODE, DATABASE ARCHITECTURES, AND INTELLECTUAL PROPERTY ARE THE <strong>EXCLUSIVE PROPERTY OF DEVSTUDIO SOLUTIONS (HTTPS://WWW.DEVSTUDIO.SOLUTIONS/) AND ITS FOUNDING MEMBERS</strong>.
                 </p>
-                <div className="p-3 bg-slate-800/90 rounded-xl border border-slate-700 text-xs text-slate-200 font-semibold leading-relaxed">
-                  ABSOLUTE PROHIBITION ON UNLICENSED ORGANIZATIONS: NO OTHER PERSON, SCHOOL, UNIVERSITY, DISTRICT, CORPORATION, OR THIRD-PARTY ORGANIZATION APART FROM THE AUTHORIZED LICENSEE / OWNER HAS ANY RIGHT, PERMISSION, TITLE, OR LICENSE TO ACCESS, USE, RUN, HOST, REPRODUCE, FORK, MODIFY, OR OPERATE THIS SOFTWARE.
+                <div className="p-3.5 bg-slate-800/90 rounded-xl border border-slate-700 text-xs text-slate-200 font-semibold leading-relaxed space-y-1.5">
+                  <p>
+                    <strong>PERPETUAL OWNERSHIP GUARANTEE:</strong> All legal rights, title, patents, source code, and design assets remain perpetually and unconditionally vested with DevStudio Solutions (<a href="mailto:devstudionvk@gmail.com" className="text-blue-400 underline">devstudionvk@gmail.com</a>).
+                  </p>
+                  <p>
+                    <strong>LICENSING CAN BE GRANTED OR REVOKED:</strong> Commercial or educational licenses may be issued, operated, suspended, or revoked/taken down at will by DevStudio Solutions, but title and ownership NEVER transfer to any licensee or third-party organization under any circumstance.
+                  </p>
                 </div>
               </div>
 
@@ -228,10 +234,10 @@ export function LegalModal({
                   Exclusive License Scope & Organizational Boundaries
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Dev Studios and its Founding Members grant authorized members of the licensed institution a non-transferable, non-sublicensable, revocable, role-based software access license strictly for internal educational administration and coursework management.
+                  DevStudio Solutions grants authorized institutional licensees a limited, non-transferable, non-sublicensable, revocable software access license strictly for educational administration.
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Access is cryptographically bound to authorized institutional domains (e.g. <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-800 dark:text-slate-200 font-mono text-xs">westbridge.schoolos.edu</code>). Any deployment or instance operated by or for an unauthorized external organization is strictly illegal and subject to immediate legal injunction.
+                  Any deployment, hosting, code extraction, or operation by unauthorized organizations is strictly prohibited and subject to immediate international legal injunction and statutory damages.
                 </p>
               </section>
 
@@ -241,12 +247,12 @@ export function LegalModal({
                   Statutory Damages for Unlicensed Deployment
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Any unauthorized duplication, unapproved multi-tenant cloning, commercial extraction, or deployment by non-licensed entities constitutes willful copyright infringement and trade secret theft under:
+                  Any unauthorized duplication, multi-tenant cloning, commercial extraction, or deployment by non-licensed entities constitutes willful copyright infringement under:
                 </p>
                 <div className="grid sm:grid-cols-2 gap-3 text-xs pt-1">
                   <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
                     <strong className="text-slate-900 dark:text-white">17 U.S.C. § 101 et seq. & DMCA</strong>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Statutory civil damages up to $150,000 per willful infringement plus legal fees.</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Statutory civil damages up to $150,000 per willful infringement plus attorney fees.</p>
                   </div>
                   <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
                     <strong className="text-slate-900 dark:text-white">18 U.S.C. § 1030 (CFAA) & WIPO</strong>
@@ -263,7 +269,7 @@ export function LegalModal({
                 <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-1.5">
                   <strong className="text-xs font-bold text-slate-900 dark:text-white block">100% Creator Ownership Principle</strong>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                    While the software platform is proprietary, students and teachers retain <strong>100% full intellectual property ownership</strong> of all original works created or uploaded (assignments, research, syllabi, lesson plans, and portfolios). SchoolOS holds only a non-exclusive license solely to render and grade coursework.
+                    While the software platform and code are exclusively owned by DevStudio Solutions, students and teachers retain <strong>100% full intellectual property ownership</strong> of all original works created or uploaded (assignments, research, syllabi, lesson plans, and portfolios).
                   </p>
                 </div>
               </section>
@@ -279,7 +285,7 @@ export function LegalModal({
                   TOTAL ZERO LIABILITY & COMPLETE INDEMNIFICATION COVENANT
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-mono">
-                  TO THE MAXIMUM EXTENT PERMITTED BY LAW, DEV STUDIOS, ITS FOUNDING MEMBERS, OWNERS, DEVELOPERS, DIRECTORS, AND AFFILIATES (THE &quot;RELEASED PARTIES&quot;) SHALL BEAR <strong>ABSOLUTELY ZERO FINANCIAL, LEGAL, OR OPERATIONAL LIABILITY ($0.00 USD CAP)</strong> ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE.
+                  TO THE MAXIMUM EXTENT PERMITTED BY LAW, DEVSTUDIO SOLUTIONS, ITS FOUNDING MEMBERS, DEVELOPERS, AND AFFILIATES (THE &quot;RELEASED PARTIES&quot;) SHALL BEAR <strong>ABSOLUTELY ZERO FINANCIAL, LEGAL, OR OPERATIONAL LIABILITY ($0.00 USD CAP)</strong> ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE.
                 </p>
               </div>
 
@@ -312,7 +318,7 @@ export function LegalModal({
                   Complete Defense & Indemnification (Hold Harmless)
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  All users, deploying institutions, and third parties agree to fully <strong>DEFEND, INDEMNIFY, AND HOLD HARMLESS</strong> the Released Parties from and against any and all claims, liabilities, lawsuits, judgments, fines, and legal expenses (including attorney fees) arising from software usage, data handling, or breach of licensing terms.
+                  All users, deploying institutions, and third parties agree to fully <strong>DEFEND, INDEMNIFY, AND HOLD HARMLESS</strong> DevStudio Solutions and its Founding Members from and against any and all claims, liabilities, lawsuits, judgments, fines, and legal expenses (including attorney fees) arising from software usage, data handling, or breach of licensing terms.
                 </p>
               </section>
             </div>
@@ -363,7 +369,7 @@ export function LegalModal({
               <section className="space-y-2">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">1. Authorized Institutional Scope</h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Access is strictly reserved for authenticated students, faculty, and guardians of the licensed institution under an active Enterprise Licensing Agreement.
+                  Access is strictly reserved for authenticated students, faculty, and guardians of the licensed institution under an active Enterprise Licensing Agreement issued by DevStudio Solutions.
                 </p>
               </section>
             </div>
@@ -401,17 +407,18 @@ export function LegalModal({
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white space-y-2 shadow-md">
                 <div className="flex items-center gap-2 font-bold text-sm text-white">
                   <Mail size={18} className="text-slate-300" />
-                  Data Protection & Legal Licensing Office
+                  DevStudio Solutions — Intellectual Property & Legal Office
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300">
-                  For formal licensing verification, institutional access agreements, or privacy requests.
+                  For formal licensing agreements, IP verification, audits, or takedown notices.
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs font-mono space-y-1.5 text-slate-700 dark:text-slate-300">
-                <p><strong>Licensing & Legal:</strong> legal@westbridge.schoolos.edu</p>
-                <p><strong>Privacy Office:</strong> privacy@westbridge.schoolos.edu</p>
-                <p><strong>Campus:</strong> 100 Academic Way, Westbridge Campus</p>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs font-mono space-y-2 text-slate-700 dark:text-slate-300">
+                <p><strong>Legal Entity / Owner:</strong> DevStudio Solutions</p>
+                <p><strong>Official Website:</strong> <a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="text-blue-600 underline">https://www.devstudio.solutions/</a></p>
+                <p><strong>Legal & Licensing Email:</strong> <a href="mailto:devstudionvk@gmail.com" className="text-blue-600 underline">devstudionvk@gmail.com</a></p>
+                <p><strong>Jurisdiction & Rights:</strong> All Rights Reserved Worldwide · Full Perpetual Ownership with DevStudio Solutions</p>
               </div>
             </div>
           )}
@@ -421,7 +428,7 @@ export function LegalModal({
         <div className="p-3 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 shrink-0">
           <div className="flex items-center gap-2 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-            <span>SchoolOS 2026 · Dev Studios & Founding Members · 0 Liability</span>
+            <span>SchoolOS · Owned by DevStudio Solutions (devstudionvk@gmail.com) · 0 Liability</span>
           </div>
           <Button variant="default" size="sm" onClick={() => onOpenChange(false)} className="h-7 px-3.5 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900">
             Close

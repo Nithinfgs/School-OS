@@ -71,13 +71,13 @@ export default function PrivacyPolicyPage() {
             </div>
             <div>
               <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-                Official Institutional Policy
+                Official Institutional & Developer Privacy Policy
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 SchoolOS Privacy Policy & FERPA Compliance
               </h1>
               <p className="text-xs text-slate-500 mt-1">
-                A Product of Dev Studios and its Founding Members · Westbridge International Campus · Version 4.2
+                Proprietary Technology Owned Exclusively by <a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="underline font-semibold hover:text-blue-600">DevStudio Solutions</a> (devstudionvk@gmail.com) · Version 5.0
               </p>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
               <CheckCircle2 size={13} /> GDPR & UK-GDPR
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200">
-              <CheckCircle2 size={13} /> Student Privacy Pledge Signatory
+              <CheckCircle2 size={13} /> DevStudio Solutions IP
             </span>
           </div>
 
@@ -105,13 +105,23 @@ export default function PrivacyPolicyPage() {
                 Zero Commercialization & Anti-Monetization Pledge
               </strong>
               <p className="text-xs text-emerald-800">
-                SchoolOS and Westbridge International unconditionally guarantee that no student, guardian, or educator personal data is ever sold, rented, leased, or monetized. We do not construct commercial advertising profiles or permit third-party advertising trackers.
+                DevStudio Solutions (<a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="underline font-semibold">https://www.devstudio.solutions/</a>) and SchoolOS unconditionally guarantee that no student, guardian, or educator personal data is ever sold, rented, leased, or monetized. We do not construct commercial advertising profiles or permit third-party advertising trackers.
               </p>
             </div>
 
             <section className="space-y-3">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">1</span>
+                Exclusive Code Ownership & Licensing Structure
+              </h2>
+              <p>
+                All software source code, algorithms, security schemas, and system architectures are the exclusive intellectual property of <strong>DevStudio Solutions</strong> (<a href="mailto:devstudionvk@gmail.com" className="text-blue-600 underline">devstudionvk@gmail.com</a>). While institutional licensing may be granted, modified, suspended, or revoked/taken down, full legal ownership of the code always remains permanently with DevStudio Solutions.
+              </p>
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">2</span>
                 Educational Mission & Data Scope
               </h2>
               <p>
@@ -121,7 +131,7 @@ export default function PrivacyPolicyPage() {
 
             <section className="space-y-3">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">2</span>
+                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">3</span>
                 Categories of Information Processed
               </h2>
               <ul className="list-disc list-inside space-y-2 text-xs text-slate-600 pl-2">
@@ -134,7 +144,7 @@ export default function PrivacyPolicyPage() {
 
             <section className="space-y-3">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">3</span>
+                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">4</span>
                 Technical & Organizational Safeguards
               </h2>
               <p>
@@ -144,11 +154,11 @@ export default function PrivacyPolicyPage() {
 
             <section className="space-y-3">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">4</span>
+                <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-800 text-xs font-bold inline-flex items-center justify-center">5</span>
                 Parental Inspection & Data Subject Rights
               </h2>
               <p>
-                Parents and eligible students maintain complete rights under FERPA and GDPR to inspect, review, download, and request correction of educational records. Inquiries and formal data export requests may be directed to our dedicated Data Protection Officer at <code className="bg-slate-100 px-2 py-0.5 rounded text-slate-800 font-mono text-xs">privacy@westbridge.schoolos.edu</code>.
+                Parents and eligible students maintain complete rights under FERPA and GDPR to inspect, review, download, and request correction of educational records. Legal, licensing, and privacy inquiries may be directed to DevStudio Solutions at <code className="bg-slate-100 px-2 py-0.5 rounded text-slate-800 font-mono text-xs">devstudionvk@gmail.com</code> or <a href="https://www.devstudio.solutions/" target="_blank" rel="noreferrer" className="text-blue-600 underline">https://www.devstudio.solutions/</a>.
               </p>
             </section>
           </div>

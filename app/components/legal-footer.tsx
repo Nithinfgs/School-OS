@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShieldCheck, Scale, Lock, FileText, Award } from 'lucide-react';
+import { ShieldCheck, Scale, Lock, FileText } from 'lucide-react';
 import { LegalModal, type LegalTab } from './legal-modal';
 
 interface LegalFooterProps {
@@ -21,32 +21,32 @@ export function LegalFooter({ className = '', variant = 'full' }: LegalFooterPro
   if (variant === 'compact') {
     return (
       <>
-        <div className={`flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400 py-3 border-t border-slate-200/70 mt-6 ${className}`}>
-          <div className="flex items-center gap-1.5 font-medium text-slate-500">
-            <ShieldCheck size={13} className="text-emerald-600" />
+        <div className={`flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400 dark:text-slate-500 py-3 border-t border-slate-200/70 dark:border-slate-800/70 mt-6 ${className}`}>
+          <div className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-400">
+            <ShieldCheck size={13} className="text-slate-500 dark:text-slate-400" />
             <span>FERPA & COPPA Protected · SchoolOS 2026</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => openTab('privacy')}
-              className="hover:text-slate-700 underline underline-offset-2 transition-colors"
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               Privacy Policy
             </button>
-            <span>·</span>
+            <span className="text-slate-300 dark:text-slate-700">·</span>
             <button
               type="button"
               onClick={() => openTab('licensing')}
-              className="hover:text-slate-700 underline underline-offset-2 transition-colors"
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               Licensing & IP
             </button>
-            <span>·</span>
+            <span className="text-slate-300 dark:text-slate-700">·</span>
             <button
               type="button"
               onClick={() => openTab('terms')}
-              className="hover:text-slate-700 underline underline-offset-2 transition-colors"
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               Terms
             </button>
@@ -59,67 +59,67 @@ export function LegalFooter({ className = '', variant = 'full' }: LegalFooterPro
 
   return (
     <>
-      <footer className={`mt-10 pt-6 pb-8 border-t border-slate-200/80 text-xs text-slate-500 space-y-4 ${className}`}>
+      <footer className={`mt-10 pt-6 pb-8 border-t border-slate-200/80 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-4 ${className}`}>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-2xs">
               <ShieldCheck size={16} />
             </div>
             <div>
-              <div className="font-bold text-slate-800 tracking-tight text-xs">
+              <div className="font-semibold text-slate-800 dark:text-slate-200 tracking-tight text-xs">
                 SchoolOS Enterprise Educational Platform
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                 A Product of Dev Studios and its Founding Members · Westbridge International Campus
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs">
             <button
               type="button"
               onClick={() => openTab('licensing')}
-              className="inline-flex items-center gap-1 text-slate-700 hover:text-blue-700 font-bold transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all"
             >
-              <Scale size={12} className="text-blue-600" />
-              License & Exclusivity
+              <Scale size={13} className="text-slate-400 dark:text-slate-500" />
+              <span>License & Exclusivity</span>
             </button>
-            <span className="text-slate-300">|</span>
+            <span className="text-slate-200 dark:text-slate-800">|</span>
             <button
               type="button"
               onClick={() => openTab('liability')}
-              className="inline-flex items-center gap-1 text-rose-700 hover:text-rose-900 font-bold transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all"
             >
-              <ShieldCheck size={12} className="text-rose-600" />
-              0-Liability Shield
+              <ShieldCheck size={13} className="text-slate-400 dark:text-slate-500" />
+              <span>0-Liability Shield</span>
             </button>
-            <span className="text-slate-300">|</span>
+            <span className="text-slate-200 dark:text-slate-800">|</span>
             <button
               type="button"
               onClick={() => openTab('privacy')}
-              className="inline-flex items-center gap-1 text-slate-700 hover:text-emerald-700 font-bold transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all"
             >
-              <Lock size={12} className="text-emerald-600" />
-              Privacy & FERPA
+              <Lock size={13} className="text-slate-400 dark:text-slate-500" />
+              <span>Privacy & FERPA</span>
             </button>
-            <span className="text-slate-300">|</span>
+            <span className="text-slate-200 dark:text-slate-800">|</span>
             <button
               type="button"
               onClick={() => openTab('terms')}
-              className="inline-flex items-center gap-1 text-slate-700 hover:text-amber-700 font-bold transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all"
             >
-              <FileText size={12} className="text-amber-600" />
-              Terms
+              <FileText size={13} className="text-slate-400 dark:text-slate-500" />
+              <span>Terms</span>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 dark:text-slate-500">
           <p>
             © 2026 Dev Studios and its Founding Members. All rights reserved. Restricted to authorized institutional licensees with an active licensing agreement.
           </p>
-          <div className="flex items-center gap-2 font-medium">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 font-medium text-slate-500 dark:text-slate-400">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
             <span>A Product of Dev Studios · 0 Liability</span>
           </div>
         </div>

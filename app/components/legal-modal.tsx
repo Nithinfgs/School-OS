@@ -79,16 +79,16 @@ export function LegalModal({
         <div className="p-6 sm:p-7 border-b border-slate-200 bg-slate-50/95">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-md">
-                <ShieldAlert size={26} />
+              <div className="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs">
+                <ShieldCheck size={24} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <DialogTitle className="text-xl font-black tracking-tight text-slate-900">
-                    SchoolOS Enterprise Legal & Zero-Liability Hub
+                  <DialogTitle className="text-xl font-bold tracking-tight text-slate-900">
+                    SchoolOS Enterprise Legal & Institutional Governance
                   </DialogTitle>
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
-                    Strict Proprietary
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+                    Institutional License
                   </span>
                 </div>
                 <DialogDescription className="text-xs text-slate-600 font-medium mt-0.5">
@@ -102,7 +102,7 @@ export function LegalModal({
                 variant="outline"
                 size="sm"
                 onClick={copyLegalText}
-                className="h-9 px-3 text-xs font-bold gap-1.5 bg-white border-slate-300 shadow-xs hover:bg-slate-50"
+                className="h-9 px-3 text-xs font-semibold gap-1.5 bg-white border-slate-300 shadow-xs hover:bg-slate-50"
               >
                 {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
                 {copied ? 'Copied to Clipboard' : 'Copy All Terms'}
@@ -111,7 +111,7 @@ export function LegalModal({
                 variant="outline"
                 size="sm"
                 onClick={handlePrint}
-                className="h-9 px-3 text-xs font-bold gap-1.5 bg-white border-slate-300 shadow-xs hover:bg-slate-50"
+                className="h-9 px-3 text-xs font-semibold gap-1.5 bg-white border-slate-300 shadow-xs hover:bg-slate-50"
               >
                 <Printer size={14} />
                 Print / PDF
@@ -124,73 +124,73 @@ export function LegalModal({
             <button
               type="button"
               onClick={() => setTab('licensing')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 tab === 'licensing'
                   ? 'bg-white shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Scale size={14} className={tab === 'licensing' ? 'text-blue-600' : 'text-slate-500'} />
+              <Scale size={14} className={tab === 'licensing' ? 'text-slate-900' : 'text-slate-500'} />
               <span>Enterprise License & Exclusivity</span>
             </button>
             <button
               type="button"
               onClick={() => setTab('liability')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 tab === 'liability'
-                  ? 'bg-rose-600 shadow-sm text-white'
+                  ? 'bg-white shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ShieldAlert size={14} className={tab === 'liability' ? 'text-white' : 'text-rose-600'} />
+              <ShieldCheck size={14} className={tab === 'liability' ? 'text-slate-900' : 'text-slate-500'} />
               <span>Zero-Liability & Indemnity</span>
             </button>
             <button
               type="button"
               onClick={() => setTab('privacy')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 tab === 'privacy'
                   ? 'bg-white shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Lock size={14} className={tab === 'privacy' ? 'text-emerald-600' : 'text-slate-500'} />
+              <Lock size={14} className={tab === 'privacy' ? 'text-slate-900' : 'text-slate-500'} />
               <span>Privacy & FERPA</span>
             </button>
             <button
               type="button"
               onClick={() => setTab('terms')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 tab === 'terms'
                   ? 'bg-white shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <FileText size={14} className={tab === 'terms' ? 'text-amber-600' : 'text-slate-500'} />
+              <FileText size={14} className={tab === 'terms' ? 'text-slate-900' : 'text-slate-500'} />
               <span>Terms of Service</span>
             </button>
             <button
               type="button"
               onClick={() => setTab('security')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 tab === 'security'
                   ? 'bg-white shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Award size={14} className={tab === 'security' ? 'text-purple-600' : 'text-slate-500'} />
+              <Award size={14} className={tab === 'security' ? 'text-slate-900' : 'text-slate-500'} />
               <span>Security Controls</span>
             </button>
             <button
               type="button"
               onClick={() => setTab('dpo')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 tab === 'dpo'
                   ? 'bg-white shadow-sm text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Mail size={14} className={tab === 'dpo' ? 'text-rose-600' : 'text-slate-500'} />
+              <Mail size={14} className={tab === 'dpo' ? 'text-slate-900' : 'text-slate-500'} />
               <span>DPO & Legal Contact</span>
             </button>
           </div>

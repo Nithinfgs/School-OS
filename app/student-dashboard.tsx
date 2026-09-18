@@ -20,6 +20,7 @@ import {
   LogOut,
   Users,
   Wrench,
+  UserRound,
   Plus,
   Search,
   Cpu,
@@ -2184,14 +2185,23 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
           <div className="student-profile-account-actions">
             <span className="student-switch-label">Switch to:</span>
             <a
+              href="/api/dev-login?role=parent&return_to=/"
+              className="student-role-switch-btn parent"
+              target="_top"
+            >
+              <UserRound size={14} /> Parent
+            </a>
+            <a
               href="/api/dev-login?role=teacher&return_to=/"
               className="student-role-switch-btn teacher"
+              target="_top"
             >
               <Users size={14} /> Teacher (Maya)
             </a>
             <a
               href="/api/dev-login?role=admin&return_to=/"
               className="student-role-switch-btn admin"
+              target="_top"
             >
               <Wrench size={14} /> Admin (Nithin)
             </a>

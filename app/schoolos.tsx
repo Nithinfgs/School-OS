@@ -636,7 +636,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               ))}
             </SidebarMenu>
           ))}
-          {visibleClasses.length > 0 && !['Admin', 'Lab Assistant', 'Library Assistant', 'Transport Staff'].includes(role) && (
+          {visibleClasses.length > 0 && !['Admin', 'Lab Assistant', 'Library Assistant', 'Transport Staff', 'Parent'].includes(role) && (
             <SidebarMenu className="class-shortcuts">
               <p className="nav-label">MY CLASSES</p>
               {visibleClasses.map((classRow: any, index: number) => (
@@ -794,7 +794,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <TransportDashboard ws={ws} mode="oversight" />
           ) : role === 'Transport Staff' && !['Settings', 'Help & support'].includes(page) ? (
             <TransportDashboard ws={ws} />
-          ) : role === 'Parent' && page === 'Requests' ? (
+          ) : role === 'Parent' && ['Home', 'Requests'].includes(page) ? (
             <ParentDashboard ws={ws} />
           ) : ['Approvals','Requests','Announcements','Forms','ID Cards','Library Suggestions','Lab Purchases','Policies','Services','Feedback','Emergency Contacts'].includes(page) ? (
             <StudentServices ws={ws} role={role} initialTab={page as any} />
@@ -1321,6 +1321,7 @@ export function ProfileMenu({
               key={p.role}
               href={`/api/dev-login?role=${p.authRole}&return_to=${encodeURIComponent(p.landing || '/')}`}
               className={`profile-switch-item ${isActive ? 'active' : ''}`}
+              target="_top"
             >
               <span className={`profile-switch-avatar ${p.role}`}>
                 <Icon size={13} />

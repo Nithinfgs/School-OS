@@ -27,7 +27,7 @@ import { context, db, encode } from '@/lib/server';
 async function demoParentRequest(body: { action?: string; data?: any }) {
   const { user, member, org } = await context();
   if (member.role !== 'Parent') throw new Error('FORBIDDEN');
-  if (body.action !== 'parentRequest.create') return { ok: true };
+  if (body.action !== 'parentRequest.create') throw new Error('DEMO_MODE');
   const rawInput = body.data || {};
   const validated = parseParentRequest({ ...rawInput, studentId: '00000000-0000-4000-8000-000000000000' });
   const input = { ...validated, studentId: String(rawInput.studentId || '') };
@@ -72,7 +72,7 @@ function errorResponse(error: unknown) {
       ? 409
       : message.startsWith('VALIDATION_ERROR')
       ? 422
-      : 500;
+      : 400;
   return Response.json({ error: message }, { status });
 }
 

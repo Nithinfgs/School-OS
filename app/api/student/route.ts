@@ -1,7 +1,5 @@
 import { context, db, schoolRows, scopeRows } from '@/lib/server';
 import { classLogRows } from '@/lib/class-logs';
-import { handleMockMutation } from '@/lib/mock-workspace';
-import { getChatGPTUser } from '@/app/chatgpt-auth';
 export async function POST(req: Request) {
   try {
     const { user, member, org } = await context();
@@ -50,23 +48,18 @@ export async function POST(req: Request) {
       prior: any = null,
       id = crypto.randomUUID() as string;
     const policy = rows.find((r) => r.kind === 'servicePolicy')?.data || {};
-    if (b.action === 'notificationsReadAll') {
-      id = 'read-all-' + user.userId.replace(/[^a-zA-Z0-9_-]/g, '-');
-      prior = rows.find((r) => r.id === id);
-      kind = 'reading';
-      name = 'All notifications read';
-      data = { userId: user.userId, allRead: true, read: true };
-    } else if (b.action === 'read' || b.action === 'notificationRead') {
+    if (b.action === 'read') {
       const source = [...rows, ...(await classLogRows(org, member))].find(
         (r) => r.id === b.sourceId,
       );
-      const key = source ? source.id + ':' + (source.version ?? source.updatedAt ?? '0') : (b.sourceId + ':0');
+      if (!source) throw Error('FORBIDDEN');
+      const key = source.id + ':' + (source.version ?? source.updatedAt ?? '0');
       id =
-        'read-' + user.userId.replace(/[^a-zA-Z0-9_-]/g, '-') + '-' + (b.sourceId || 'item');
+        'read-' + user.userId.replace(/[^a-zA-Z0-9_-]/g, '-') + '-' + source.id;
       prior = rows.find((r) => r.id === id);
       kind = 'reading';
       name = 'Read status';
-      data = { userId: user.userId, sourceId: b.sourceId, sourceKey: key, read: b.read !== false };
+      data = { userId: user.userId, sourceKey: key, read: b.read === true };
     } else if (b.action === 'request') {
       if (
         !old ||
@@ -302,30 +295,18 @@ export async function POST(req: Request) {
         .run();
     return Response.json({ ok: true, id });
   } catch (e: any) {
-    if (e?.message === 'FORBIDDEN' || e?.message === 'UNAUTHORIZED') {
-      return Response.json(
-        { error: e.message },
-        { status: e.message === 'UNAUTHORIZED' ? 401 : 403 },
-      );
-    }
-    if (e?.message === 'CONFLICT') {
-      return Response.json({ error: e.message }, { status: 409 });
-    }
-    if (e?.message && (e.message.startsWith('Check ') || e.message.startsWith('Invalid ') || e.message.startsWith('Choose '))) {
-      return Response.json({ error: e.message }, { status: 400 });
-    }
-    try {
-      const b: any = await req.clone().json().catch(() => null);
-      if (b && typeof b.action === 'string') {
-        const user = await getChatGPTUser().catch(() => null);
-        return Response.json(handleMockMutation(b, user || 'Student'));
-      }
-    } catch {
-      // Fall through
-    }
     return Response.json(
-      { error: e?.message || 'Request failed' },
-      { status: 500 },
+      { error: e.message },
+      {
+        status:
+          e.message === 'FORBIDDEN'
+            ? 403
+            : e.message === 'UNAUTHORIZED'
+              ? 401
+              : e.message === 'CONFLICT'
+                ? 409
+                : 400,
+      },
     );
   }
 }

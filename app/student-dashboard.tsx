@@ -561,13 +561,24 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     }
   };
   const markAllNotificationsRead = async () => {
-    if (markingAllRead) return;
+    const unreadList = notifications.filter((n) => !n.read);
+    if (!unreadList.length || markingAllRead) return;
     setMarkingAllRead(true);
     try {
       await ws.act({
         action: 'notificationsReadAll',
         student: true,
       });
+      await Promise.all(
+        unreadList.map((n) =>
+          ws.act({
+            student: true,
+            action: 'read',
+            sourceId: n.source.id,
+            read: true,
+          }),
+        ),
+      );
     } catch (e: any) {
       setError(e.message);
     } finally {

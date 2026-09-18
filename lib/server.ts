@@ -5,7 +5,10 @@ import { studentScope } from './student';
 import { isMasterVisible, ordinaryData } from './master-dashboard';
 import { demoTeacherEntries, MAYA_HOMEROOM, MAYA_SUBJECT, MAYA_TEACHER_ID } from './demo-teacher';
 export function db() {
-  return env.DB as D1Database;
+  if (env && env.DB) {
+    return env.DB as D1Database;
+  }
+  return ((env as any)?.DB || (globalThis as any).__schoolos_fallback_db) as D1Database;
 }
 export async function context() {
   const user = await getChatGPTUser();

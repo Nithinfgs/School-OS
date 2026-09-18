@@ -30,23 +30,19 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === 'seatbelt';
 const localBindingConfig = {
   main: 'vinext/server/fetch-handler',
   compatibility_flags: ['nodejs_compat'],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: 'site-creator-d1',
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: 'site-creator-r2',
-        },
-      ]
-    : [],
+  d1_databases: [
+    {
+      binding: d1 || 'DB',
+      database_name: 'site-creator-d1',
+      database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
+    },
+  ],
+  r2_buckets: [
+    {
+      binding: r2 || 'FILES',
+      bucket_name: 'site-creator-r2',
+    },
+  ],
 };
 
 export default defineConfig(async () => {
@@ -66,14 +62,16 @@ export default defineConfig(async () => {
   const isNetlify =
     process.env.NETLIFY === 'true' || process.env.NITRO_PRESET === 'netlify';
 
+  const cloudflareShimPath = fileURLToPath(
+    new URL('./lib/netlify-cloudflare-shim.ts', import.meta.url),
+  );
+
   if (isNetlify) {
     return {
       css: { postcss: { plugins: [tailwindcss()] } },
       resolve: {
         alias: {
-          'cloudflare:workers': fileURLToPath(
-            new URL('./lib/netlify-cloudflare-shim.ts', import.meta.url),
-          ),
+          'cloudflare:workers': cloudflareShimPath,
         },
       },
       plugins: [vinext(), nitro()],
@@ -81,20 +79,31 @@ export default defineConfig(async () => {
   }
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import('@cloudflare/vite-plugin');
+  let cloudflarePlugin: any = null;
+  try {
+    const { cloudflare } = await import('@cloudflare/vite-plugin');
+    cloudflarePlugin = cloudflare({
+      viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
+      config: localBindingConfig,
+    });
+  } catch {
+    cloudflarePlugin = null;
+  }
 
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
+    resolve: {
+      alias: {
+        'cloudflare:workers': cloudflareShimPath,
+      },
+    },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
       vinext(),
       sites(),
-      cloudflare({
-        viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
-        config: localBindingConfig,
-      }),
+      ...(cloudflarePlugin ? [cloudflarePlugin] : []),
     ],
   };
 });

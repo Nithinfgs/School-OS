@@ -1251,51 +1251,82 @@ body {
 .role-pill {
   display: inline-flex;
   align-items: center;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  letter-spacing: 0.2px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .role-pill.admin {
-  background: #ede9fe;
-  color: #5b21b6;
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.role-pill.hos,
+.role-pill.head-of-school {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .role-pill.teacher {
-  background: #dcfce7;
-  color: #15803d;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .role-pill.student {
-  background: #e0f2fe;
+  background: rgba(14, 165, 233, 0.12);
   color: #0369a1;
+  border: 1px solid rgba(14, 165, 233, 0.25);
 }
 
 .role-pill.lab-assistant {
-  background: #ccfbf1;
+  background: rgba(20, 184, 166, 0.12);
   color: #0f766e;
+  border: 1px solid rgba(20, 184, 166, 0.25);
+}
+
+.role-pill.library-assistant {
+  background: rgba(6, 182, 212, 0.12);
+  color: #0e7490;
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.role-pill.transport-staff {
+  background: rgba(100, 116, 139, 0.12);
+  color: #334155;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+.role-pill.parent {
+  background: rgba(249, 115, 22, 0.12);
+  color: #c2410c;
+  border: 1px solid rgba(249, 115, 22, 0.25);
 }
 
 /* Profile Menu Dropdown */
 .profile-menu {
   position: absolute;
-  z-index: 100;
-  width: 290px;
-  padding: 8px;
-  border: 1px solid #d5dce3;
-  border-radius: 8px;
+  z-index: 1000;
+  width: 310px;
+  padding: 6px;
+  border: 1px solid rgba(220, 226, 232, 0.9);
+  border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.16), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
-  animation: profileMenuIn 0.15s ease-out;
+  box-shadow: 0 20px 48px -6px rgba(15, 23, 42, 0.2), 0 6px 16px -2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  animation: profileMenuIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes profileMenuIn {
   from {
     opacity: 0;
-    transform: translateY(-4px) scale(0.98);
+    transform: translateY(-6px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -1304,14 +1335,14 @@ body {
 }
 
 .profile-menu-topbar {
-  top: 42px;
+  top: 48px;
   right: 0;
 }
 
 .profile-menu-sidebar {
-  bottom: 56px;
+  bottom: 60px;
   left: 0;
-  width: 270px;
+  width: 290px;
 }
 
 .profile-menu-header {
@@ -1319,7 +1350,24 @@ body {
   align-items: center;
   gap: 10px;
   padding: 8px 10px 10px;
-  border-bottom: 1px solid #edf0f2;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #edf0f4;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.profile-header-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--school-navy-deep, #1c2a3b);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
 }
 
 .profile-menu-info {
@@ -1329,102 +1377,148 @@ body {
   flex: 1;
 }
 
-.profile-menu-info > b {
-  font-size: 13px;
+.profile-menu-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.profile-menu-user-row > b {
+  font-size: 12.5px;
+  font-weight: 600;
   color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.profile-menu-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 3px;
-}
-
 .profile-menu-email {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 1px;
 }
 
 .profile-menu-section-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 10px 6px;
+  padding: 8px 8px 4px;
   color: #64748b;
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.profile-menu-section-title small {
+.profile-menu-badge-count {
   color: #94a3b8;
   font-weight: 500;
-  font-size: 9px;
+  font-size: 9.5px;
   letter-spacing: 0;
+  text-transform: none;
 }
 
 .profile-menu-profiles {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.profile-menu-profiles::-webkit-scrollbar {
+  width: 4px;
+}
+.profile-menu-profiles::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
 .profile-switch-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 9px;
-  border-radius: 6px;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 8px;
   text-decoration: none;
   color: #334155;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: all 0.14s ease;
   border: 1px solid transparent;
+  position: relative;
 }
 
 .profile-switch-item:hover {
-  background: #f8fafc;
+  background: #f1f5f9;
   border-color: #e2e8f0;
+  transform: translateX(1px);
 }
 
 .profile-switch-item.active {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: #eef4f9;
+  border-color: #cbdbe8;
 }
 
 .profile-switch-avatar {
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: 7px;
   display: grid;
   place-items: center;
   flex-shrink: 0;
 }
 
 .profile-switch-avatar.admin {
-  background: #ede9fe;
-  color: #6d28d9;
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.profile-switch-avatar.hos,
+.profile-switch-avatar.head-of-school {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 .profile-switch-avatar.teacher {
-  background: #dcfce7;
-  color: #16a34a;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .profile-switch-avatar.student {
-  background: #e0f2fe;
-  color: #0284c7;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0369a1;
+  border: 1px solid rgba(14, 165, 233, 0.2);
 }
 
 .profile-switch-avatar.lab-assistant {
-  background: #ccfbf1;
+  background: rgba(20, 184, 166, 0.12);
   color: #0f766e;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.profile-switch-avatar.library-assistant {
+  background: rgba(6, 182, 212, 0.12);
+  color: #0e7490;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.profile-switch-avatar.transport-staff {
+  background: rgba(100, 116, 139, 0.12);
+  color: #334155;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.profile-switch-avatar.parent {
+  background: rgba(249, 115, 22, 0.12);
+  color: #c2410c;
+  border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
 .profile-switch-meta {
@@ -1436,13 +1530,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
 }
 
 .profile-switch-name-row > b {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-switch-meta > small {
@@ -1452,47 +1549,64 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.profile-switch-active-indicator {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--school-blue, #2879a8);
+  color: #ffffff;
+  flex-shrink: 0;
 }
 
 .profile-switch-check {
-  color: #0284c7;
-  flex-shrink: 0;
+  color: #ffffff;
 }
 
 .profile-switch-arrow {
   color: #94a3b8;
   flex-shrink: 0;
+  transition: transform 0.14s ease, color 0.14s ease;
+}
+
+.profile-switch-item:hover .profile-switch-arrow {
+  color: #475569;
+  transform: translateX(2px);
 }
 
 .profile-menu-footer {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #edf0f2;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #edf0f4;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .profile-menu-action,
 .profile-menu-signout {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 7px 10px;
-  border-radius: 5px;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
   border: none;
-  background: none;
-  text-align: left;
-  transition: background 0.12s ease, color 0.12s ease;
+  background: transparent;
+  transition: all 0.14s ease;
 }
 
 .profile-menu-action {
   color: #334155;
+  flex: 1;
 }
 
 .profile-menu-action:hover {
@@ -1502,6 +1616,7 @@ body {
 
 .profile-menu-signout {
   color: #dc2626;
+  font-weight: 600;
 }
 
 .profile-menu-signout:hover {

@@ -1207,25 +1207,6 @@ export function ProfileMenu({
 
   const devProfiles = [
     {
-      role: 'head-of-school',
-      authRole: 'hos',
-      name: 'Dr. Aisha Rahman',
-      title: 'Head of School',
-      badge: 'HOS',
-      email: 'hos.dev@schoolos.local',
-      icon: GraduationCap,
-      landing: '/hos',
-    },
-    {
-      role: 'admin',
-      name: 'Nithin Selvaraj',
-      title: 'School Administrator',
-      badge: 'Admin',
-      email: 'admin.dev@schoolos.local',
-      icon: Wrench,
-      landing: '/admin',
-    },
-    {
       role: 'hos',
       authRole: 'hos',
       name: 'Dr. Aisha Rahman',
@@ -1236,39 +1217,58 @@ export function ProfileMenu({
       landing: '/hos',
     },
     {
+      role: 'admin',
+      authRole: 'admin',
+      name: 'Nithin Selvaraj',
+      title: 'School Administrator',
+      badge: 'Admin',
+      email: 'admin.dev@schoolos.local',
+      icon: Wrench,
+      landing: '/admin',
+    },
+    {
       role: 'teacher',
+      authRole: 'teacher',
       name: 'Sadahana',
       title: 'Physics & Math Teacher',
       badge: 'Teacher',
       email: 'teacher.dev@schoolos.local',
       icon: Users,
+      landing: '/',
     },
     {
       role: 'student',
+      authRole: 'student',
       name: 'Nithin Selvaraj',
       title: 'DP-2 Student (IBDP)',
       badge: 'Student',
       email: 'nithin.selvaraj@schoolos.local',
       icon: User,
+      landing: '/',
     },
     {
       role: 'lab-assistant',
+      authRole: 'lab-assistant',
       name: 'Olivia Reed',
       title: 'Science Lab Assistant',
       badge: 'Lab Assistant',
       email: 'lab.assistant.dev@schoolos.local',
       icon: FlaskConical,
+      landing: '/labs',
     },
     {
       role: 'library-assistant',
+      authRole: 'library-assistant',
       name: 'Daniel Moore',
       title: 'Library Assistant',
       badge: 'Library Assistant',
       email: 'library.assistant.dev@schoolos.local',
       icon: BookOpen,
+      landing: '/library',
     },
     {
       role: 'transport-staff',
+      authRole: 'transport-staff',
       name: 'Leena Joseph',
       title: 'Transport Operations',
       badge: 'Transport Staff',
@@ -1278,11 +1278,13 @@ export function ProfileMenu({
     },
     {
       role: 'parent',
+      authRole: 'parent',
       name: 'Nithin Selvaraj',
       title: 'Parent / Guardian',
       badge: 'Parent',
       email: 'parent.dev@schoolos.local',
       icon: User,
+      landing: '/',
     },
   ];
 
@@ -1293,33 +1295,35 @@ export function ProfileMenu({
       aria-label="User profile and account switcher"
     >
       <div className="profile-menu-header">
-        <span className="avatar">{initials}</span>
+        <span className={`profile-header-avatar ${currentRole}`}>{initials}</span>
         <div className="profile-menu-info">
-          <b>{member.name || 'Alex Carter'}</b>
-          <div className="profile-menu-meta-row">
+          <div className="profile-menu-user-row">
+            <b>{member.name || 'Alex Carter'}</b>
             <span className={`role-pill ${currentRole}`}>{member.role || 'Student'}</span>
-            <small className="profile-menu-email">{member.email || 'Signed in'}</small>
           </div>
+          <small className="profile-menu-email">{member.email || 'Signed in'}</small>
         </div>
       </div>
 
       <div className="profile-menu-section-title">
         <span>SWITCH PROFILE</span>
-        <small>Development accounts</small>
+        <small className="profile-menu-badge-count">Development Accounts</small>
       </div>
 
       <div className="profile-menu-profiles">
         {devProfiles.map((p) => {
-          const isActive = currentRole === p.role;
+          const isActive =
+            currentRole === p.role ||
+            (currentRole === 'head-of-school' && p.role === 'hos');
           const Icon = p.icon;
           return (
             <a
               key={p.role}
-              href={`/api/dev-login?role=${(p as any).authRole || p.role}&return_to=${encodeURIComponent((p as any).landing || '/')}`}
+              href={`/api/dev-login?role=${p.authRole}&return_to=${encodeURIComponent(p.landing || '/')}`}
               className={`profile-switch-item ${isActive ? 'active' : ''}`}
             >
               <span className={`profile-switch-avatar ${p.role}`}>
-                <Icon size={14} />
+                <Icon size={13} />
               </span>
               <div className="profile-switch-meta">
                 <div className="profile-switch-name-row">
@@ -1329,7 +1333,9 @@ export function ProfileMenu({
                 <small>{p.title}</small>
               </div>
               {isActive ? (
-                <Check size={14} className="profile-switch-check" />
+                <div className="profile-switch-active-indicator">
+                  <Check size={13} className="profile-switch-check" />
+                </div>
               ) : (
                 <ChevronRight size={13} className="profile-switch-arrow" />
               )}
@@ -1346,7 +1352,7 @@ export function ProfileMenu({
             navigate('Settings');
           }}
         >
-          <Settings size={14} />
+          <Settings size={13} />
           <span>Profile & settings</span>
         </button>
         <a
@@ -1354,7 +1360,7 @@ export function ProfileMenu({
           className="profile-menu-signout"
           target="_top"
         >
-          <LogOut size={14} />
+          <LogOut size={13} />
           <span>Sign out</span>
         </a>
       </div>

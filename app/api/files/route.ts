@@ -1,5 +1,4 @@
-import { env } from 'cloudflare:workers';
-import { context, db, schoolRows } from '@/lib/server';
+import { context, db, files, schoolRows } from '@/lib/server';
 import { isMasterVisible } from '@/lib/master-dashboard';
 function allowedFile(r: any, member: any, user: any) {
   const d = JSON.parse(r.data);
@@ -95,7 +94,7 @@ export async function POST(req: Request) {
       );
     const id = crypto.randomUUID();
     const key = org + '/' + id;
-    await env.FILES.put(key, await file.arrayBuffer(), {
+    await files().put(key, await file.arrayBuffer(), {
       httpMetadata: { contentType: 'application/octet-stream' },
     });
     await db()
@@ -152,7 +151,7 @@ export async function GET(req: Request) {
       .first<any>();
     if (!r || !allowedFile(r, member, user))
       return new Response('Not found', { status: 404 });
-    const file = await env.FILES.get(JSON.parse(r.data).key);
+    const file = await files().get(JSON.parse(r.data).key);
     if (!file) return new Response('Not found', { status: 404 });
     return new Response(file.body, {
       headers: {
@@ -162,7 +161,10 @@ export async function GET(req: Request) {
         'X-Content-Type-Options': 'nosniff',
       },
     });
-  } catch {
-    return new Response('Sign in required', { status: 401 });
+  } catch (e: any) {
+    if (e?.message === 'UNAUTHORIZED') {
+      return new Response('Sign in required', { status: 401 });
+    }
+    return new Response(e?.message || 'File retrieval failed', { status: 500 });
   }
 }

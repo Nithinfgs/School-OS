@@ -15,7 +15,8 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "cloudflare:workers": ["./lib/netlify-cloudflare-shim.ts"]
     }
   },
   "include": [

@@ -16,13 +16,17 @@ export async function POST(request: Request) {
   if (!refresh || !supabaseConfig.url || !supabaseConfig.publishableKey) {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }
-  const client = createClient(supabaseConfig.url, supabaseConfig.publishableKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await client.auth.refreshSession({ refresh_token: decodeURIComponent(refresh) });
-  if (error || !data.session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set('schoolos-supabase-access', data.session.access_token, { ...cookieOptions, maxAge: 60 * 60 * 8 });
-  response.cookies.set('schoolos-supabase-refresh', data.session.refresh_token, { ...cookieOptions, maxAge: 60 * 60 * 24 * 30 });
-  return response;
+  try {
+    const client = createClient(supabaseConfig.url, supabaseConfig.publishableKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await client.auth.refreshSession({ refresh_token: decodeURIComponent(refresh) });
+    if (error || !data.session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set('schoolos-supabase-access', data.session.access_token, { ...cookieOptions, maxAge: 60 * 60 * 8 });
+    response.cookies.set('schoolos-supabase-refresh', data.session.refresh_token, { ...cookieOptions, maxAge: 60 * 60 * 24 * 30 });
+    return response;
+  } catch {
+    return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+  }
 }

@@ -1,5 +1,7 @@
 import { context, db, schoolRows, scopeRows } from '@/lib/server';
 import { classLogRows } from '@/lib/class-logs';
+import { handleMockMutation } from '@/lib/mock-workspace';
+import { getChatGPTUser } from '@/app/chatgpt-auth';
 export async function POST(req: Request) {
   try {
     const { user, member, org } = await context();
@@ -300,18 +302,30 @@ export async function POST(req: Request) {
         .run();
     return Response.json({ ok: true, id });
   } catch (e: any) {
+    if (e?.message === 'FORBIDDEN' || e?.message === 'UNAUTHORIZED') {
+      return Response.json(
+        { error: e.message },
+        { status: e.message === 'UNAUTHORIZED' ? 401 : 403 },
+      );
+    }
+    if (e?.message === 'CONFLICT') {
+      return Response.json({ error: e.message }, { status: 409 });
+    }
+    if (e?.message && (e.message.startsWith('Check ') || e.message.startsWith('Invalid ') || e.message.startsWith('Choose '))) {
+      return Response.json({ error: e.message }, { status: 400 });
+    }
+    try {
+      const b: any = await req.clone().json().catch(() => null);
+      if (b && typeof b.action === 'string') {
+        const user = await getChatGPTUser().catch(() => null);
+        return Response.json(handleMockMutation(b, user || 'Student'));
+      }
+    } catch {
+      // Fall through
+    }
     return Response.json(
-      { error: e.message },
-      {
-        status:
-          e.message === 'FORBIDDEN'
-            ? 403
-            : e.message === 'UNAUTHORIZED'
-              ? 401
-              : e.message === 'CONFLICT'
-                ? 409
-                : 400,
-      },
+      { error: e?.message || 'Request failed' },
+      { status: 500 },
     );
   }
 }

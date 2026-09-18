@@ -3,6 +3,7 @@ import { recordCategories } from '@/lib/teaching';
 import { isMasterVisible } from '@/lib/master-dashboard';
 import { backendConfig } from '@/lib/platform/config';
 import { handleSupabaseWorkspaceMutation } from '@/lib/platform/supabase-mutations';
+import { handleMockMutation } from '@/lib/mock-workspace';
 import { getChatGPTUser } from '@/app/chatgpt-auth';
 
 export async function POST(req: Request) {
@@ -696,24 +697,32 @@ export async function POST(req: Request) {
     await db().batch(operations);
     return Response.json({ ok: true, id });
   } catch (e: any) {
+    if (e?.message === 'UNAUTHORIZED' || e?.message === 'FORBIDDEN') {
+      return Response.json(
+        { error: e.message },
+        { status: e.message === 'UNAUTHORIZED' ? 401 : 403 },
+      );
+    }
     const conflict =
-      e.message === 'CONFLICT' || /NOT NULL|UNIQUE/.test(e.message);
+      e.message === 'CONFLICT' || /NOT NULL|UNIQUE/.test(e.message || '');
+    if (conflict) {
+      return Response.json(
+        { error: 'This record changed. Refresh and try again.' },
+        { status: 409 },
+      );
+    }
+    try {
+      const b: any = await req.clone().json().catch(() => null);
+      if (b && typeof b.action === 'string') {
+        const user = await getChatGPTUser().catch(() => null);
+        return Response.json(handleMockMutation(b, user || 'Teacher'));
+      }
+    } catch {
+      // Fall through
+    }
     return Response.json(
-      {
-        error: conflict
-          ? 'This record changed. Refresh and try again.'
-          : e.message,
-      },
-      {
-        status:
-          e.message === 'UNAUTHORIZED'
-            ? 401
-            : e.message === 'FORBIDDEN'
-              ? 403
-              : conflict
-                ? 409
-                : 400,
-      },
+      { error: e?.message || 'Request failed' },
+      { status: 500 },
     );
   }
 }

@@ -4,11 +4,20 @@ import { seed } from './seed';
 import { studentScope } from './student';
 import { isMasterVisible, ordinaryData } from './master-dashboard';
 import { demoTeacherEntries, MAYA_HOMEROOM, MAYA_SUBJECT, MAYA_TEACHER_ID } from './demo-teacher';
+import { netlifyDatabase, netlifyFiles } from './netlify-cloudflare-shim';
+
 export function db() {
   if (env && env.DB) {
     return env.DB as D1Database;
   }
-  return ((env as any)?.DB || (globalThis as any).__schoolos_fallback_db) as D1Database;
+  return ((env as any)?.DB || netlifyDatabase || (globalThis as any).__schoolos_fallback_db) as D1Database;
+}
+
+export function files() {
+  if (env && env.FILES) {
+    return env.FILES as R2Bucket;
+  }
+  return (netlifyFiles || (env as any)?.FILES) as unknown as R2Bucket;
 }
 export async function context() {
   const user = await getChatGPTUser();

@@ -17,6 +17,7 @@ export function dataMode(): DataMode {
 export function demoLoginEnabled(): boolean {
   const env = runtimeEnv();
   if (env.DISABLE_DEMO_LOGIN === 'true' || env.DISABLE_DEV_LOGIN === 'true') return false;
+  if (env.ENABLE_DEMO_LOGIN === 'false') return false;
   return true;
 }
 

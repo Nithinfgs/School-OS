@@ -1,0 +1,30 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NITRO_PRESET = "netlify"
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+  ENABLE_DEMO_LOGIN = "true"
+  DATA_MODE = "demo"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,DEFAULT_ORGANIZATION_ID,SCHOOL_TIMEZONE,DATA_MODE,ENABLE_DEMO_LOGIN,SUPABASE_JWKS_URL"
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/functions-internal/**,dist/_next/static/**,node_modules/**"
+  SECRETS_SCAN_ENABLED = "false"
+
+# Nitro creates the Netlify server function and route rules during the build.
+# Netlify should publish the generated public assets from this directory.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
+    X-Permitted-Cross-Domain-Policies = "none"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.netlify.app; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+

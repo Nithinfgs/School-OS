@@ -1872,27 +1872,6 @@ body {
   color: #b91c1c;
   transform: translateY(-1px);
 }
-}
-
-.settings-signout-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.12s ease;
-}
-
-.settings-signout-btn:hover {
-  background: #fee2e2;
-  color: #b91c1c;
-}
 
 /* Student Profile Account Bar */
 .student-profile-account-bar {

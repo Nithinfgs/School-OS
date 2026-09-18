@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseConfig } from '@/lib/platform/config';
 import { buildRecordTags, RecordRegistry } from '@/lib/tracking';
+import { checkRateLimit, extractClientIp, rateLimitExceededResponse } from '@/lib/security/rate-limit';
 
-const recent = new Map<string, number>();
 const clean = (value: unknown, max = 5000) => String(value ?? '').trim().slice(0, max);
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  const now = Date.now();
-  if (now - (recent.get(ip) || 0) < 20_000) return NextResponse.json({ error: 'Please wait before submitting another inquiry.' }, { status: 429 });
+  const ip = extractClientIp(request);
+  const rateLimit = checkRateLimit(`inquiry:${ip}`, { maxRequests: 10, windowMs: 60_000 });
+  if (!rateLimit.success) {
+    return rateLimitExceededResponse(rateLimit.resetSeconds);
+  }
   const body = await request.json().catch(() => null) as any;
   const required = ['parentGuardianName','studentName','parentPhone','parentEmail','category','subject','message'];
   if (!body || required.some((key) => !clean(body[key]))) return NextResponse.json({ error: 'Please complete all required fields.' }, { status: 400 });
@@ -16,7 +18,6 @@ export async function POST(request: Request) {
   if (!body.consentAccepted) return NextResponse.json({ error: 'Consent is required.' }, { status: 400 });
   const attachment = body.attachment;
   if (attachment && (Number(attachment.size) > 5 * 1024 * 1024 || !['application/pdf','image/png','image/jpeg'].includes(String(attachment.type)))) return NextResponse.json({ error: 'Invalid attachment.' }, { status: 400 });
-  recent.set(ip, now);
   const referenceNumber = `INQ-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
   const organizationId = process.env.DEFAULT_ORGANIZATION_ID || '';
   if ((process.env.DATA_MODE || 'demo') === 'supabase' && supabaseConfig.url && supabaseConfig.secretKey) {

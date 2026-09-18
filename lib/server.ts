@@ -92,7 +92,7 @@ const DEV_MEMBERS: Record<string, any> = {
     organizationId: 'schoolos-dev',
     userId: 'dev:teacher',
     role: 'Teacher',
-    name: 'Maya Iyer',
+    name: 'Sadahana',
     email: 'teacher.dev@schoolos.local',
     classes: `${MAYA_HOMEROOM}|${MAYA_SUBJECT}`,
     studentId: '',

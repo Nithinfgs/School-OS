@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLibrary } from '../../context/LibraryContext';
 import { 
   X, 
@@ -33,9 +34,9 @@ export const BookCartDrawer: React.FC = () => {
     setCheckoutNotes('');
   };
 
-  return (
+  const drawerContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 overflow-hidden">
+      <div className="fixed inset-0 z-[9999] overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -204,4 +205,6 @@ export const BookCartDrawer: React.FC = () => {
       </div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(drawerContent, document.body) : null;
 };

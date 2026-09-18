@@ -13,7 +13,8 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "test": "npx tsx tests/run-all-tests.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

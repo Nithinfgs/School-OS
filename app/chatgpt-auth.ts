@@ -105,9 +105,9 @@ async function getDevUser(): Promise<ChatGPTUser | null> {
     },
     teacher: {
       userId: 'dev:teacher',
-      displayName: 'Maya Iyer',
+      displayName: 'Sadahana',
       email: 'teacher.dev@schoolos.local',
-      fullName: 'Maya Iyer',
+      fullName: 'Sadahana',
     },
     admin: {
       userId: 'dev:admin',
@@ -138,6 +138,18 @@ async function getDevUser(): Promise<ChatGPTUser | null> {
       displayName: 'Leena Joseph',
       email: 'transport.dev@schoolos.local',
       fullName: 'Leena Joseph',
+    },
+    transport: {
+      userId: 'dev:transport-staff',
+      displayName: 'Leena Joseph',
+      email: 'transport.dev@schoolos.local',
+      fullName: 'Leena Joseph',
+    },
+    'head-of-school': {
+      userId: 'dev:hos',
+      displayName: 'Dr. Aisha Rahman',
+      email: 'hos.dev@schoolos.local',
+      fullName: 'Dr. Aisha Rahman',
     },
     parent: {
       userId: 'dev:parent',

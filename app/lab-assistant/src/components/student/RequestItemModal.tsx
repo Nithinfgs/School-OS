@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLab } from '../../context/LabContext';
 import { LabItem, LabType, UnitType } from '../../types/lab';
 import { X, Send, Sparkles } from 'lucide-react';
@@ -63,8 +64,8 @@ export const RequestItemModal: React.FC<RequestItemModalProps> = ({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#253B53]/50 backdrop-blur-xs animate-in fade-in">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#253B53]/50 backdrop-blur-xs animate-in fade-in">
       <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-[#DBE4EA] overflow-hidden font-sans text-[#1F3547]">
         
         {/* Header */}
@@ -219,4 +220,6 @@ export const RequestItemModal: React.FC<RequestItemModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

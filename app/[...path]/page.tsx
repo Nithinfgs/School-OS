@@ -7,7 +7,7 @@ import { resolveSupabaseMember } from '@/lib/platform/supabase-auth';
 export const dynamic = 'force-dynamic';
 
 const knownPages = new Set([
-  'home','labs','library','academics','students','directory','chat','messages','announcements','forms','policies','feedback','requests','school-services','reports','cas','services','approvals','id-cards','calendar','daily-calendar','notifications','inquiries','transport','teacher-inquiry','student-search','report-cards','admissions','staff-leave','procurement','documents','visitors','analytics','activity','settings','help-support',
+  'home','labs','library','academics','students','directory','student-directory','chat','messages','announcements','forms','policies','feedback','requests','school-services','student-services','reports','cas','projects-and-cas','services','approvals','id-cards','calendar','daily-calendar','notifications','inquiries','parent-inquiry','transport','teacher-inquiry','student-search','report-cards','admissions','staff-leave','procurement','documents','visitors','analytics','activity','settings','help-support','help-and-support','privacy-licensing','privacy-and-licensing','emergency-contacts','library-suggestions','lab-purchases','class-logs','attendance','timetable','gradebook','overview',
 ]);
 
 function devRole(userId: string) {

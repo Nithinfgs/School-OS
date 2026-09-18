@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { LabItem } from '../../types/lab';
 import { LabBadge, HazardBadge, StockBadge } from './Badge';
 import { 
@@ -79,8 +80,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
     window.location.href = `mailto:${item.supplier.email}?subject=${subject}&body=${body}`;
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#253B53]/50 backdrop-blur-xs animate-in fade-in duration-150">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#253B53]/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#DBE4EA] flex flex-col text-[#1F3547] font-sans">
         
         {/* Header */}
@@ -339,4 +340,6 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

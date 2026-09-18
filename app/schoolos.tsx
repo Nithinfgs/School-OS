@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Modules, GlobalSearch, useWorkspace } from './modules';
 import { AdminMasterDashboard } from './admin-dashboard';
 import { TeacherDashboard } from './teacher-dashboard';
@@ -123,6 +123,10 @@ const apps = [
   },
 ];
 export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [page, setPage] = useState('Home');
   const ws = useWorkspace(initialUser);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -149,32 +153,15 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     return () => sidebar.removeEventListener('scroll', rememberScroll);
   }, []);
 
-  const preserveSidebarScroll = (action: () => void) => {
-    const sidebar = document.querySelector<HTMLElement>(
-      "[data-slot='sidebar-content']",
-    );
-    const scrollTop = sidebar?.scrollTop ?? null;
-    const restore = () => {
-      const currentSidebar = document.querySelector<HTMLElement>(
-        "[data-slot='sidebar-content']",
-      );
-      if (currentSidebar && scrollTop !== null) {
-        currentSidebar.scrollTop = scrollTop;
-      }
-    };
-    action();
-    restore();
-    requestAnimationFrame(restore);
-  };
+  const role = ws.member.role || 'Student';
 
-  const navigate = (p: string) => {
-    preserveSidebarScroll(() => {
-      setPage(p);
-      const prefix = role === 'Admin' ? '/admin' : role === 'Head of School' ? '/hos' : '';
-      navigateWebsite(prefix ? (p === 'Home' ? prefix : `${prefix}/${webSlug(p)}`) : pagePath(p), true);
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    });
-  };
+  const navigate = useCallback((p: string) => {
+    setPage(p);
+    const prefix = role === 'Admin' ? '/admin' : role === 'Head of School' ? '/hos' : '';
+    const targetUrl = prefix ? (p === 'Home' ? prefix : `${prefix}/${webSlug(p)}`) : pagePath(p);
+    navigateWebsite(targetUrl, true);
+  }, [role]);
+
   useEffect(() => {
     migrateLegacyHash();
     const p = decodeURIComponent(location.pathname.slice(1));
@@ -325,7 +312,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       window.removeEventListener('popstate', route);
     };
   }, []);
-  const role = ws.member.role || 'Student';
+
   // A bookmarked or manually edited role route must never keep the previous
   // role's URL. The server handles demo landings; this also protects client
   // navigation after a profile switch or browser back/forward action.
@@ -568,6 +555,18 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
     ).catch(() => {});
     return () => controller.abort();
   }, [navigate]);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400" suppressHydrationWarning>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-medium text-slate-300">Loading SchoolOS...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider
       style={{ '--sidebar-width': '238px' } as React.CSSProperties}
@@ -644,11 +643,11 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
                 <SidebarMenuItem key={classRow.id}>
                   <SidebarMenuButton
                     onClick={() =>
-                      preserveSidebarScroll(() => navigateWebsite(
+                      navigateWebsite(
                         role === 'Teacher'
                           ? `/teacher/class/${classRow.id}`
                           : `/student/class/${classRow.id}`,
-                      ))
+                      )
                     }
                   >
                     <span className={`class-dot dot-${(index % 5) + 1}`} />
@@ -1238,7 +1237,7 @@ export function ProfileMenu({
     },
     {
       role: 'teacher',
-      name: 'Maya Iyer',
+      name: 'Sadahana',
       title: 'Physics & Math Teacher',
       badge: 'Teacher',
       email: 'teacher.dev@schoolos.local',

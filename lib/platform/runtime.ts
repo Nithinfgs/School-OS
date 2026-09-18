@@ -13,8 +13,10 @@ export function dataMode(): DataMode {
   throw new Error(`Invalid DATA_MODE '${value}'. Use demo or supabase.`);
 }
 
-/** Development profiles always enabled for instant quick logins */
+/** Demo profiles enabled by default in all environments unless explicitly disabled. */
 export function demoLoginEnabled(): boolean {
+  const env = runtimeEnv();
+  if (env.DISABLE_DEMO_LOGIN === 'true' || env.DISABLE_DEV_LOGIN === 'true') return false;
   return true;
 }
 

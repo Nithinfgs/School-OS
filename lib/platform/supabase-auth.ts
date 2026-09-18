@@ -6,7 +6,7 @@ const firstRelated = (value:any) => Array.isArray(value) ? value[0] : value;
 const DEV_PROFILES: Record<string, { role: string; roleCode: string; name: string; email: string }> = {
   'dev:admin': { role: 'Admin', roleCode: 'admin', name: 'Nithin Selvaraj', email: 'admin.dev@schoolos.local' },
   'dev:hos': { role: 'Head of School', roleCode: 'head_of_school', name: 'Dr. Aisha Rahman', email: 'hos.dev@schoolos.local' },
-  'dev:teacher': { role: 'Teacher', roleCode: 'teacher', name: 'Maya Iyer', email: 'teacher.dev@schoolos.local' },
+  'dev:teacher': { role: 'Teacher', roleCode: 'teacher', name: 'Sadahana', email: 'teacher.dev@schoolos.local' },
   'dev:student': { role: 'Student', roleCode: 'student', name: 'Nithin Selvaraj', email: 'nithin.selvaraj@schoolos.local' },
   'dev:parent': { role: 'Parent', roleCode: 'parent', name: 'Nithin Selvaraj', email: 'parent.dev@schoolos.local' },
   'dev:transport-staff': { role: 'Transport Staff', roleCode: 'transport_staff', name: 'Leena Joseph', email: 'transport.dev@schoolos.local' },
@@ -79,3 +79,44 @@ export async function resolveSupabaseBearer(token:string) {
   if(error || !data.user) throw new Error('UNAUTHORIZED');
   return resolveSupabaseMember({id:data.user.id,email:data.user.email});
 }
+
+/**
+ * Enterprise Single Sign-On (SSO) and OAuth provider initiation helper.
+ * Supports Google Workspace for Education and Microsoft Azure/Entra ID.
+ */
+export async function getOAuthSignInUrl(
+  provider: 'google' | 'azure' | 'apple',
+  redirectTo: string
+): Promise<string> {
+  const client = createSupabaseServerClient();
+  const { data, error } = await client.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo,
+      scopes: provider === 'google' ? 'email profile' : undefined,
+    },
+  });
+  if (error || !data.url) {
+    throw new Error(`SSO_ERROR: Failed to initialize ${provider} login - ${error?.message || 'No URL returned'}`);
+  }
+  return data.url;
+}
+
+/**
+ * Enterprise SAML 2.0 Single Sign-On initiator for school domains.
+ */
+export async function getSAMLEnterpriseSignInUrl(
+  domain: string,
+  redirectTo: string
+): Promise<string> {
+  const client = createSupabaseServerClient();
+  const { data, error } = await client.auth.signInWithSSO({
+    domain,
+    options: { redirectTo },
+  });
+  if (error || !data.url) {
+    throw new Error(`SAML_ERROR: Enterprise domain ${domain} is not configured - ${error?.message || 'No URL returned'}`);
+  }
+  return data.url;
+}
+

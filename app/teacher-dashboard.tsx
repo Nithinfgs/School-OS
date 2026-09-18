@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -15,6 +15,7 @@ import {
   Upload,
   AlertTriangle,
   BusFront,
+  Phone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +56,7 @@ import { MessageThread } from './message-thread';
 import { ChatRoomView } from './chat-room';
 import { ChatModal } from './chat-modal';
 import { TimetableMatrix } from '@/app/components/timetable-matrix';
+import { StudentContactCard } from './components/student-contact-card';
 import { navigateWebsite } from '@/lib/web-navigation';
 import {
   teacherTabs,
@@ -165,28 +167,31 @@ export function TeacherDashboard({ ws }: any) {
     [day, setDay] = useState(localDate()),
     [studentSection, setStudentSection] = useState('Overview'),
     [calendarViewMode, setCalendarViewMode] = useState<'matrix' | 'daily'>('matrix');
-  const rows = ws.rows,
-    classes = rows.filter((r: any) => r.kind === 'class'),
-    cls = classes.find((r: any) => r.id === classId),
-    today = localDate();
-  const todayLessons = scheduleFor(rows, today);
-  const next = [...Array(14)]
-    .flatMap((_, i) => {
-      const date = new Date(Date.parse(today) + i * 86400000)
-        .toISOString()
-        .slice(0, 10);
-      return scheduleFor(rows, date).map((r: any) => ({
-        ...r,
-        data: { ...r.data, date },
-      }));
-    })
-    .find(
-      (r: any) =>
-        r.data.date > today ||
-        r.data.startTime > new Date().toTimeString().slice(0, 5),
-    );
-  const selected = rows.find((r: any) => r.id === selectedId);
-  const inClass = (r: any) =>
+  const rows = ws.rows || [];
+  const classes = useMemo(() => rows.filter((r: any) => r.kind === 'class'), [rows]);
+  const cls = useMemo(() => classes.find((r: any) => r.id === classId), [classes, classId]);
+  const today = localDate();
+  const todayLessons = useMemo(() => scheduleFor(rows, today), [rows, today]);
+  const next = useMemo(() => {
+    return [...Array(14)]
+      .flatMap((_, i) => {
+        const date = new Date(Date.parse(today) + i * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        return scheduleFor(rows, date).map((r: any) => ({
+          ...r,
+          data: { ...r.data, date },
+        }));
+      })
+      .find(
+        (r: any) =>
+          r.data.date > today ||
+          r.data.startTime > new Date().toTimeString().slice(0, 5),
+      );
+  }, [rows, today]);
+
+  const selected = useMemo(() => rows.find((r: any) => r.id === selectedId), [rows, selectedId]);
+  const inClass = useCallback((r: any) =>
     !cls ||
     r.id === cls.id ||
     r.data.class === cls.name ||
@@ -203,10 +208,11 @@ export function TeacherDashboard({ ws }: any) {
     (r.data.assignmentId &&
       rows.some(
         (a: any) => a.id === r.data.assignmentId && a.data.class === cls.name,
-      ));
-  const scoped = rows.filter(inClass),
-    roster = scoped.filter((r: any) => r.kind === 'student'),
-    assignments = scoped.filter((r: any) => r.kind === 'assignment');
+      )), [cls, rows, ws.member.id, ws.member.userId]);
+
+  const scoped = useMemo(() => rows.filter(inClass), [rows, inClass]);
+  const roster = useMemo(() => scoped.filter((r: any) => r.kind === 'student'), [scoped]);
+  const assignments = useMemo(() => scoped.filter((r: any) => r.kind === 'assignment'), [scoped]);
   const matching = (values: any[]) =>
     values.filter((r) =>
       (r.name + ' ' + JSON.stringify(r.data))
@@ -278,46 +284,61 @@ export function TeacherDashboard({ ws }: any) {
       )?.data.period,
     });
   };
-  const pendingAttendance = todayLessons.filter((lesson: any) => {
-    const students = rows.filter(
-      (r: any) => r.kind === 'student' && studentInClass(r, lesson.data.class),
-    );
-    return students.some(
-      (s: any) =>
+  const pendingAttendance = useMemo(() => {
+    return todayLessons.filter((lesson: any) => {
+      const students = rows.filter(
+        (r: any) => r.kind === 'student' && studentInClass(r, lesson.data.class),
+      );
+      return students.some(
+        (s: any) =>
+          !rows.some(
+            (r: any) =>
+              r.kind === 'attendance' &&
+              r.data.studentId === s.id &&
+              r.data.class === lesson.data.class &&
+              r.data.date === today &&
+              (r.data.period || 'Daily') === lesson.data.period,
+          ),
+      );
+    });
+  }, [todayLessons, rows, today]);
+
+  const missingLogs = useMemo(() => {
+    return todayLessons.filter(
+      (l: any) =>
         !rows.some(
           (r: any) =>
-            r.kind === 'attendance' &&
-            r.data.studentId === s.id &&
-            r.data.class === lesson.data.class &&
+            r.kind === 'classLog' &&
+            r.data.class === l.data.class &&
             r.data.date === today &&
-            (r.data.period || 'Daily') === lesson.data.period,
+            (r.data.period || 'Daily') === l.data.period,
         ),
     );
-  });
-  const missingLogs = todayLessons.filter(
-    (l: any) =>
-      !rows.some(
-        (r: any) =>
-          r.kind === 'classLog' &&
-          r.data.class === l.data.class &&
-          r.data.date === today &&
-          (r.data.period || 'Daily') === l.data.period,
-      ),
-  );
-  const toGrade = rows.filter(
-    (r: any) =>
-      r.kind === 'submission' && ['Submitted', 'Late'].includes(r.data.status),
-  );
-  const lateAbsent = rows.filter(
-    (r: any) =>
-      r.kind === 'attendance' &&
-      r.data.date === today &&
-      ['Late', 'Absent'].includes(r.data.status),
-  );
-  const concerned = rows.filter(
-    (r: any) => r.kind === 'student' && studentIssues(r, rows, today).length,
-  );
-  const calendar = calendarEvents(scoped, day);
+  }, [todayLessons, rows, today]);
+
+  const toGrade = useMemo(() => {
+    return rows.filter(
+      (r: any) =>
+        r.kind === 'submission' && ['Submitted', 'Late'].includes(r.data.status),
+    );
+  }, [rows]);
+
+  const lateAbsent = useMemo(() => {
+    return rows.filter(
+      (r: any) =>
+        r.kind === 'attendance' &&
+        r.data.date === today &&
+        ['Late', 'Absent'].includes(r.data.status),
+    );
+  }, [rows, today]);
+
+  const concerned = useMemo(() => {
+    return rows.filter(
+      (r: any) => r.kind === 'student' && studentIssues(r, rows, today).length,
+    );
+  }, [rows, today]);
+
+  const calendar = useMemo(() => calendarEvents(scoped, day), [scoped, day]);
   const recordAction = (r: any) => {
     const names: any = {
       record: 'studentRecord',
@@ -338,8 +359,8 @@ export function TeacherDashboard({ ws }: any) {
     );
   if (ws.member.role !== 'Teacher') return null;
   return (
-    <div className="teacher-dashboard">
-      <header className="page-heading">
+    <div className="teacher-dashboard" suppressHydrationWarning>
+      <header className="page-heading" suppressHydrationWarning>
         <div>
           {cls && (
             <Button
@@ -357,14 +378,14 @@ export function TeacherDashboard({ ws }: any) {
           <div className="eyebrow">
             {cls ? 'CLASS CONTROL CENTER' : 'YOUR TEACHING DAY'}
           </div>
-          <h1>{cls ? cls.name : `Good ${displayNow ? (displayNow.getHours() < 12 ? 'morning' : 'afternoon') : 'day'}, ${ws.member.name.split(' ')[0]}`}</h1>
+          <h1 suppressHydrationWarning>{cls ? cls.name : `Good ${displayNow ? (displayNow.getHours() < 12 ? 'morning' : 'afternoon') : 'day'}, ${ws.member.name.split(' ')[0]}`}</h1>
           <p>
             {cls
               ? `${cls.data.room} · ${roster.length} students`
               : 'Today’s lessons, student follow-ups and work to review.'}
           </p>
         </div>
-        <span className="date-label"><CalendarDays size={17} />{displayNow ? displayNow.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }) : 'Today'}</span>
+        <span className="date-label" suppressHydrationWarning><CalendarDays size={17} />{displayNow ? displayNow.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }) : 'Today'}</span>
       </header>
       {ws.error && (
         <div className="error-banner" role="alert">
@@ -799,18 +820,32 @@ export function TeacherDashboard({ ws }: any) {
                             'No current alerts'}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            onClick={() =>
-                              quick('studentRecord', {
-                                kind: 'student',
-                                id: s.id,
-                                data: s.data,
-                              })
-                            }
-                          >
-                            Add record
-                          </Button>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedId(s.id);
+                                setStudentSection('Contacts & Guardians');
+                              }}
+                              title="View Student & Parent Contact Details"
+                            >
+                              <Phone className="w-3.5 h-3.5 mr-1 text-primary" /> Contact Info
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                quick('studentRecord', {
+                                  kind: 'student',
+                                  id: s.id,
+                                  data: s.data,
+                                })
+                              }
+                            >
+                              Add record
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1145,6 +1180,13 @@ export function TeacherDashboard({ ws }: any) {
                     <Button onClick={() => quick('studentRecord', selected)}>
                       Add student record
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setStudentSection('Contacts & Guardians')}
+                    >
+                      <Phone className="w-3.5 h-3.5 mr-1 text-primary" />
+                      Contact & Parents
+                    </Button>
                     <Button variant="outline" onClick={() => quick('behaviorReport', selected)}>
                       Behaviour report
                     </Button>
@@ -1173,6 +1215,7 @@ export function TeacherDashboard({ ws }: any) {
                     <TabsList variant="line" className="teacher-tabs">
                       {[
                         'Overview',
+                        'Contacts & Guardians',
                         'Attendance',
                         'Academics',
                         'Records',
@@ -1187,45 +1230,59 @@ export function TeacherDashboard({ ws }: any) {
                       ))}
                     </TabsList>
                   </Tabs>
-                  <Entries
-                    rows={rows.filter((r: any) => {
-                      if (r.id === selected.id) return false;
-                      const related =
-                        r.data.studentId === selected.id ||
-                        r.data.studentIds?.includes(selected.id) ||
-                        ([
-                          'assignment',
-                          'classLog',
-                          'exam',
-                          'timetable',
-                          'announcement',
-                          'resource',
-                        ].includes(r.kind) &&
-                          studentInClass(selected, r.data.class));
-                      const map: any = {
-                        Attendance: ['attendance'],
-                        Academics: ['assignment', 'submission'],
-                        Records: ['record', 'transportNotice'],
-                        Labs: ['request', 'labUsage'],
-                        Library: ['loan'],
-                        'Projects & CAS': ['project', 'cas'],
-                        Calendar: [
-                          'classLog',
-                          'assignment',
-                          'exam',
-                          'timetable',
-                          'project',
-                          'cas',
-                        ],
-                      };
-                      return (
-                        related &&
-                        (studentSection === 'Overview' ||
-                          map[studentSection]?.includes(r.kind))
-                      );
-                    })}
-                    open={open}
-                  />
+
+                  {studentSection === 'Contacts & Guardians' ? (
+                    <div className="my-3">
+                      <StudentContactCard student={selected} />
+                    </div>
+                  ) : (
+                    <>
+                      {studentSection === 'Overview' && (
+                        <div className="my-3">
+                          <StudentContactCard student={selected} compact={true} />
+                        </div>
+                      )}
+                      <Entries
+                        rows={rows.filter((r: any) => {
+                          if (r.id === selected.id) return false;
+                          const related =
+                            r.data.studentId === selected.id ||
+                            r.data.studentIds?.includes(selected.id) ||
+                            ([
+                              'assignment',
+                              'classLog',
+                              'exam',
+                              'timetable',
+                              'announcement',
+                              'resource',
+                            ].includes(r.kind) &&
+                              studentInClass(selected, r.data.class));
+                          const map: any = {
+                            Attendance: ['attendance'],
+                            Academics: ['assignment', 'submission'],
+                            Records: ['record', 'transportNotice'],
+                            Labs: ['request', 'labUsage'],
+                            Library: ['loan'],
+                            'Projects & CAS': ['project', 'cas'],
+                            Calendar: [
+                              'classLog',
+                              'assignment',
+                              'exam',
+                              'timetable',
+                              'project',
+                              'cas',
+                            ],
+                          };
+                          return (
+                            related &&
+                            (studentSection === 'Overview' ||
+                              map[studentSection]?.includes(r.kind))
+                          );
+                        })}
+                        open={open}
+                      />
+                    </>
+                  )}
                 </>
               ) : selected.kind === 'classLog' ? (
                 <ClassLogDetail row={selected} />

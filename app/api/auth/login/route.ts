@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseConfig } from '@/lib/platform/config';
+import { checkRateLimit, extractClientIp, rateLimitExceededResponse } from '@/lib/security/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    const ip = extractClientIp(request);
+    const rateLimit = checkRateLimit(`login:${ip}`, { maxRequests: 5, windowMs: 60_000 });
+    if (!rateLimit.success) {
+      return rateLimitExceededResponse(rateLimit.resetSeconds);
+    }
+
     const body = (await request.json()) as { email?: unknown; password?: unknown };
     const email = String(body?.email || '').trim().toLowerCase();
     const password = String(body?.password || '');

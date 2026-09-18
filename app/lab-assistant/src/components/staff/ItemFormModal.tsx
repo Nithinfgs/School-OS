@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLab } from '../../context/LabContext';
 import { LabItem, LabType, Category, HazardLevel, UnitType } from '../../types/lab';
 import { X, Plus, Save, Building2 } from 'lucide-react';
@@ -136,8 +137,8 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#253B53]/50 backdrop-blur-xs animate-in fade-in">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#253B53]/50 backdrop-blur-xs animate-in fade-in">
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#DBE4EA] flex flex-col font-sans text-[#1F3547]">
         
         {/* Header */}
@@ -448,4 +449,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

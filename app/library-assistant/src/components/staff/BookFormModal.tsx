@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLibrary } from '../../context/LibraryContext';
 import { BookItem, CollectionType, BookCategory } from '../../types/library';
 import { X, BookPlus, Save, Layers } from 'lucide-react';
@@ -173,9 +174,9 @@ export const BookFormModal: React.FC<BookFormModalProps> = ({
     onClose();
   };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -474,4 +475,6 @@ export const BookFormModal: React.FC<BookFormModalProps> = ({
       </div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

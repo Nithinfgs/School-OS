@@ -162,7 +162,7 @@ export function VisitorManagement({ ws }: { ws: any }) {
           <strong>{today.filter((v) => v.status === 'Expected').length}</strong>
           <span>Expected remaining</span>
         </button>
-        <button>
+        <button onClick={() => { setTab('Today'); setType('ParentGuardian'); }}>
           <strong>{today.filter((v) => v.type === 'ParentGuardian').length}</strong>
           <span>Parent visits</span>
         </button>

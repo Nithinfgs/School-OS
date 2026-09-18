@@ -228,9 +228,14 @@ export function personalNotifications(rows: any[], studentId: string) {
         detail = `${r.data.dueAt < today && r.data.status !== 'Returned' ? 'Overdue' : 'Library due'} · ${r.data.dueAt}`;
       if (r.kind === 'submission' && r.data.returned) detail = 'Feedback ready';
       const key = r.id + ':' + (r.version ?? r.updatedAt ?? '0');
-      const read = rows.some(
-        (x) => x.kind === 'reading' && x.data.sourceKey === key && x.data.read,
-      );
+      const read =
+        r.data?.read === true ||
+        rows.some(
+          (x) =>
+            x.kind === 'reading' &&
+            (x.data.sourceKey === key || x.data.sourceId === r.id || x.data.allRead === true) &&
+            x.data.read !== false,
+        );
       return { id: key, source: r, detail, read };
     })
     .sort((a, b) =>

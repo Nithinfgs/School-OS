@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BookItem } from '../../types/library';
 import { useLibrary } from '../../context/LibraryContext';
 import { Badge } from './Badge';
@@ -41,9 +42,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({ book, onClose 
     });
   };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -318,4 +319,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({ book, onClose 
       </div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

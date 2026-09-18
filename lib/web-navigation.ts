@@ -11,6 +11,7 @@ export const pagePath = (page: string) => `/${webSlug(page || 'home')}`;
 export function navigateWebsite(path: string, replace = false) {
   if (typeof window === 'undefined') return;
   const target = path.startsWith('/') ? path : `/${path}`;
+  if (location.pathname === target) return;
   if (replace) history.replaceState(null, '', target);
   else history.pushState(null, '', target);
   window.dispatchEvent(new PopStateEvent('popstate'));

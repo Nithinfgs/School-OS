@@ -42,7 +42,7 @@ export const mockMembers = [
   {
     id: 'dev-teacher-member',
     userId: 'dev:teacher',
-    name: 'Maya Iyer',
+    name: 'Sadahana',
     role: 'Teacher',
     email: 'teacher.dev@schoolos.local',
     department: 'Science',
@@ -221,7 +221,7 @@ export function buildMockRows(): any[] {
   const sampleLogs = [
     {
       class: 'Physics HL',
-      teacher: 'Maya Iyer',
+      teacher: 'Sadahana',
       topic: 'Conservation of Linear Momentum & 2D Collisions',
       notes: 'Conducted air track trolley experiment with photogates. Verified elastic vs inelastic collision momentum conservation.',
       homework: 'Complete analysis on Chapter 4 problem set, questions 14-22.',
@@ -229,7 +229,7 @@ export function buildMockRows(): any[] {
     },
     {
       class: 'Physics HL',
-      teacher: 'Maya Iyer',
+      teacher: 'Sadahana',
       topic: 'Newtonian Dynamics and Friction Coefficients',
       notes: 'Reviewed static and kinetic friction equations. Analyzed inclined plane data sets with error bars.',
       homework: 'Submit laboratory write-up by Friday 16:00.',
@@ -278,7 +278,7 @@ export function buildMockRows(): any[] {
       assignmentId: 'assignment-1',
       name: 'Forces and motion investigation',
       class: 'Physics HL',
-      teacher: 'Maya Iyer',
+      teacher: 'Sadahana',
       studentId: 'student-1',
       studentName: 'Nithin Selvaraj',
       text: 'For the dynamics trolley, weight and the normal reaction force balance vertically. A net horizontal force of 2.4 N acting on a 0.8 kg trolley produced an acceleration of 3.0 m/s², confirming F = ma within 1.8% experimental uncertainty.',
@@ -308,7 +308,7 @@ export function buildMockRows(): any[] {
       assignmentId: 'assignment-3',
       name: 'Electric circuits analysis',
       class: 'Physics HL',
-      teacher: 'Maya Iyer',
+      teacher: 'Sadahana',
       studentId: 'student-1',
       studentName: 'Nithin Selvaraj',
       text: 'Kirchhoff’s voltage and current laws were validated using digital multimeters across bridge circuit configurations.',
@@ -323,7 +323,7 @@ export function buildMockRows(): any[] {
       assignmentId: 'assignment-1',
       name: 'Forces and motion investigation',
       class: 'Physics HL',
-      teacher: 'Maya Iyer',
+      teacher: 'Sadahana',
       studentId: 'student-2',
       studentName: 'Emma Wilson',
       text: 'Acceleration measured using light gates matched theoretical calculations. Systematic friction was accounted for.',
@@ -338,7 +338,7 @@ export function buildMockRows(): any[] {
       assignmentId: 'assignment-1',
       name: 'Forces and motion investigation',
       class: 'Physics HL',
-      teacher: 'Maya Iyer',
+      teacher: 'Sadahana',
       studentId: 'student-3',
       studentName: 'Liam Chen',
       text: 'We plotted force against acceleration giving a linear gradient representing total mass M = 0.82 kg.',
@@ -579,7 +579,7 @@ export function buildMockRows(): any[] {
       quantity: 1,
       data: {
         senderId: 'dev-teacher-member',
-        senderName: 'Maya Iyer',
+        senderName: 'Sadahana',
         recipientId: 'dev-student-member',
         recipientName: 'Nithin Selvaraj',
         class: 'Physics HL',
@@ -596,7 +596,7 @@ export function buildMockRows(): any[] {
         senderId: 'dev-student-member',
         senderName: 'Nithin Selvaraj',
         recipientId: 'dev-teacher-member',
-        recipientName: 'Maya Iyer',
+        recipientName: 'Sadahana',
         class: 'Physics HL',
         timestamp: '2026-09-06T15:10:00Z',
         body: 'Thank you Ms. Iyer! I will set up the ultrasonic motion sensor during Tuesday’s free period and log initial calibration readings.',
@@ -649,7 +649,7 @@ export function buildMockAudits(): any[] {
       entityId: 'schoolos-dev:inventory-6',
       action: 'Updated inventory',
       actor: 'dev:teacher',
-      actorName: 'Maya Iyer',
+      actorName: 'Sadahana',
       timestamp: '2026-09-07T08:30:00Z',
       before: JSON.stringify({ name: 'Sodium hydroxide', quantity: 12 }),
       after: JSON.stringify({ name: 'Sodium hydroxide', quantity: 10 }),
@@ -660,7 +660,7 @@ export function buildMockAudits(): any[] {
       entityId: 'schoolos-dev:att-today-1',
       action: 'Marked attendance',
       actor: 'dev:teacher',
-      actorName: 'Maya Iyer',
+      actorName: 'Sadahana',
       timestamp: '2026-09-07T08:35:00Z',
       before: '{}',
       after: JSON.stringify({ class: 'Physics HL', present: 14, absent: 1 }),
@@ -671,7 +671,7 @@ export function buildMockAudits(): any[] {
       entityId: 'schoolos-dev:teaching-submission-1',
       action: 'Graded assignment',
       actor: 'dev:teacher',
-      actorName: 'Maya Iyer',
+      actorName: 'Sadahana',
       timestamp: '2026-09-05T10:15:00Z',
       before: JSON.stringify({ status: 'Submitted' }),
       after: JSON.stringify({ status: 'Graded', score: 29 }),
@@ -763,7 +763,7 @@ export function getMockWorkspaceData(userOrRole?: any): MockWorkspaceData {
     memberClasses = 'Physics|Chemistry|Digital Society|Math AA|English|French B|Theory of Knowledge (TOK)|CAS Experience|DEAR (Drop Everything And Read)|Physical Education (PE)|Extended Essay (EE Workshop)';
   } else if (role === 'Teacher') {
     userId = 'dev:teacher';
-    name = 'Maya Iyer';
+    name = 'Sadahana';
     email = 'teacher.dev@schoolos.local';
     memberClasses = `${MAYA_HOMEROOM}|${MAYA_SUBJECT}`;
   } else if (role === 'Lab Assistant') {
@@ -915,16 +915,55 @@ export function handleMockMutation(payload: any, activeMember: any) {
     store.audits.unshift({ actor: activeMember?.userId || 'system', action: `Created ${context.recordType}`, entityId: row.id, after: JSON.stringify(entity), timestamp: nowStr, organizationId: 'schoolos-dev' });
   };
 
-  if (payload.action === 'notificationRead') {
-    const notification = store.rows.find((row) => row.id === payload.id && row.kind === 'notification');
-    if (!notification) return { ok: false, error: 'Notification not found' };
-    notification.data = { ...notification.data, read: payload.read !== false };
-    return { ok: true, id: notification.id };
+  if (payload.action === 'notificationRead' || payload.action === 'read') {
+    const targetId = payload.sourceId || payload.id;
+    const notification = store.rows.find((row) => row.id === targetId || row.id === payload.id);
+    if (notification) {
+      notification.data = { ...notification.data, read: payload.read !== false };
+    }
+    const readingKey = `reading-${targetId}`;
+    const existingReading = store.rows.find((row) => row.id === readingKey || (row.kind === 'reading' && row.data?.sourceId === targetId));
+    if (existingReading) {
+      existingReading.data = { ...existingReading.data, read: payload.read !== false, readAt: nowStr };
+    } else {
+      store.rows.unshift({
+        id: readingKey,
+        kind: 'reading',
+        name: 'Read marker',
+        quantity: 1,
+        data: {
+          sourceId: targetId,
+          sourceKey: payload.sourceKey || targetId,
+          read: payload.read !== false,
+          readAt: nowStr,
+          userId: activeMember?.userId || 'dev:student',
+        },
+      });
+    }
+    return { ok: true, id: targetId };
   }
 
   if (payload.action === 'notificationsReadAll') {
     store.rows
       .filter((row) => row.kind === 'notification')
+      .forEach((row) => { row.data = { ...row.data, read: true }; });
+    // Also add global all-read reading record for personal notifications
+    const allReadId = `reading-all-${Date.now()}`;
+    store.rows.unshift({
+      id: allReadId,
+      kind: 'reading',
+      name: 'All Read Marker',
+      quantity: 1,
+      data: {
+        allRead: true,
+        read: true,
+        readAt: nowStr,
+        userId: activeMember?.userId || 'dev:student',
+      },
+    });
+    // Mark any existing reading records as read
+    store.rows
+      .filter((row) => row.kind === 'reading')
       .forEach((row) => { row.data = { ...row.data, read: true }; });
     return { ok: true };
   }
@@ -937,7 +976,7 @@ export function handleMockMutation(payload: any, activeMember: any) {
       quantity: 1,
       data: {
         ...payload,
-        teacher: activeMember?.name || 'Maya Iyer',
+        teacher: activeMember?.name || 'Sadahana',
         date: payload.date || nowStr.slice(0, 10),
       },
     };

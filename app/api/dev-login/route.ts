@@ -1,7 +1,19 @@
 import { DEV_AUTH_COOKIE } from '@/app/chatgpt-auth';
 import { demoLoginEnabled } from '@/lib/platform/runtime';
 
-const roles = new Set(['student', 'teacher', 'admin', 'hos', 'parent', 'transport-staff', 'lab-assistant', 'library-assistant']);
+const roles = new Set([
+  'student',
+  'teacher',
+  'admin',
+  'hos',
+  'head-of-school',
+  'parent',
+  'transport-staff',
+  'transport',
+  'lab-assistant',
+  'library-assistant',
+  'staff',
+]);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

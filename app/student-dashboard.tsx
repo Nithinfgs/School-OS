@@ -565,6 +565,10 @@ export function StudentDashboard({ ws, page = 'Home' }: any) {
     if (!unreadList.length || markingAllRead) return;
     setMarkingAllRead(true);
     try {
+      await ws.act({
+        action: 'notificationsReadAll',
+        student: true,
+      });
       await Promise.all(
         unreadList.map((n) =>
           ws.act({

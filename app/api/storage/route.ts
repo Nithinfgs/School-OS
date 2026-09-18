@@ -7,6 +7,7 @@ import {
   uploadStorageObject,
   type StorageBucket,
 } from '@/lib/platform/storage';
+import { checkRateLimit, extractClientIp, rateLimitExceededResponse } from '@/lib/security/rate-limit';
 
 async function authenticatedMember() {
   const user = await getChatGPTUser();
@@ -54,6 +55,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = extractClientIp(request);
+    const rateLimit = checkRateLimit(`storage:${ip}`, { maxRequests: 30, windowMs: 60_000 });
+    if (!rateLimit.success) {
+      return rateLimitExceededResponse(rateLimit.resetSeconds);
+    }
+
     const origin = request.headers.get('origin');
     if (origin && origin !== new URL(request.url).origin) {
       throw new Error('FORBIDDEN: Invalid request origin');

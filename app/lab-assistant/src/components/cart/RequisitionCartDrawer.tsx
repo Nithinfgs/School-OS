@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLab } from '../../context/LabContext';
 import { LabBadge } from '../common/Badge';
 import { 
@@ -53,8 +54,8 @@ export const RequisitionCartDrawer: React.FC = () => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-[#253B53]/40 backdrop-blur-xs animate-in fade-in">
+  const drawerContent = (
+    <div className="fixed inset-0 z-[9999] flex justify-end bg-[#253B53]/40 backdrop-blur-xs animate-in fade-in">
       
       {/* Background click to close */}
       <div 
@@ -247,4 +248,6 @@ export const RequisitionCartDrawer: React.FC = () => {
       </motion.div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(drawerContent, document.body) : null;
 };

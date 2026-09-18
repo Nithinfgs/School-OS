@@ -78,6 +78,7 @@ import { getMockWorkspaceData, handleMockMutation } from '@/lib/mock-workspace';
 import { ClassHistory, ClassLogDetail } from './class-logs';
 import { AttendanceRegister } from './attendance-register';
 import { MessageThread } from './message-thread';
+import { StudentContactCard } from './components/student-contact-card';
 import { calendarEvents } from '@/lib/teaching';
 import { navigateWebsite } from '@/lib/web-navigation';
 import { createClient } from '@/utils/supabase/client';
@@ -113,6 +114,9 @@ export function useWorkspace(initialUser?: any) {
   const [state, setState] = useState<any>(() => {
     return getMockWorkspaceData(initialUser);
   });
+  const memberRef = useRef(state.member);
+  memberRef.current = state.member;
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -139,7 +143,7 @@ export function useWorkspace(initialUser?: any) {
         return;
       }
       // The rich mock workspace is deliberately retained for demo mode only.
-      const mockData = getMockWorkspaceData(initialUser || state.member);
+      const mockData = getMockWorkspaceData(initialUser || memberRef.current);
       if (request !== requestNumber.current) return;
       setState(mockData);
       setError('');
@@ -151,13 +155,13 @@ export function useWorkspace(initialUser?: any) {
         setError('School data could not be loaded. Check your connection and try again.');
         return;
       }
-      const mockData = getMockWorkspaceData(initialUser || state.member);
+      const mockData = getMockWorkspaceData(initialUser || memberRef.current);
       setState(mockData);
       setError('');
     } finally {
       setLoading(false);
     }
-  }, [initialUser, state.member]);
+  }, [initialUser]);
 
   useEffect(() => {
     const currentReq = requestNumber;
@@ -335,8 +339,8 @@ export function GlobalSearch({
                 </CommandItem>
               ))}
             </CommandGroup>
-            {['Admin', 'Head of School'].includes(role) && (
-              <CommandGroup heading="Open unified record">
+            {['Admin', 'Head of School', 'Teacher', 'Head of Department', 'Coordinator', 'Staff'].some((allowedRole: string) => (role || '').toLowerCase().includes(allowedRole.toLowerCase())) && (
+              <CommandGroup heading="Open unified student & staff record">
                 {rows.filter((r: any) => r.kind === 'student' || (r.kind === 'staff' && /teacher/i.test(`${r.data?.role || ''} ${r.data?.title || ''}`))).slice(0, 40).map((r: any) => {
                   const isTeacher = r.kind === 'staff'; const target = isTeacher ? 'Teacher Inquiry' : 'Student Search';
                   return <CommandItem key={`lookup-${r.id}`} value={`${isTeacher ? 'teacher' : 'student'} ${r.name} ${JSON.stringify(r.data)}`} onSelect={() => { sessionStorage.setItem('schoolos-record-lookup', JSON.stringify({ kind: isTeacher ? 'teacher' : 'student', id: r.id })); navigate(target); setOpen(false); }}>
@@ -788,7 +792,7 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                         },
                         {
                           role: 'teacher',
-                          name: 'Maya Iyer',
+                          name: 'Sadahana',
                           title: 'Physics & Math HL Teacher',
                           badge: 'Teacher',
                           icon: Users,
@@ -1568,6 +1572,7 @@ function Detail({ row: r, rows, audit, mutate, can, role, ws }: any) {
           <TabsList variant="line" className="detail-tabs">
             {[
               'Overview',
+              'Contacts & Guardians',
               'Academics',
               'Attendance',
               'Behaviour',
@@ -1584,7 +1589,11 @@ function Detail({ row: r, rows, audit, mutate, can, role, ws }: any) {
       )}
       {r.kind === 'student' ? (
         <>
-          {tab === 'Overview' || tab === 'Attendance' ? (
+          {tab === 'Contacts & Guardians' ? (
+            <div className="my-3">
+              <StudentContactCard student={r} />
+            </div>
+          ) : tab === 'Overview' || tab === 'Attendance' ? (
             <>
               <div className="detail-metrics">
                 <div>
@@ -1611,6 +1620,11 @@ function Detail({ row: r, rows, audit, mutate, can, role, ws }: any) {
                   </div>
                 ))}
               </dl>
+              {tab === 'Overview' && (
+                <div className="my-3">
+                  <StudentContactCard student={r} compact={true} />
+                </div>
+              )}
             </>
           ) : (
             <div>

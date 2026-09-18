@@ -27,7 +27,7 @@ export function demoTeacherEntries() {
       kind: 'class',
       name: MAYA_HOMEROOM,
       data: {
-        teacher: 'Maya Iyer',
+        teacher: 'Sadahana',
         teacherId: MAYA_TEACHER_ID,
         classTeacherId: MAYA_TEACHER_ID,
         isHomeroom: true,
@@ -41,7 +41,7 @@ export function demoTeacherEntries() {
       kind: 'class',
       name: MAYA_SUBJECT,
       data: {
-        teacher: 'Maya Iyer',
+        teacher: 'Sadahana',
         teacherId: MAYA_TEACHER_ID,
         subjectTeacherId: MAYA_TEACHER_ID,
         room: 'Physics Lab',
@@ -58,7 +58,7 @@ export function demoTeacherEntries() {
       data: {
         classId: 'maya-homeroom',
         class: MAYA_HOMEROOM,
-        teacher: 'Maya Iyer',
+        teacher: 'Sadahana',
         teacherId: MAYA_TEACHER_ID,
         period: 'P1',
         weekdays: [1, 2, 3, 4, 5],
@@ -74,7 +74,7 @@ export function demoTeacherEntries() {
       data: {
         classId: 'maya-physics-hl',
         class: MAYA_SUBJECT,
-        teacher: 'Maya Iyer',
+        teacher: 'Sadahana',
         teacherId: MAYA_TEACHER_ID,
         period: 'P3',
         weekdays: [1, 2, 3, 4, 5],
@@ -138,7 +138,7 @@ export function demoTeacherEntries() {
       data: {
         class: MAYA_SUBJECT,
         classId: 'maya-physics-hl',
-        teacher: 'Maya Iyer',
+        teacher: 'Sadahana',
         teacherId: MAYA_TEACHER_ID,
         title: 'Physics IA draft: motion analysis',
         instructions: 'Submit your research question, variables and first data table.',
@@ -155,7 +155,7 @@ export function demoTeacherEntries() {
       data: {
         class: MAYA_SUBJECT,
         classId: 'maya-physics-hl',
-        teacher: 'Maya Iyer',
+        teacher: 'Sadahana',
         teacherId: MAYA_TEACHER_ID,
         date: '2026-09-07',
         period: 'P3',

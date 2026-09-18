@@ -12,7 +12,7 @@ const demoBuses = Array.from({ length: 30 }, (_, index) => {
   return { id: `bus_m${n}`, busCode: code, route: `Route ${n}`, driver: ['A. Kumar', 'S. Patel', 'R. Das', 'M. Ali'][n % 4], assistant: ['K. Sharma', 'P. Nair', 'J. Roy'][n % 3], capacity: 42, status: 'Active', arrival, departure };
 });
 const seedNotices = [
-  { id: 'notice-1', student: 'Aarav Mehta', grade: 'DP-2 · Physics HL', bus: 'M2 · Route 2', date: TODAY, changeType: 'NotGoingByBus', teacher: 'Maya Iyer', reason: 'Parent pickup after Physics IA meeting', notes: 'Collect from main reception.', timeSubmitted: '07:12', status: 'Submitted', operationalNote: '' },
+  { id: 'notice-1', student: 'Aarav Mehta', grade: 'DP-2 · Physics HL', bus: 'M2 · Route 2', date: TODAY, changeType: 'NotGoingByBus', teacher: 'Sadahana', reason: 'Parent pickup after Physics IA meeting', notes: 'Collect from main reception.', timeSubmitted: '07:12', status: 'Submitted', operationalNote: '' },
   { id: 'notice-2', student: 'Mira Iyer', grade: 'DP-1 · Mathematics AA', bus: 'M5 · Route 5', date: TODAY, changeType: 'PickupChange', teacher: 'David Park', reason: 'Alternate pickup point', notes: '', timeSubmitted: '07:20', status: 'Acknowledged', operationalNote: 'Driver informed.' },
 ];
 

@@ -22,12 +22,20 @@ import { handleSupabaseWorkspaceMutation } from '@/lib/platform/supabase-mutatio
 import { getChatGPTUser } from '@/app/chatgpt-auth';
 export async function GET() {
   try {
+    const user = await getChatGPTUser();
+    if (!user) return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+
+    // Instant local demonstration workspace for dev accounts (<10ms)
+    if (user.userId.startsWith('dev:')) {
+      return Response.json(getMockWorkspaceData(user), {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
+
     if (backendConfig.adapter === 'supabase') {
-      const user = await getChatGPTUser();
-      if (!user) return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
       return Response.json(await loadSupabaseWorkspace(user));
     }
-    const { user, member, org } = await context();
+    const { member, org } = await context();
     await ensureSeed(org, user.userId);
     await seedTeachingDemo(org);
     await seedStudentDemo(org);

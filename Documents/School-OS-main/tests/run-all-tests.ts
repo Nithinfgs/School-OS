@@ -4,6 +4,7 @@ import { runStorageValidationTests } from './security/storage-validation.test';
 import { runRbacMatrixTests } from './security/rbac-matrix.test';
 import { runButtonWorkflowTests } from './interaction/button-workflows.test';
 import { runE2EUserFlowTests } from './interaction/e2e-user-flows.test';
+import { runWorkspaceRoutingTests } from './interaction/workspace-routing.test';
 
 async function main() {
   console.log('\n========================================');
@@ -16,6 +17,7 @@ async function main() {
     await runStorageValidationTests();
     await runRbacMatrixTests();
     await runButtonWorkflowTests();
+    await runWorkspaceRoutingTests();
     await runE2EUserFlowTests();
 
     console.log('\n========================================');
@@ -28,4 +30,3 @@ async function main() {
 }
 
 main();
-

@@ -20,6 +20,7 @@ import { backendConfig } from '@/lib/platform/config';
 import { loadSupabaseWorkspace } from '@/lib/platform/supabase-workspace';
 import { handleSupabaseWorkspaceMutation } from '@/lib/platform/supabase-mutations';
 import { getChatGPTUser } from '@/app/chatgpt-auth';
+import { workspaceMutationMode } from '@/lib/workspace-routing';
 export async function GET() {
   try {
     const user = await getChatGPTUser();
@@ -201,11 +202,23 @@ export async function POST(req: Request) {
     const origin = req.headers.get('origin');
     if (origin && origin !== new URL(req.url).origin)
       throw new Error('FORBIDDEN');
-    if (backendConfig.adapter === 'supabase') {
-      const user = await getChatGPTUser();
-      if (!user) throw new Error('UNAUTHORIZED');
+    const authenticatedUser = await getChatGPTUser();
+    const mutationMode = workspaceMutationMode(
+      authenticatedUser,
+      backendConfig.adapter,
+    );
+    if (mutationMode === 'mock') {
       const payload = await req.json();
-      return Response.json(await handleSupabaseWorkspaceMutation(payload, user));
+      if (!payload || typeof payload.action !== 'string')
+        throw new Error('Invalid action');
+      return Response.json(handleMockMutation(payload, authenticatedUser));
+    }
+    if (mutationMode === 'supabase') {
+      if (!authenticatedUser) throw new Error('UNAUTHORIZED');
+      const payload = await req.json();
+      return Response.json(
+        await handleSupabaseWorkspaceMutation(payload, authenticatedUser),
+      );
     }
     const { user, member, org } = await context();
     const b: any = await req.json();

@@ -279,6 +279,7 @@ const allowed: Record<string, string[]> = {
   'Library Assistant': ['book', 'loan'],
   'Department Head': ['assignment', 'record'],
   Student: [],
+  Parent: [],
 };
 const tabMap: Record<string, string[]> = {
   Labs: ['Overview', 'Chemistry', 'Physics', 'Biology', 'Requests', 'Activity'],

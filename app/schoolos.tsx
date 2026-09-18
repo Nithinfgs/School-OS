@@ -421,8 +421,8 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           ]
       : role === 'Parent'
         ? [
-            ['Open quick requests', '/home'],
-            ['View my requests', '/home'],
+            ['Open quick requests', '/requests'],
+            ['View my requests', '/requests'],
           ]
       : role === 'Teacher'
       ? [
@@ -794,7 +794,7 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             <TransportDashboard ws={ws} mode="oversight" />
           ) : role === 'Transport Staff' && !['Settings', 'Help & support'].includes(page) ? (
             <TransportDashboard ws={ws} />
-          ) : role === 'Parent' && !['Settings', 'Help & support'].includes(page) ? (
+          ) : role === 'Parent' && page === 'Requests' ? (
             <ParentDashboard ws={ws} />
           ) : ['Approvals','Requests','Announcements','Forms','ID Cards','Library Suggestions','Lab Purchases','Policies','Services','Feedback','Emergency Contacts'].includes(page) ? (
             <StudentServices ws={ws} role={role} initialTab={page as any} />

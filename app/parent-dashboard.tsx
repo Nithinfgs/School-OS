@@ -102,7 +102,7 @@ export function ParentDashboard({ ws }: { ws: any }) {
   }
 
   return <section className="parent-dashboard">
-    <div className="page-heading"><div><div className="eyebrow">PARENT / GUARDIAN</div><h1>Family home</h1><p>Keep the school informed about today’s arrangements.</p></div><div className="parent-child-picker"><UserRound size={16}/><select value={selectedChild} onChange={(event) => setSelectedChild(event.target.value)} aria-label="Select child">{children.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.className}</option>)}</select></div></div>
+    <div className="page-heading"><div><div className="eyebrow">PARENT / GUARDIAN</div><h1>Parent Requests & Notices</h1><p>Submit quick requests for your children and follow up with the front desk.</p></div><div className="parent-child-picker"><UserRound size={16}/><select value={selectedChild} onChange={(event) => setSelectedChild(event.target.value)} aria-label="Select child">{children.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.className}</option>)}</select></div></div>
     {message && <p className="student-success" role="status">{message}</p>}
     <section className="parent-quick panel"><div className="parent-section-heading"><div><h2>Quick Requests</h2><p>Requests are sent to the school team for acknowledgement.</p></div><span className="parent-pending"><Clock3 size={14}/> {pending} pending</span></div><div className="parent-request-actions">
       <button onClick={() => setOpenType('Early Pickup')}><Clock3/><b>Early Pickup</b><small>Request an early departure</small></button>

@@ -48,18 +48,23 @@ export async function POST(req: Request) {
       prior: any = null,
       id = crypto.randomUUID() as string;
     const policy = rows.find((r) => r.kind === 'servicePolicy')?.data || {};
-    if (b.action === 'read') {
+    if (b.action === 'notificationsReadAll') {
+      id = 'read-all-' + user.userId.replace(/[^a-zA-Z0-9_-]/g, '-');
+      prior = rows.find((r) => r.id === id);
+      kind = 'reading';
+      name = 'All notifications read';
+      data = { userId: user.userId, allRead: true, read: true };
+    } else if (b.action === 'read' || b.action === 'notificationRead') {
       const source = [...rows, ...(await classLogRows(org, member))].find(
         (r) => r.id === b.sourceId,
       );
-      if (!source) throw Error('FORBIDDEN');
-      const key = source.id + ':' + (source.version ?? source.updatedAt ?? '0');
+      const key = source ? source.id + ':' + (source.version ?? source.updatedAt ?? '0') : (b.sourceId + ':0');
       id =
-        'read-' + user.userId.replace(/[^a-zA-Z0-9_-]/g, '-') + '-' + source.id;
+        'read-' + user.userId.replace(/[^a-zA-Z0-9_-]/g, '-') + '-' + (b.sourceId || 'item');
       prior = rows.find((r) => r.id === id);
       kind = 'reading';
       name = 'Read status';
-      data = { userId: user.userId, sourceKey: key, read: b.read === true };
+      data = { userId: user.userId, sourceId: b.sourceId, sourceKey: key, read: b.read !== false };
     } else if (b.action === 'request') {
       if (
         !old ||

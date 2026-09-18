@@ -197,6 +197,18 @@ export function personalEvents(rows: any[], day: string) {
 }
 export function personalNotifications(rows: any[], studentId: string) {
   const today = localDate();
+  const allRead = rows.some((x) => x.kind === 'reading' && x.data?.allRead === true && x.data?.read !== false);
+  const readSourceIds = new Set(
+    rows
+      .filter((x) => x.kind === 'reading' && x.data?.read !== false && x.data?.sourceId)
+      .map((x) => String(x.data.sourceId))
+  );
+  const readSourceKeys = new Set(
+    rows
+      .filter((x) => x.kind === 'reading' && x.data?.read !== false && x.data?.sourceKey)
+      .map((x) => String(x.data.sourceKey))
+  );
+
   return rows
     .filter((r) =>
       [
@@ -219,24 +231,21 @@ export function personalNotifications(rows: any[], studentId: string) {
       ].includes(r.kind),
     )
     .map((r) => {
-      let detail = r.data.status || r.data.class || 'Updated';
+      let detail = r.data?.status || r.data?.class || 'Updated';
       if (r.kind === 'assignment') {
         const state = submissionState(r, studentId, rows).status;
-        detail = `${state} · Due ${r.data.dueAt || 'not set'}`;
+        detail = `${state} · Due ${r.data?.dueAt || 'not set'}`;
       }
       if (r.kind === 'loan')
-        detail = `${r.data.dueAt < today && r.data.status !== 'Returned' ? 'Overdue' : 'Library due'} · ${r.data.dueAt}`;
-      if (r.kind === 'submission' && r.data.returned) detail = 'Feedback ready';
+        detail = `${(r.data?.dueAt || '') < today && r.data?.status !== 'Returned' ? 'Overdue' : 'Library due'} · ${r.data?.dueAt || ''}`;
+      if (r.kind === 'submission' && r.data?.returned) detail = 'Feedback ready';
       const key = r.id + ':' + (r.version ?? r.updatedAt ?? '0');
-      const read =
+      const isRead =
+        allRead ||
         r.data?.read === true ||
-        rows.some(
-          (x) =>
-            x.kind === 'reading' &&
-            (x.data.sourceKey === key || x.data.sourceId === r.id || x.data.allRead === true) &&
-            x.data.read !== false,
-        );
-      return { id: key, source: r, detail, read };
+        readSourceIds.has(r.id) ||
+        readSourceKeys.has(key);
+      return { id: key, source: r, detail, read: isRead };
     })
     .sort((a, b) =>
       (b.source.updatedAt || '').localeCompare(a.source.updatedAt || ''),

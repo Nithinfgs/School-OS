@@ -437,6 +437,18 @@ a:focus-visible {
   box-sizing: border-box;
   margin: auto;
   padding: 24px 32px 16px;
+  animation: pageFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+@keyframes pageFadeIn {
+  from {
+    opacity: 0.88;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .page-heading {
   display: flex;

@@ -251,14 +251,14 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
       const studentPage = currentPath.startsWith('student/page/')
         ? studentSections.find((name) => webSlug(name) === currentPath.slice('student/page/'.length))
         : undefined;
-      if (studentPage) setPage(studentPage);
+      if (studentPage) setPage((prev) => (prev === studentPage ? prev : studentPage));
       else if (
         location.pathname.startsWith('/admin/record/') ||
         location.pathname.startsWith('/hos/record/') ||
         location.pathname.startsWith('/teacher/') ||
         location.pathname.startsWith('/student/')
       )
-        setPage('Home');
+        setPage((prev) => (prev === 'Home' ? prev : 'Home'));
       else {
         const raw = location.pathname.slice(1);
         const current = raw.startsWith('admin/') ? raw.slice(6) : raw.startsWith('hos/') ? raw.slice(4) : raw;
@@ -300,9 +300,9 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
           'Settings',
           'Help & support',
         ].find((name) => webSlug(name) === current);
-        if (next) setPage(next);
+        if (next) setPage((prev) => (prev === next ? prev : next));
         else if (embeddedRouteModule[current])
-          setPage(embeddedRouteModule[current]);
+          setPage((prev) => (prev === embeddedRouteModule[current] ? prev : embeddedRouteModule[current]));
       }
     };
     window.addEventListener('popstate', route);
@@ -787,80 +787,87 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
               <div className="loader-spinner" />
             </div>
           ) : ['Chat', 'Messages'].includes(page) ? (
-            <ChatRoomView ws={ws} />
+            <ChatRoomView key={page} ws={ws} />
           ) : role === 'Head of School' && page === 'Transport' ? (
-            <TransportDashboard ws={ws} mode="oversight" />
+            <TransportDashboard key={page} ws={ws} mode="oversight" />
           ) : role === 'Admin' && page === 'Transport' ? (
-            <TransportDashboard ws={ws} mode="oversight" />
+            <TransportDashboard key={page} ws={ws} mode="oversight" />
           ) : role === 'Transport Staff' && !['Settings', 'Help & support'].includes(page) ? (
-            <TransportDashboard ws={ws} />
+            <TransportDashboard key={page} ws={ws} />
           ) : role === 'Parent' && ['Home', 'Requests'].includes(page) ? (
-            <ParentDashboard ws={ws} />
+            <ParentDashboard key={page} ws={ws} />
           ) : ['Approvals','Requests','Announcements','Forms','ID Cards','Library Suggestions','Lab Purchases','Policies','Services','Feedback','Emergency Contacts'].includes(page) ? (
-            <StudentServices ws={ws} role={role} initialTab={page as any} />
+            <StudentServices key={page} ws={ws} role={role} initialTab={page as any} />
           ) : ['Admin', 'Head of School'].includes(role) && page === 'Teacher Inquiry' ? (
-            <RecordLookup ws={ws} kind="teacher" navigate={navigate} />
+            <RecordLookup key={page} ws={ws} kind="teacher" navigate={navigate} />
           ) : ['Admin', 'Head of School'].includes(role) && page === 'Student Search' ? (
-            <RecordLookup ws={ws} kind="student" navigate={navigate} />
+            <RecordLookup key={page} ws={ws} kind="student" navigate={navigate} />
           ) : page === 'Report Cards' && ['Admin', 'Head of School', 'Teacher', 'Student'].includes(role) ? (
-            <ReportCards ws={ws} role={role} navigate={navigate} />
+            <ReportCards key={page} ws={ws} role={role} navigate={navigate} />
           ) : page === 'Admissions' && role === 'Admin' ? (
-            <AdmissionsDashboard ws={ws} />
+            <AdmissionsDashboard key={page} ws={ws} />
           ) : page === 'Staff Leave' && role === 'Admin' ? (
-            <StaffLeaveDashboard ws={ws} />
+            <StaffLeaveDashboard key={page} ws={ws} />
           ) : page === 'Procurement' && role === 'Admin' ? (
-            <ProcurementDashboard ws={ws} />
+            <ProcurementDashboard key={page} ws={ws} />
           ) : page === 'Documents' && ['Admin', 'Student'].includes(role) ? (
-            <StudentDocuments ws={ws} role={role} />
+            <StudentDocuments key={page} ws={ws} role={role} />
           ) : page === 'Visitors' && role === 'Admin' ? (
-            <VisitorManagement ws={ws} />
+            <VisitorManagement key={page} ws={ws} />
           ) : ['Teacher Inquiry', 'Student Search'].includes(page) ? (
-            <section className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
+            <section key={page} className="panel master-empty"><h1>Access restricted</h1><p>This organization-wide record lookup is available only to authorized Admin and Head of School roles.</p></section>
           ) : role === 'Head of School' && ['Home', 'Calendar', 'Daily Calendar', 'Inquiries'].includes(page) ? (
-            <HOSDashboard ws={ws} navigate={navigate} page={page} />
+            <HOSDashboard key={page} ws={ws} navigate={navigate} page={page} />
           ) : role === 'Admin' && ['Calendar', 'Daily Calendar', 'Inquiries'].includes(page) ? (
-            <HOSDashboard ws={ws} navigate={navigate} page={page} mode="admin" />
+            <HOSDashboard key={page} ws={ws} navigate={navigate} page={page} mode="admin" />
           ) : role === 'Admin' && page === 'Labs' ? (
             <AdminLabView
+              key={page}
               member={ws.member}
               sharedRows={ws.masterRows || ws.rows || []}
             />
           ) : role === 'Admin' && page === 'Library' ? (
             <AdminLibraryView
+              key={page}
               member={ws.member}
               sharedRows={ws.masterRows || ws.rows || []}
             />
           ) : role === 'Head of School' && page === 'Labs' ? (
-            <HOSLabSummary sharedRows={ws.masterRows || ws.rows || []} />
+            <HOSLabSummary key={page} sharedRows={ws.masterRows || ws.rows || []} />
           ) : role === 'Head of School' && page === 'Library' ? (
-            <HOSLibrarySummary sharedRows={ws.masterRows || ws.rows || []} />
+            <HOSLibrarySummary key={page} sharedRows={ws.masterRows || ws.rows || []} />
           ) : role === 'Lab Assistant' &&
           !['Settings', 'Help & support'].includes(page) ? (
             <LabAssistantWorkspace
+              key={page}
               member={ws.member}
               sharedRows={ws.rows || []}
             />
           ) : page === 'Labs' ? (
             <LabAssistantWorkspace
+              key={page}
               member={ws.member}
               sharedRows={ws.rows || []}
             />
           ) : role === 'Library Assistant' &&
           !['Settings', 'Help & support'].includes(page) ? (
             <LibraryAssistantWorkspace
+              key={page}
               member={ws.member}
               sharedRows={ws.rows || []}
             />
           ) : page === 'Library' ? (
             <LibraryAssistantWorkspace
+              key={page}
               member={ws.member}
               sharedRows={ws.member.role === 'Admin' ? ws.masterRows || [] : ws.rows || []}
             />
           ) : ws.member.role === 'Student' &&
           !['Settings', 'Help & support'].includes(page) ? (
-            <StudentDashboard ws={ws} page={page} />
+            <StudentDashboard key={page} ws={ws} page={page} />
           ) : page !== 'Home' ? (
             <Modules
+              key={page}
               page={page}
               ws={ws}
               navigate={navigate}
@@ -869,12 +876,13 @@ export default function SchoolOS({ initialUser }: { initialUser?: any } = {}) {
             />
           ) : ws.member.role === 'Admin' ? (
             <AdminMasterDashboard
+              key={page}
               ws={ws}
               navigate={navigate}
               select={setSelected}
             />
           ) : ws.member.role === 'Teacher' ? (
-            <TeacherDashboard ws={ws} />
+            <TeacherDashboard key={page} ws={ws} />
           ) : (
             <>
               <div className="page-heading">

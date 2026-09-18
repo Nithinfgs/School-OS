@@ -23,6 +23,8 @@ import {
   FileText,
   ShieldCheck,
   RefreshCw,
+  BusFront,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -761,34 +763,49 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
               {tab === 'Profile' ? (
                 <div className="settings-profile-section">
                   <div className="settings-profile-card">
-                    <span className="avatar large">
+                    <span className={`settings-profile-avatar ${(member.role || 'student').toLowerCase().replace(/\s+/g, '-')}`}>
                       {member.name?.slice(0, 2).toUpperCase() || 'SC'}
                     </span>
                     <div className="settings-profile-meta">
-                      <h2>{member.name || 'User'}</h2>
-                      <div className="settings-profile-role-row">
-                        <span className={`role-pill ${(member.role || 'student').toLowerCase()}`}>
+                      <div className="settings-profile-title-row">
+                        <h2>{member.name || 'User'}</h2>
+                        <span className={`role-pill ${(member.role || 'student').toLowerCase().replace(/\s+/g, '-')}`}>
                           {member.role || 'Student'}
                         </span>
-                        <span className="school-tag">Westbridge International</span>
                       </div>
-                      <p className="settings-profile-email">{member.email || 'dev.user@schoolos.local'}</p>
+                      <div className="settings-profile-sub-row">
+                        <span className="school-tag">Westbridge International</span>
+                        <span className="settings-bullet">·</span>
+                        <p className="settings-profile-email">{member.email || 'dev.user@schoolos.local'}</p>
+                      </div>
                     </div>
                   </div>
 
                   <div className="settings-dev-switchers">
                     <div className="settings-switch-heading">
-                      <h3>Switch test profile</h3>
+                      <div className="settings-switch-title-row">
+                        <h3>Switch test profile</h3>
+                        <span className="settings-profile-count">8 Accounts available</span>
+                      </div>
                       <p>Instant role switching for local and preview testing.</p>
                     </div>
                     <div className="settings-switch-grid">
                       {[
+                        {
+                          role: 'hos',
+                          name: 'Dr. Aisha Rahman',
+                          title: 'Head of School',
+                          badge: 'HOS',
+                          icon: GraduationCap,
+                          landing: '/hos',
+                        },
                         {
                           role: 'admin',
                           name: 'Nithin Selvaraj',
                           title: 'School Administrator',
                           badge: 'Admin',
                           icon: Wrench,
+                          landing: '/admin',
                         },
                         {
                           role: 'teacher',
@@ -796,6 +813,7 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                           title: 'Physics & Math HL Teacher',
                           badge: 'Teacher',
                           icon: Users,
+                          landing: '/',
                         },
                         {
                           role: 'student',
@@ -803,6 +821,7 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                           title: 'DP-2 Student (IBDP)',
                           badge: 'Student',
                           icon: User,
+                          landing: '/',
                         },
                         {
                           role: 'lab-assistant',
@@ -810,6 +829,7 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                           title: 'Science Lab Assistant',
                           badge: 'Lab Assistant',
                           icon: FlaskConical,
+                          landing: '/labs',
                         },
                         {
                           role: 'library-assistant',
@@ -817,25 +837,51 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                           title: 'Library Assistant',
                           badge: 'Library Assistant',
                           icon: BookOpen,
+                          landing: '/library',
+                        },
+                        {
+                          role: 'transport-staff',
+                          name: 'Leena Joseph',
+                          title: 'Transport Operations',
+                          badge: 'Transport Staff',
+                          icon: BusFront,
+                          landing: '/transport',
+                        },
+                        {
+                          role: 'parent',
+                          name: 'Nithin Selvaraj',
+                          title: 'Parent / Guardian',
+                          badge: 'Parent',
+                          icon: User,
+                          landing: '/',
                         },
                       ].map((p) => {
-                        const isActive = (member.role || '').toLowerCase().replace(/\s+/g, '-') === p.role;
+                        const normalizedRole = (member.role || '').toLowerCase().replace(/\s+/g, '-');
+                        const isActive =
+                          normalizedRole === p.role ||
+                          (normalizedRole === 'head-of-school' && p.role === 'hos');
                         const Icon = p.icon;
                         return (
                           <a
                             key={p.role}
-                            href={`/api/dev-login?role=${p.role}&return_to=/`}
+                            href={`/api/dev-login?role=${p.role}&return_to=${encodeURIComponent(p.landing || '/')}`}
                             className={`settings-switch-card ${isActive ? 'active' : ''}`}
                           >
                             <span className={`profile-switch-avatar ${p.role}`}>
                               <Icon size={16} />
                             </span>
                             <div className="settings-switch-card-info">
-                              <b>{p.name}</b>
+                              <div className="settings-card-name-row">
+                                <b>{p.name}</b>
+                                <span className={`role-pill ${p.role}`}>{p.badge}</span>
+                              </div>
                               <small>{p.title}</small>
                             </div>
                             {isActive ? (
-                              <span className="current-badge">Active</span>
+                              <div className="settings-active-pill">
+                                <span className="settings-active-dot" />
+                                <span>Active</span>
+                              </div>
                             ) : (
                               <ChevronRight size={15} className="settings-switch-arrow" />
                             )}
@@ -855,7 +901,7 @@ export function Modules({ page, ws, navigate, selected, setSelected }: any) {
                       href="/api/dev-login?role=clear&return_to=/"
                       target="_top"
                     >
-                      <LogOut size={16} />
+                      <LogOut size={15} />
                       <span>Sign out of profile</span>
                     </a>
                   </div>
